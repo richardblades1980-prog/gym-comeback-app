@@ -1,24 +1,32 @@
-GYM COMEBACK — INSTALLABLE PHONE APP
+GYM COMEBACK — VERSION 2 UPGRADE
 
-Files included
-- index.html: the app
-- manifest.webmanifest: install metadata and app name
-- sw.js: offline cache
-- cover-art.jpg and icons/: comic-inspired artwork and app icons
+WHAT'S NEW
+- Progress dashboard with body-weight chart, session history and heaviest recorded lifts.
+- 4, 8 or 12-week programme selector (keeps existing logs).
+- Comeback Coach profile: goals, experience, equipment, session time, injury/pain area, pain rating and movement restrictions.
+- Rules-based exercise modifications and safety prompts. This is not a medical diagnosis and does not call an external AI service.
+- Hold an exercise heading for a quick guide with a stylised machine diagram and highlighted muscle group.
+- Rest timer, CSV export, JSON backup and restore.
+- Local auto-save and offline caching.
 
-IMPORTANT
-For Android Chrome to offer “Install app” / “Add to Home screen”, the files must be served from an HTTPS website. Opening index.html directly from Downloads is not enough for a full installable PWA.
+UPDATE YOUR LIVE GITHUB PAGES APP
+1. Download and unzip this package on your computer.
+2. Open your existing GitHub repository for Gym Comeback.
+3. Upload/replace the files and icons from this ZIP, keeping index.html, manifest.webmanifest, sw.js, cover-art.jpg and the icons folder at the repository root.
+4. Commit the changes and wait for GitHub Pages to finish publishing.
+5. On your phone, open the app website while online and refresh. If it still shows the old version, fully close the installed app, reopen the website in Chrome, refresh, and wait a short moment for the new service worker to activate. If needed, remove the old home-screen app and install it again from the updated site.
 
-EASIEST PUBLISH ROUTE (GitHub Pages)
-1. On a computer, sign in to GitHub and create a new public repository, e.g. gym-comeback-app.
-2. Upload all files and the icons folder from this ZIP (upload the contents, not the ZIP itself). Make sure index.html is at the repository root.
-3. In the repository, open Settings → Pages. Choose “Deploy from a branch”, select the main branch and /(root), then Save.
-4. Wait for GitHub Pages to publish the HTTPS site.
-5. Open the published site URL on your Android phone in Chrome. Tap ⋮ → “Install app” or “Add to Home screen”.
-6. The Gym Comeback icon will appear on your home screen. Open it from there like an app.
+IMPORTANT ABOUT INJURY / AI
+The current coach uses transparent rules and the injury details remain on the device; it is not connected to a live AI service. Do not rely on it to diagnose an injury. Follow your clinician's advice and stop movements that cause sharp or worsening pain, swelling or limping. Seek urgent help for emergency symptoms.
 
-DATA AND BACKUPS
-Workout entries are saved in local browser storage on that device. Use the app’s “Download backup (JSON)” and “Export all logs (CSV)” regularly. Browser/site data can be lost if storage is cleared. This version does not sync between devices.
+DATA
+Workout logs and profile are stored locally in the browser on this device. They are not automatically synced between devices. Download JSON backups regularly. CSV is available for spreadsheets.
 
-DESIGN
-Custom comic-inspired artwork, teal/orange/cream theme and home-screen icon are included. This is a progressive web app (PWA), not a Play Store APK.
+PWA NOTE
+This is an installable Progressive Web App served over HTTPS, not a Play Store APK.
+
+
+V3 UPDATE — SIX-SECOND WORKOUT CELEBRATION
+After you tap Save session, a six-second comic-style animation plays. The hero flexes and the muscle groups trained in the selected workout are highlighted. You can dismiss it early with the button. The app still saves your session locally as before.
+
+To update an existing GitHub Pages deployment, replace the repository files with all files from this ZIP, commit the changes, and wait for Pages to publish. The service worker cache name has been bumped to gym-comeback-v3 so the updated app can replace the cached version. Export a backup before updating as a precaution.

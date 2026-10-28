@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback Logbook",
+  "name": "Gym Comeback \u2014 Training Coach",
   "short_name": "Gym Comeback",
-  "description": "Full-colour comic-style gym logbook with four-week workouts, set tracking, progress history and backups.",
+  "description": "Comic-inspired training logbook with longer plans, injury-aware guidance, muscle guides and progress tracking.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
