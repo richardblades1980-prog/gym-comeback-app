@@ -1,0 +1,4 @@
+GYM COMEBACK V13.1
+Bug-fix release for repeated exercise swaps.
+Repeated swaps replace the same workout slot; they do not append extra exercises.
+Built from the V13 beta package. Not deployed to GitHub Pages.
