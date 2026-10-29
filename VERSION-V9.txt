@@ -1,0 +1,2 @@
+Gym Comeback V9 — Personalised Training Foundation
+Built on V8; preserves existing workout logs and equipment features.
