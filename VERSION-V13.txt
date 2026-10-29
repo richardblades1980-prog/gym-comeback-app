@@ -1,0 +1,10 @@
+Gym Comeback V13 — Adaptive Workout Builder
+
+Built from the user-tested V12 release.
+- Adds a whole-week personalised builder using saved training goal, experience, weekly frequency, session length, recovery, exercise preferences, equipment inventory and selected restriction context.
+- Activates gear-matched workouts for the selected 2–5 training days and restores original days outside the chosen frequency.
+- Uses symptom-aware caution scoring for candidate exercise substitutions; prompts before building with high pain or broad restrictions.
+- Keeps the V12 bodyweight/mobility weight-field checkbox, V11 safer swaps, V10 smart progression, five workout days, logs, exports, backup/restore and persistent version badge.
+- Does not delete logs or manually chosen substitutions. User should review each exercise; suggestions are not medical clearance.
+
+Beta release only. Not deployed to GitHub Pages and not tested on the user’s phone.
