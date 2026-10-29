@@ -1,0 +1,3 @@
+GYM COMEBACK V10.1 — VERSION BADGE UPDATE
+Built from the beta-tested V10 package.
+Status: packaged for user beta testing; not deployed to GitHub Pages.
