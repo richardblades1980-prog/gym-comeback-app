@@ -1,0 +1,19 @@
+GYM COMEBACK — VERSION V11
+Status: Beta release for user testing
+Base: Passed V10.1
+Focus: Injury-aware exercise alternatives
+
+V11 keeps the V10 smart progression, exercise logs, equipment matching, profile, five workout days, muscle/equipment guides, progress dashboard, and CSV/JSON export features.
+
+New in V11:
+- Renamed workout-card Swap button to Safer swap.
+- Exercise alternatives are ranked using the selected pain/restriction area, target muscles, and equipment availability.
+- Potentially aggravating movements are flagged; higher reported pain and broad/unspecified restrictions prompt extra caution.
+- Added clear reminders that these are candidates, not medical clearance, and users should stop movements that worsen symptoms.
+- Persistent VERSION V11 badge and About section.
+- Updated service-worker cache identifier.
+
+Important limitations:
+- This is a rules-based helper, not a medical assessment. It cannot diagnose an injury or guarantee any substitute is safe.
+- Not live-tested on the user's phone and not deployed to GitHub Pages.
+- Existing data remains in browser storage. Export a JSON backup before changing versions or clearing browser data.
