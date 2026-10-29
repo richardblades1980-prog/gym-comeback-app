@@ -1,0 +1,11 @@
+Gym Comeback V12 — Complete Exercise Library & Cleaner Logging
+
+Built from the user-tested V11 release.
+- Keeps V11 injury-aware alternatives and V10 smart progression.
+- Version badge and About section updated to V12.
+- Adds a persistent Settings checkbox: “Show weight fields for bodyweight and mobility exercises”.
+- Off by default: weight-entry fields are hidden for bodyweight/mobility exercises, while remaining in the DOM so saved data and existing logs are preserved.
+- Turning the checkbox on reveals those fields for recording added resistance.
+- Service worker cache updated for V12.
+
+Beta release only. Not deployed to GitHub Pages and not tested on the user's phone.
