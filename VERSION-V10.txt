@@ -1,0 +1,3 @@
+GYM COMEBACK V10 — SMART PROGRESSION
+Build base: V9.1 passed beta test.
+Status: packaged for user beta testing; not deployed to GitHub Pages.
