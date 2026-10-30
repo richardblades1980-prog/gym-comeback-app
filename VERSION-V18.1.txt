@@ -1,0 +1,4 @@
+Gym Comeback V18.1 — Set Status Clarity
+Built from the user-approved V18 Workout Experience release.
+Adds persistent per-session set states: NOT STARTED, IN PROGRESS, and COMPLETED. Entering/focusing a set marks it in progress; tapping Set Completed marks it complete and starts the existing rest timer. Set state is stored separately from workout logs and is cleared when the current session is cleared.
+Technical validation is not a substitute for user testing. Not deployed to GitHub Pages. Keep the V18 ZIP as a stable backup until V18.1 passes.
