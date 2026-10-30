@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V16",
+  "name": "Gym Comeback V16.1",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V16 \u2014 personalisation and accessibility polish",
+  "description": "Gym Comeback V16.1 \u2014 workout list fixes and personalisation polish",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,0 +1,4 @@
+GYM COMEBACK V16.1
+Workout List Fixes
+
+Fixes warm-up/cardio machines appearing as strength exercise cards and prevents duplicate library additions. Based on passed V16.
