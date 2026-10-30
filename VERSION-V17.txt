@@ -1,0 +1,4 @@
+Gym Comeback V17 — Smart Rest Timer
+Beta release built from the passed V16.1 baseline.
+Adds configurable default rest periods, per-exercise rest overrides, set-completion timer buttons, a large countdown, BOOM end alert, optional sound/vibration, and countdown recovery after navigation/reload.
+Not yet user-tested or deployed to GitHub Pages. Keep V16.1 ZIP as the stable backup.
