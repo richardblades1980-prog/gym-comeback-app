@@ -1,0 +1,5 @@
+Gym Comeback V15 — Community Edition
+
+Built from the user-tested V14 release. Adds quick-start onboarding, display accessibility options, and clearer backup/privacy guidance. V14 progress dashboard, independent weigh-ins, strength trends, and JSON backup/restore are retained.
+
+Status: beta package for user testing. Not automatically deployed to GitHub Pages.
