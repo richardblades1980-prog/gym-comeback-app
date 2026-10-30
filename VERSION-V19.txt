@@ -1,0 +1,4 @@
+Gym Comeback V19 — Exercise Completion Clarity
+Beta release built from the passed V18.1 baseline.
+All three sets complete: the exercise card receives a subtle, faded green background and a clear “EXERCISE COMPLETE” label. Set statuses remain stored using the existing local set-status mechanism.
+Not yet approved as stable; requires user testing on phone and desktop.
