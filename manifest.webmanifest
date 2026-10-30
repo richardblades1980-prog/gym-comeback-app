@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V14",
+  "name": "Gym Comeback V15.1",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V15 Community Edition",
+  "description": "Gym Comeback V15.1 Community Edition",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

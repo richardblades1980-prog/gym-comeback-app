@@ -1,4 +1,4 @@
-Gym Comeback V15 — Community Edition
+Gym Comeback V15.1 — Blue Screen Fix
 
 Built from the user-tested V14 release. Adds quick-start onboarding, display accessibility options, and clearer backup/privacy guidance. V14 progress dashboard, independent weigh-ins, strength trends, and JSON backup/restore are retained.
 
