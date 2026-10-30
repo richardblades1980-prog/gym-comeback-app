@@ -1,0 +1,3 @@
+GYM COMEBACK V19.2
+Weekly defaults for weighted and non-weighted exercises
+Built from passed V19.1. Beta test required.
