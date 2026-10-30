@@ -1,0 +1,5 @@
+GYM COMEBACK V14 — PROGRESS DASHBOARD
+
+Builds on passed V13.1 exercise-swap fix. Adds standalone weigh-ins, 28-day session count, cardio-minute total, recorded lifting-volume total, exercise-specific dated load trends, clearer recent session history, and includes weigh-ins in JSON backup/restore. Existing workout logs remain in the same localStorage keys.
+
+Packaged for beta testing. Not deployed to GitHub Pages or tested on the user’s device.

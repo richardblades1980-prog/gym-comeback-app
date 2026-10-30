@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V13.1",
+  "name": "Gym Comeback V14",
   "short_name": "Gym Comeback",
-  "description": "Comic-inspired training logbook with adaptive workouts and reliable repeat exercise swaps.",
+  "description": "Comic-inspired training logbook with adaptive workouts and progress dashboard, body-weight tracking and strength trends.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
