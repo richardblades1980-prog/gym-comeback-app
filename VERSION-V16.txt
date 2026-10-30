@@ -1,0 +1,3 @@
+Gym Comeback V16 — Personalisation & Polish
+Status: Beta release for user testing.
+Built from the passed V15.1 baseline. V15.1 backup should remain untouched.
