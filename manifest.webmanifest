@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V16.1",
+  "name": "Gym Comeback V18",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V16.1 \u2014 workout list fixes and personalisation polish",
+  "description": "Gym Comeback V18 \u2014 workout usability refinements and smart rest timer",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

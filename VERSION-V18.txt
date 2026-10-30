@@ -1,0 +1,4 @@
+Gym Comeback V18 — Workout Experience Refinements
+Beta release built from the user-approved V17 Smart Rest Timer baseline.
+Focus: more comfortable phone set entry, clearer set cards, larger touch targets, keyboard focus visibility, and reduced-motion support. Existing workout, progress, timer, swapping, and backup features are intended to remain unchanged.
+Technical checks are not a substitute for user testing. Not deployed to GitHub Pages. Keep V17 ZIP as the stable backup until V18 passes.
