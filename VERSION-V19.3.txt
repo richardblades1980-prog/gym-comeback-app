@@ -1,0 +1,11 @@
+GYM COMEBACK V19.3
+Workout list recovery + weekly rep defaults + service-worker update reliability.
+
+Built from the confirmed V19.1 release.
+
+- Restores the original exercise list by clearing stale per-day custom additions, swaps and adapted-workout flags one time. Workout logs, profile, equipment and saved weights/reps are preserved.
+- Carries reps forward for weighted and non-weighted/bodyweight exercises, and copies recorded weights where available. Existing current-week values are not overwritten. Exercise-name matching tolerates punctuation/case differences.
+- Updates the service-worker cache version and uses network-first handling for app HTML so a new GitHub Pages release is less likely to keep showing an older version.
+- Visible app version label updated to V19.3.
+
+Beta package only. It has not been deployed to GitHub Pages or live-tested in a browser/device.
