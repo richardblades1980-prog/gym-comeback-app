@@ -1,0 +1,3 @@
+GYM COMEBACK VERSION V19.4
+Adaptive Training Review
+Built from confirmed stable V19.3.
