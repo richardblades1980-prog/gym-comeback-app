@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V19.3",
+  "name": "Gym Comeback V19.5",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V19.3 \u2014 restores the original workout list and carries reps and recorded weights forward as editable defaults.",
+  "description": "Gym Comeback V19.5 \u2014 adaptive training review with a safe progress reset option.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

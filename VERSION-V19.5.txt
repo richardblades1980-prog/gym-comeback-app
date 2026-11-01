@@ -1,0 +1,4 @@
+GYM COMEBACK V19.5
+Adaptive Training Review + Safe Progress Reset
+
+This beta adds a deliberate, two-step Reset All Progress control in Settings > Backups & privacy. It clears saved workout sessions, set completion history, recorded weights/reps, body-weight entries and adaptive review history. It preserves profile, selected/custom equipment, workout setup, programme length and app preferences.
