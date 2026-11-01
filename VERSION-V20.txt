@@ -1,0 +1,7 @@
+GYM COMEBACK V20
+Adaptive Training Engine foundation
+
+V20 introduces a daily readiness check-in and transparent rules-based readiness guidance. It considers self-reported energy, fatigue, muscle soreness and pain/symptoms. It recommends planned training, a steady pace, recovery focus or pausing aggravating activity. It does not diagnose, provide medical clearance or automatically change the workout.
+
+V19.4 exercise-by-exercise Adaptive Training Review is retained.
+Readiness check-ins are stored locally and included in user-controlled Comeback backups. Reset all progress clears readiness check-ins.

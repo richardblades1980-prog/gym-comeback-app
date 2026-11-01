@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V19.6",
+  "name": "Gym Comeback V20",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V19.6 \u2014 adaptive training review with a safe progress reset option.",
+  "description": "Gym Comeback V20 \u2014 adaptive training engine with daily readiness guidance.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
