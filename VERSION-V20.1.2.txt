@@ -1,0 +1,4 @@
+GYM COMEBACK V20.1.2
+Set Count Correction
+
+Fixes the mismatch between the set-count dropdown and the stored configuration property. Includes migration of selections saved by V20.1.1 and updates workout rendering, logging and completion tracking to use the selected count.
