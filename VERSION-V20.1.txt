@@ -1,0 +1,6 @@
+GYM COMEBACK V20.1
+Individual Exercise Progression
+
+V20.1 introduces per-exercise working-set counts (1–8), exercise-specific progression preferences (reps, weight, duration, sets, balanced or manual), and timed-set logging for isometric exercises such as planks and wall sits. Set counts and progression preferences are stored per exercise and workout day, included in user-owned backups, and retained when progress is reset. Existing V20 readiness check-ins and the V19.4 adaptive training review are retained.
+
+Beta release. Please test before relying on the new set and timed-exercise features.

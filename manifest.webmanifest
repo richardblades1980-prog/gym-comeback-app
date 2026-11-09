@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V20",
+  "name": "Gym Comeback V20.1",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V20 \u2014 adaptive training engine with daily readiness guidance.",
+  "description": "Gym Comeback V20.1 \u2014 adaptive training engine with daily readiness guidance.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
