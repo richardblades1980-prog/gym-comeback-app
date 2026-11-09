@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Gym Comeback V20.6",
+  "name": "Gym Comeback V20.7",
   "short_name": "Gym Comeback",
-  "description": "Gym Comeback V20.6 \u2014 sequential set completion with visible locked sets.",
+  "description": "Gym Comeback V20.7 \u2014 previous-workout carry-forward and linked set prefill.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,0 +1,1 @@
+Gym Comeback V20.7 — Smart Set Carry-Forward. Previous workout values are carried forward when available. Later sets are prefilled from the set above and continue to follow it until manually edited. All fields remain editable when their sequential set is unlocked.
