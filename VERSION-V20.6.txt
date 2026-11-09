@@ -1,0 +1,1 @@
+Gym Comeback V20.6 — Sequential set completion with visible, disabled future sets.
