@@ -1,0 +1,6 @@
+GYM COMEBACK V20.1.1
+Set Count Fix
+
+Fixes the per-exercise set-count control so selecting 1–8 sets rebuilds the visible set cards, preserves existing entries, and saves the updated count. Includes the V20.1 individual progression preferences and V20 readiness/adaptive review.
+
+Beta release. Please test before relying on it.
