@@ -1,4 +1,4 @@
-GYM COMEBACK V21.1 — STAGE A: PROGRESSION FOUNDATIONS
+GYM COMEBACK V21.1A.1 — STAGE A: PROGRESSION FOUNDATIONS
 
 BUILT FROM
 Passed V21.0 Training Objectives beta. The V21.0 workout screens, local data model, exercise settings, workout history and backup behaviour are retained.
@@ -11,7 +11,7 @@ NEW IN STAGE A
 5. Previous workout records remain available after a method change and are not rewritten.
 
 SCOPE LIMIT
-This is Stage A only. It establishes method recommendations and user control; it does not yet implement the complete adaptive progression decision engine, recovery hierarchy, progression timeline or weekly/monthly reviews. Those belong to later V21.1 stages.
+This is Stage A only. It establishes method recommendations and user control; it does not yet implement the complete adaptive progression decision engine, recovery hierarchy, progression timeline or weekly/monthly reviews. Those belong to later V21.1A.1 stages.
 
 BETA CHECKLIST
 - Open Train and inspect several exercises.
@@ -30,4 +30,4 @@ INSTALL
 1. Export a fresh Gym Comeback data backup before updating.
 2. Keep the passed V20.7 and V21.0 ZIPs as rollback copies.
 3. Extract this ZIP and upload the contents of the gc206 folder to the root of the GitHub Pages repository, replacing the previous app files.
-4. Open the app and check the top-right version badge reads VERSION V21.1. If an old version appears, refresh once and allow the service worker to update.
+4. Open the app and check the top-right version badge reads VERSION V21.1A.1. If an old version appears, refresh once and allow the service worker to update.
