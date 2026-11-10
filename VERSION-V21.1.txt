@@ -1,0 +1,1 @@
+Gym Comeback V21.1 — Stage A: Exercise-Specific Progression Foundations. Adds objective- and exercise-aware progression method suggestions, clear explanations of each method, and confirmation before changing a saved exercise progression preference. Existing workout history and settings are preserved.
