@@ -1,1 +1,15 @@
-Gym Comeback V21.1A.2 — Objective-to-Plan Integration Fix. The primary training objective now drives personalised workout goal summaries, exercise substitution priorities, and Coach plan suggestions. Legacy profile goal remains a fallback when no primary objective has been selected. Secondary objective remains a supporting goal and does not override the primary objective. Existing workout history and exercise-specific progression preferences are preserved.
+GYM COMEBACK
+Version: V21.1B.1
+Release: Beta testing and workout logging fixes
+Base checkpoint: V21.1A.2 — Objective-to-Plan Integration
+
+Changes in this release:
+- Workout completion status is scoped to a workout session and starts fresh after a saved session, while historical completion records remain available for workout-day unlocking.
+- Timed exercises provide a per-set stopwatch with start, stop and reset controls.
+- Target duration is displayed separately from actual elapsed time.
+- Actual duration can be entered manually or corrected after timing, and may be shorter or longer than the target.
+- Completed exercises no longer collapse automatically; the user chooses when to collapse them after recording results.
+- Adds a separate two-step Factory Reset — Start as a New User action.
+- Existing Reset all progress remains separate and retains profile, equipment and programme setup.
+
+Beta status: Requires user testing on deployed hosting and target devices.
