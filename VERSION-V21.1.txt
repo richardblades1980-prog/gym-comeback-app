@@ -1,15 +1,16 @@
 GYM COMEBACK
-Version: V21.1B.1
-Release: Beta testing and workout logging fixes
-Base checkpoint: V21.1A.2 — Objective-to-Plan Integration
+Version: V21.1B.2
+Release: Selectable timed repetition recording
+Base checkpoint: V21.1B.1 — Beta testing and workout logging fixes
 
 Changes in this release:
-- Workout completion status is scoped to a workout session and starts fresh after a saved session, while historical completion records remain available for workout-day unlocking.
-- Timed exercises provide a per-set stopwatch with start, stop and reset controls.
-- Target duration is displayed separately from actual elapsed time.
-- Actual duration can be entered manually or corrected after timing, and may be shorter or longer than the target.
-- Completed exercises no longer collapse automatically; the user chooses when to collapse them after recording results.
-- Adds a separate two-step Factory Reset — Start as a New User action.
-- Existing Reset all progress remains separate and retains profile, equipment and programme setup.
+- Adds per-exercise recording modes: Normal repetitions, Timed hold, and Timed repetitions.
+- Recording mode is independent of progression preference; choosing Weight first does not remove the selected timer.
+- Timed repetitions record weight where applicable, actual elapsed time and completed repetitions for each set.
+- Timed holds retain stopwatch and actual-duration logging without a reps field.
+- Existing duration-first exercises migrate to Timed hold; other exercises default to Normal repetitions.
+- Timed repetition progression review treats a set as fully recorded only when both time and reps are present, without blocking workout saving.
+
+Preserves all V21.1B.1 fixes and V21.1A.2 objective-to-plan integration.
 
 Beta status: Requires user testing on deployed hosting and target devices.

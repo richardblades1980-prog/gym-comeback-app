@@ -1,0 +1,12 @@
+GYM COMEBACK V21.1B.2
+Selectable timed repetition recording
+Built from V21.1B.1.
+
+Recording modes per exercise:
+- Normal repetitions
+- Timed hold
+- Timed repetitions
+
+Timed repetitions record actual time, reps completed and weight where applicable. Recording mode is independent of progression preference. Existing V21.1B.1 fixes and V21.1A.2 objective-to-plan integration are retained.
+
+Beta build: source syntax and ZIP integrity checks completed; live device/deployment testing remains with the beta tester.
