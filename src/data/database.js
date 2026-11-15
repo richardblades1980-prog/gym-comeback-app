@@ -78,9 +78,10 @@
     const db = await open();
     try {
       const tx = db.transaction(name, mode);
+      const done = transactionDone(tx);
       const store = tx.objectStore(name);
       const result = await work(store, tx);
-      await transactionDone(tx);
+      await done;
       return result;
     } finally {
       db.close();
@@ -128,8 +129,9 @@
     try {
       const names = Array.from(db.objectStoreNames);
       const tx = db.transaction(names, "readwrite");
+      const done = transactionDone(tx);
       names.forEach(name => tx.objectStore(name).clear());
-      await transactionDone(tx);
+      await done;
     } finally {
       db.close();
     }
