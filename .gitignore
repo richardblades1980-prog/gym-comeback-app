@@ -1,0 +1,13 @@
+# Windows Explorer metadata
+Thumbs.db
+**/Thumbs.db
+Desktop.ini
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*.tmp
+
+# Local test and backup artefacts
+*.local.json
+*.backup
