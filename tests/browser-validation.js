@@ -335,9 +335,18 @@ function server() {
       marker: await ProjectComebackDB.getMeta("migration-v21.2a-typed-projection-v1"),
       source: localStorage.getItem("gym-comeback-w1-d1")
     }));
-    if (migrated.sessions.length !== 1 || migrated.hikes.length !== 1 ||
+    if (migrated.sessions.length !== 2 ||
+        !migrated.sessions.some(session => session.id === "browser-test-gym-session") ||
+        !migrated.sessions.some(session => session.date === "2026-11-16") ||
+        migrated.hikes.length !== 1 ||
         migrated.marker.value.status !== "complete" || !migrated.source) {
-      throw new Error("Real V21.2 app migration or module data checks failed.");
+      throw new Error("Real V21.2 app migration or module data checks failed: " + JSON.stringify({
+        sessionIds: migrated.sessions.map(session => session.id),
+        sessionDates: migrated.sessions.map(session => session.date),
+        hikes: migrated.hikes.length,
+        marker: migrated.marker,
+        sourcePreserved: Boolean(migrated.source)
+      }));
     }
 
     console.log("[browser] Full backup and invalid/valid restore");
