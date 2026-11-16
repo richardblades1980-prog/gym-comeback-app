@@ -60,3 +60,42 @@ test("day overview ignores skipped sessions", () => {
   assert.equal(result.totalScheduled, 0);
   assert.equal(result.gymSessions, 0);
 });
+
+const { indexedDB } = require("fake-indexeddb");
+
+test("IndexedDB day and range overviews read schedule and readiness without rewriting plans", async () => {
+  const request = indexedDB.deleteDatabase("ProjectComebackDB");
+  await new Promise((resolve, reject) => {
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+  const dbSandbox = { window: { indexedDB } };
+  const dbSource = fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8");
+  vm.runInNewContext(dbSource, dbSandbox);
+  const managerSource = fs.readFileSync(path.join(__dirname, "../src/programme-manager/programme-manager.js"), "utf8");
+  vm.runInNewContext(managerSource, dbSandbox);
+  const db = dbSandbox.window.ProjectComebackDB;
+  const integratedManager = dbSandbox.window.ProjectComebackProgrammeManager;
+
+  await db.put("modules", { id: "gym", name: "Gym Comeback", enabled: true });
+  await db.put("modules", { id: "hiking", name: "Hiking Preparation", enabled: true });
+  await db.put("schedules", { id: "g1", moduleId: "gym", date: "2026-11-17", title: "Strength", status: "planned", durationMinutes: 45 });
+  await db.put("schedules", { id: "h1", moduleId: "hiking", date: "2026-11-17", title: "Trail walk", status: "planned", durationMinutes: 90 });
+  await db.put("schedules", { id: "g2", moduleId: "gym", date: "2026-11-18", title: "Cancelled session", status: "cancelled", durationMinutes: 30 });
+  await db.put("readiness", { id: "r1", date: "2026-11-17", score: 3 });
+
+  const day = await integratedManager.dayOverview("2026-11-17");
+  assert.equal(day.gymSessions, 1);
+  assert.equal(day.hikingSessions, 1);
+  assert.equal(day.combinedDurationMinutes, 135);
+  assert.equal(day.readiness.score, 3);
+  assert.equal(day.flags.length, 1);
+
+  const range = await integratedManager.rangeOverview("2026-11-17", "2026-11-18");
+  assert.equal(range.totals.gymSessions, 1);
+  assert.equal(range.totals.hikingSessions, 1);
+  assert.equal(range.totals.combinedDurationMinutes, 135);
+  assert.deepEqual(JSON.parse(JSON.stringify(range.days.map(item => item.date))), ["2026-11-17"]);
+  assert.equal((await db.get("schedules", "g2")).status, "cancelled");
+});
