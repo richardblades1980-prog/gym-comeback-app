@@ -92,6 +92,7 @@ function server() {
     const appContext = await browser.newContext({ acceptDownloads: true });
     const app = await appContext.newPage();
     app.on("pageerror", error => console.error("V21.2 APP PAGE ERROR:", error.message));
+    app.on("console", message => { if (message.type() === "error") console.error("V21.2 CONSOLE:", message.text()); });
     await app.addInitScript(() => {
       localStorage.setItem("gym-comeback-profile", JSON.stringify({ goal: "strength", age: 45 }));
       localStorage.setItem("gym-comeback-w1-d1", JSON.stringify({
@@ -123,7 +124,18 @@ function server() {
     await app.locator('#schedule-form [name="title"]').fill("Browser test gym session");
     await app.locator('#schedule-form [name="date"]').fill("2026-11-17");
     await app.locator('#schedule-form button[type="submit"]').click();
-    await app.waitForFunction(() => document.querySelector("#schedule-count").textContent === "1");
+    try {
+      await app.waitForFunction(() => document.querySelector("#schedule-count").textContent === "1", null, { timeout: 8000 });
+    } catch (error) {
+      const diagnostics = await app.evaluate(async () => ({
+        notice: document.querySelector("#notice").textContent,
+        scheduleCount: document.querySelector("#schedule-count").textContent,
+        schedules: await ProjectComebackDB.getAll("schedules"),
+        modules: await ProjectComebackDB.getAll("modules")
+      }));
+      console.error("SCHEDULE FORM DIAGNOSTICS:", JSON.stringify(diagnostics));
+      throw error;
+    }
 
     await app.locator('[data-view="data"]').click();
     const snapshotDownloadPromise = app.waitForEvent("download");
