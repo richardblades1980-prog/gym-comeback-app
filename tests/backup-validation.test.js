@@ -63,3 +63,29 @@ test("rejects records in an unknown store", () => {
   data.data.unrecognisedStore = [];
   assert.throws(() => backup.validateBackup(data), /unknown stores/i);
 });
+
+test("restore preview reports additions, changes, unchanged and removals without writing", async () => {
+  const incoming = validEnvelope();
+  incoming.data.profile.push({ id: "profile-new", displayName: "New" });
+  incoming.data.profile.push({ id: "profile-changed", displayName: "Incoming" });
+  const current = {
+    profile: [
+      { id: "profile-main", displayName: "Test" },
+      { id: "profile-old", displayName: "Old" },
+      { id: "profile-changed", displayName: "Previous" }
+    ]
+  };
+  let writes = 0;
+  sandbox.window.ProjectComebackDB = {
+    getAll: async store => current[store] || [],
+    put: async () => { writes += 1; }
+  };
+  const preview = await backup.previewRestore(incoming);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(preview.stores.profile)),
+    { current: 3, incoming: 3, added: 1, changed: 1, unchanged: 1, removed: 1 }
+  );
+  assert.equal(preview.valid, true);
+  assert.equal(writes, 0);
+  delete sandbox.window.ProjectComebackDB;
+});
