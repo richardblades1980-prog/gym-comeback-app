@@ -24,7 +24,6 @@ async function loadServices() {
   }
   const db = sandbox.window.ProjectComebackDB;
   const modules = sandbox.window.ProjectComebackModules;
-  await db.open();
   await modules.initialise();
   return { db, modules };
 }
