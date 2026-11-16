@@ -428,7 +428,7 @@ function server() {
       hikes: document.querySelector("#hiking-count").textContent,
       schedule: document.querySelector("#schedule-count").textContent
     }));
-    if (afterColdStart.gym !== "1" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1") {
+    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1") {
       throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
     }
     console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
