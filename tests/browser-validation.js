@@ -279,7 +279,8 @@ function server() {
     }
 
     console.log("[browser] Full backup and invalid/valid restore");
-    const backupDownloadPromise = app.waitForEvent("download");
+    console.log("[browser] Full backup download");
+    const backupDownloadPromise = app.waitForEvent("download", { timeout: STEP_TIMEOUT_MS });
     await app.locator("#backup-download").click();
     const backupDownload = await backupDownloadPromise;
     if (!backupDownload.suggestedFilename().includes("Full-Backup")) {
@@ -287,6 +288,7 @@ function server() {
     }
     const backupPath = await backupDownload.path();
     if (!backupPath) throw new Error("Downloaded full backup file is unavailable for restore validation.");
+    console.log("[browser] Invalid backup rejection and valid restore");
     const invalidBackupPath = path.join(phoneProfile, "invalid-backup.json");
     fs.writeFileSync(invalidBackupPath, "{ definitely not valid JSON");
     await app.locator('#restore-file').setInputFiles(invalidBackupPath);
@@ -330,6 +332,7 @@ function server() {
       }
     }));
     console.log("[browser] Real app offline reload");
+    console.log("[browser] V21.2 offline shell reload");
     await appContext.setOffline(true);
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
@@ -341,6 +344,7 @@ function server() {
     // A page reload is not a browser restart. Reopen the same persistent profile
     // in a fresh browser process and prove IndexedDB records survive a cold start.
     console.log("[browser] Cold-start persistence");
+    console.log("[browser] Cold browser-process restart and persistence check");
     appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true });
     appContext.setDefaultTimeout(STEP_TIMEOUT_MS);
     appContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
