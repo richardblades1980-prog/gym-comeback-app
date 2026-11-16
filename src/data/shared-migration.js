@@ -37,23 +37,26 @@
     for (const key of Object.keys(snapshot).sort()) {
       const raw = snapshot[key];
       if (key === "gym-comeback-profile") {
+        const warningCount = warnings.length;
         const value = parse(raw, key, warnings);
         if (value && typeof value === "object" && !Array.isArray(value)) {
           profile.push(record("gym-profile", value, key, raw, { scope: "gym-legacy-profile" }));
-        } else if (raw !== null) warnings.push({ key, reason: "Profile is not an object; retained only in legacyRecords." });
+        } else if (raw !== null && warnings.length === warningCount) warnings.push({ key, reason: "Profile is not an object; retained only in legacyRecords." });
         continue;
       }
 
       if (key === "gym-comeback-gear" || key === "gym-comeback-custom-gear") {
+        const warningCount = warnings.length;
         const value = parse(raw, key, warnings);
         if (value && typeof value === "object" && !Array.isArray(value)) {
           equipment.push(record(key.endsWith("custom-gear") ? "gym-custom-equipment" : "gym-equipment",
             value, key, raw, { moduleId: "gym", equipmentKind: key.endsWith("custom-gear") ? "custom" : "selected" }));
-        } else if (raw !== null) warnings.push({ key, reason: "Equipment data is not an object; retained only in legacyRecords." });
+        } else if (raw !== null && warnings.length === warningCount) warnings.push({ key, reason: "Equipment data is not an object; retained only in legacyRecords." });
         continue;
       }
 
       if (key === "gym-comeback-weigh-ins") {
+        const warningCount = warnings.length;
         const value = parse(raw, key, warnings);
         if (Array.isArray(value)) {
           value.forEach((item, index) => {
@@ -76,11 +79,12 @@
               legacyIndex: index
             });
           });
-        } else if (raw !== null) warnings.push({ key, reason: "Weigh-ins are not an array; retained only in legacyRecords." });
+        } else if (raw !== null && warnings.length === warningCount) warnings.push({ key, reason: "Weigh-ins are not an array; retained only in legacyRecords." });
         continue;
       }
 
       if (key === "gym-comeback-readiness") {
+        const warningCount = warnings.length;
         const value = parse(raw, key, warnings);
         if (value && typeof value === "object" && !Array.isArray(value)) {
           Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).forEach(([date, item]) => {
@@ -93,9 +97,15 @@
               legacyRawValue: JSON.stringify(item)
             });
           });
-        } else if (raw !== null) warnings.push({ key, reason: "Readiness data is not a date-keyed object; retained only in legacyRecords." });
+        } else if (raw !== null && warnings.length === warningCount) warnings.push({ key, reason: "Readiness data is not a date-keyed object; retained only in legacyRecords." });
         continue;
       }
+
+      // Workout logs and their per-session status snapshots are normalised by the
+      // Gym migration service; do not duplicate them as generic preferences.
+      if (/^gym-comeback-w\d+-d\d+$/.test(key) ||
+          /^gym-comeback-set-status-v1-/.test(key) ||
+          /^gym-comeback-active-session-v1-/.test(key)) continue;
 
       // Preserve every remaining recognised setting as an independently addressable
       // preference record. This includes plan length, display preferences, rest timer
