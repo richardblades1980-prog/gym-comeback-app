@@ -2,6 +2,7 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
+const os = require("node:os");
 const { chromium } = require("playwright");
 const root = path.resolve(__dirname, "..");
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json" };
@@ -89,7 +90,8 @@ function server() {
 
     console.log("PASS offline app shell served from /tests/fixtures/offline/ service-worker scope");
 
-    const appContext = await browser.newContext({ acceptDownloads: true });
+    const phoneProfile = fs.mkdtempSync(path.join(os.tmpdir(), "project-comeback-phone-profile-"));
+    let appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true, acceptDownloads: true });
     const app = await appContext.newPage();
     app.on("pageerror", error => console.error("V21.2 APP PAGE ERROR:", error.message));
     app.on("console", message => { if (message.type() === "error") console.error("V21.2 CONSOLE:", message.text()); });
@@ -204,8 +206,27 @@ function server() {
     if (!(await app.locator("h1").textContent()).includes("Build your comeback")) {
       throw new Error("Actual V21.2 application did not reload from its own offline cache.");
     }
+    await appContext.close();
+
+    // A page reload is not a browser restart. Reopen the same persistent profile
+    // in a fresh browser process and prove IndexedDB records survive a cold start.
+    appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true });
+    const reopened = await appContext.newPage();
+    reopened.on("pageerror", error => console.error("V21.2 REOPEN PAGE ERROR:", error.message));
+    await reopened.goto(base + "/v21.2/");
+    await reopened.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    const afterColdStart = await reopened.evaluate(() => ({
+      gym: document.querySelector("#gym-count").textContent,
+      hikes: document.querySelector("#hiking-count").textContent,
+      schedule: document.querySelector("#schedule-count").textContent
+    }));
+    if (afterColdStart.gym !== "1" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1") {
+      throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
+    }
+    console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
     console.log("PASS real V21.2 app: no automatic migration, manual Gym migration, hiking/schedule writes, backup, reload and offline shell");
     await appContext.close();
+    fs.rmSync(phoneProfile, { recursive: true, force: true });
   } finally {
     await browser.close();
     await new Promise(resolve => httpServer.close(resolve));
