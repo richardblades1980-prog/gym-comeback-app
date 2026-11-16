@@ -106,6 +106,45 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await app.goto(base + "/v21.2/");
+    const contrastAudit = await app.evaluate(() => {
+      const channel = value => {
+        const match = value.match(/[0-9.]+/);
+        return match ? Number(match[0]) : 0;
+      };
+      const rgb = value => {
+        const parts = value.match(/[0-9.]+/g).map(Number);
+        return parts.slice(0, 3).map(v => {
+          v /= 255;
+          return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+      };
+      const luminance = value => {
+        const [r, g, b] = rgb(value);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const ratio = (a, b) => {
+        const x = luminance(a), y = luminance(b);
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      };
+      const input = document.querySelector('#hiking-form input');
+      const panel = document.querySelector('.panel');
+      const secondary = document.querySelector('.secondary');
+      const focus = getComputedStyle(input);
+      const inputStyle = getComputedStyle(input);
+      const panelStyle = getComputedStyle(panel);
+      const secondaryStyle = getComputedStyle(secondary);
+      const root = getComputedStyle(document.documentElement);
+      return {
+        inputBoundary: ratio(inputStyle.borderTopColor, inputStyle.backgroundColor),
+        panelBoundary: ratio(panelStyle.borderTopColor, root.getPropertyValue('--panel').trim()),
+        secondaryBoundary: ratio(secondaryStyle.borderTopColor, root.getPropertyValue('--panel2').trim()),
+        focusIndicator: ratio(root.getPropertyValue('--accent').trim(), root.getPropertyValue('--bg').trim())
+      };
+    });
+    for (const [name, value] of Object.entries(contrastAudit)) {
+      if (value < 3) throw new Error(name + " contrast is below 3:1: " + value.toFixed(2));
+    }
+    console.log("PASS control-boundary and focus-indicator contrast (3:1 minimum): " + JSON.stringify(contrastAudit));
     if (await app.locator(".skip-link").count() !== 1 || await app.locator("#main-content").getAttribute("tabindex") !== "-1") throw new Error("Keyboard skip navigation is missing.");
     await app.keyboard.press("Tab");
     if (await app.evaluate(() => document.activeElement?.classList.contains("skip-link")) !== true) throw new Error("Skip link is not the first keyboard focus target.");
