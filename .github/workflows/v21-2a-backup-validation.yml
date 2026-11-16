@@ -18,5 +18,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Install test dependencies
+        run: npm install --no-package-lock
       - name: Run backup validation tests
-        run: node --test tests/backup-validation.test.js tests/programme-manager.test.js tests/workload-summary.test.js tests/gym-migration.test.js tests/shared-migration.test.js tests/migration-orchestration.test.js
+        run: node --test tests/backup-validation.test.js tests/programme-manager.test.js tests/workload-summary.test.js tests/gym-migration.test.js tests/shared-migration.test.js tests/migration-orchestration.test.js tests/indexeddb-integration.test.js
