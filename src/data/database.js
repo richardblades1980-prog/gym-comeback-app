@@ -248,18 +248,19 @@
 
       const existing = await Promise.all(entries.map(({ storeName, record }) =>
         requestResult(tx.objectStore(storeName).get(record.id))));
+      const conflictIndex = existing.findIndex((old, index) => old &&
+        (old.legacyKey !== entries[index].record.legacyKey ||
+         old.legacyRawValue !== entries[index].record.legacyRawValue));
+      if (conflictIndex >= 0) {
+        const conflict = entries[conflictIndex];
+        tx.abort();
+        try { await done; } catch (ignored) {}
+        throw new Error("Migration conflict: existing " + conflict.storeName + " record " + conflict.record.id +
+          " does not match this legacy source. No migration records were committed.");
+      }
       const now = new Date().toISOString();
       entries.forEach((entry, index) => {
-        const old = existing[index];
-        if (old) {
-          const sameSource = old.legacyKey === entry.record.legacyKey &&
-            old.legacyRawValue === entry.record.legacyRawValue;
-          if (!sameSource) {
-            tx.abort();
-            throw new Error("Migration conflict: existing " + entry.storeName + " record " + entry.record.id +
-              " does not match this legacy source. No migration records were committed.");
-          }
-        } else {
+        if (!existing[index]) {
           tx.objectStore(entry.storeName).put(Object.assign({}, entry.record, {
             createdAt: now,
             updatedAt: now,
