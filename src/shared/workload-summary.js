@@ -44,7 +44,7 @@
       const minutes = typeof rawDuration === "number" ? rawDuration :
         (typeof rawDuration === "string" && rawDuration.trim() !== "" ? Number(rawDuration) : NaN);
       if (!Number.isFinite(minutes) || minutes < 0) {
-        throw new Error(moduleId + " record " + record.id + " has an invalid recorded duration.");
+        throw new Error(moduleId + " record " + record.id + " has an invalid recorded durationMinutes/sessionTime value.");
       }
       durationMinutes += minutes;
       durationRecordedCount += 1;
