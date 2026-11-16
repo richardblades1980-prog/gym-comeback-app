@@ -6,7 +6,7 @@
   "use strict";
 
   const DB_NAME = "ProjectComebackDB";
-  const DB_VERSION = 2;
+  const DB_VERSION = 3;
   const STORES = {
     profile: { keyPath: "id", indexes: [] },
     objectives: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
@@ -17,8 +17,8 @@
     programmes: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }, { name: "by_status", keyPath: "status" }] },
     sessions: { keyPath: "id", indexes: [{ name: "by_module_date", keyPath: ["moduleId", "date"] }, { name: "by_programme", keyPath: "programmeId" }, { name: "by_status", keyPath: "status" }] },
     exerciseRecords: { keyPath: "id", indexes: [{ name: "by_session", keyPath: "sessionId" }, { name: "by_module", keyPath: "moduleId" }] },
-    setRecords: { keyPath: "id", indexes: [{ name: "by_exercise", keyPath: "exerciseRecordId" }, { name: "by_session", keyPath: "sessionId" }] },
-    hikingRecords: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }, { name: "by_programme", keyPath: "programmeId" }] },
+    setRecords: { keyPath: "id", indexes: [{ name: "by_exercise", keyPath: "exerciseRecordId" }, { name: "by_session", keyPath: "sessionId" }, { name: "by_module", keyPath: "moduleId" }] },
+    hikingRecords: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }, { name: "by_programme", keyPath: "programmeId" }, { name: "by_module", keyPath: "moduleId" }] },
     schedules: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }, { name: "by_module_date", keyPath: ["moduleId", "date"] }] },
     progression: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }] },
     preferences: { keyPath: "id", indexes: [] },
@@ -95,6 +95,25 @@
 
   async function getAll(name, query) {
     return withStore(name, "readonly", store => requestResult(store.getAll(query)));
+  }
+
+  async function getAllByIndex(name, indexName, query) {
+    validateStore(name);
+    const db = await open();
+    try {
+      const tx = db.transaction(name, "readonly");
+      const done = transactionDone(tx);
+      const store = tx.objectStore(name);
+      if (!store.indexNames.contains(indexName)) {
+        tx.abort();
+        throw new Error("Unknown index " + indexName + " on store " + name);
+      }
+      const result = await requestResult(store.index(indexName).getAll(query));
+      await done;
+      return result;
+    } finally {
+      db.close();
+    }
   }
 
   async function put(name, record) {
