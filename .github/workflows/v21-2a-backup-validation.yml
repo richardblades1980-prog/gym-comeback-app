@@ -19,4 +19,4 @@ jobs:
         with:
           node-version: 20
       - name: Run backup validation tests
-        run: node --test tests/backup-validation.test.js
+        run: node --test tests/backup-validation.test.js tests/programme-manager.test.js
