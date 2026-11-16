@@ -137,6 +137,7 @@
       snapshotId: result.snapshotId
     }, "migration");
     return Object.assign({}, result, {
+      status: "complete",
       verified: true,
       originalStorageUnchanged: true,
       verifiedRecordCount: Object.keys(snapshot).length
