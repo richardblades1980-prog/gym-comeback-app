@@ -84,7 +84,7 @@
     if (!OWNED_STORES[moduleId].includes(storeName)) {
       throw new Error("Module " + moduleId + " cannot read from store " + storeName + ".");
     }
-    return dbApi().getAll(storeName, IDBKeyRange.only(moduleId));
+    return dbApi().getAllByIndex(storeName, "by_module", moduleId);
   }
 
   global.ProjectComebackModules = Object.freeze({
