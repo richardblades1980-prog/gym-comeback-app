@@ -10,7 +10,8 @@ function loadMigration(values) {
     get length() { return data.size; },
     key(index) { return [...data.keys()][index] ?? null; },
     getItem(key) { return data.has(key) ? data.get(key) : null; },
-    setItem(key, value) { data.set(key, String(value)); }
+    setItem(key, value) { data.set(key, String(value)); },
+    removeItem(key) { data.delete(key); }
   };
   const state = { markers: {}, legacy: [], committed: null };
   const db = {
@@ -178,4 +179,17 @@ test("completed marker cannot hide changes to original legacy storage", async ()
   storage.setItem("gym-comeback-profile", JSON.stringify({ age: "45" }));
   await assert.rejects(migration.migrateAndVerify(), /Raw legacy snapshot is not verified/);
   assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
+});
+
+
+test("completed marker cannot hide removal of an original legacy key", async () => {
+  const { migration, state, storage } = loadMigration({
+    "gym-comeback-profile": JSON.stringify({ age: "44" }),
+    "gym-comeback-gear": JSON.stringify({ gym: ["Dumbbells"], home: [] })
+  });
+  await migration.migrateAndVerify();
+  storage.removeItem("gym-comeback-gear");
+  await assert.rejects(migration.migrateAndVerify(), /removed: gym-comeback-gear/);
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
+  assert.equal(state.legacy.length, 2);
 });
