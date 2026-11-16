@@ -70,12 +70,12 @@ test("preserves multiple weigh-ins on the same date with distinct stable IDs", (
 
 test("empty snapshot produces no typed shared records or warnings", () => {
   const result = migration.normaliseSnapshot({});
-  assert.deepEqual(result.profile, []);
-  assert.deepEqual(result.equipment, []);
-  assert.deepEqual(result.readiness, []);
-  assert.deepEqual(result.weighIns, []);
-  assert.deepEqual(result.preferences, []);
-  assert.deepEqual(result.warnings, []);
+  assert.equal(result.profile.length, 0);
+  assert.equal(result.equipment.length, 0);
+  assert.equal(result.readiness.length, 0);
+  assert.equal(result.weighIns.length, 0);
+  assert.equal(result.preferences.length, 0);
+  assert.equal(result.warnings.length, 0);
 });
 
 test("malformed profile and readiness JSON are warned and not projected", () => {
