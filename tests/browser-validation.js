@@ -5,6 +5,8 @@ const path = require("node:path");
 const os = require("node:os");
 const { chromium } = require("playwright");
 const root = path.resolve(__dirname, "..");
+const STEP_TIMEOUT_MS = 20000;
+console.log("[browser] Starting Chromium validation");
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json" };
 function server() {
   return http.createServer((req, res) => {
@@ -26,8 +28,12 @@ function server() {
   await new Promise(resolve => httpServer.listen(0, "127.0.0.1", resolve));
   const base = "http://127.0.0.1:" + httpServer.address().port;
   const browser = await chromium.launch({ headless: true });
+  browser.on("disconnected", () => console.error("[browser] Chromium disconnected"));
   try {
     const context = await browser.newContext();
+    context.setDefaultTimeout(STEP_TIMEOUT_MS);
+    context.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
+    console.log("[browser] Migration fixture");
     const page = await context.newPage();
     page.on("pageerror", error => console.error("BROWSER PAGE ERROR:", error.message));
     page.on("console", message => { if (message.type() === "error") console.error("BROWSER CONSOLE:", message.text()); });
@@ -72,13 +78,15 @@ function server() {
     }
     console.log("PASS browser migration, IndexedDB persistence, localStorage preservation, retry and reload");
 
+    console.log("[browser] Offline fixture");
     const offline = await context.newPage();
     await offline.goto(base + "/tests/fixtures/offline/");
     await offline.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 15000 });
     await offline.reload();
-    await offline.evaluate(() => new Promise(resolve => {
-      if (navigator.serviceWorker.controller) resolve();
-      else navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+    await offline.evaluate(() => new Promise((resolve, reject) => {
+      if (navigator.serviceWorker.controller) return resolve();
+      const timer = setTimeout(() => reject(new Error("Offline fixture controllerchange timeout")), 15000);
+      navigator.serviceWorker.addEventListener("controllerchange", () => { clearTimeout(timer); resolve(); }, { once: true });
     }));
     await context.setOffline(true);
     await offline.reload();
@@ -90,8 +98,11 @@ function server() {
 
     console.log("PASS offline app shell served from /tests/fixtures/offline/ service-worker scope");
 
+    console.log("[browser] Real V21.2 application");
     const phoneProfile = fs.mkdtempSync(path.join(os.tmpdir(), "project-comeback-phone-profile-"));
     let appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true, acceptDownloads: true });
+    appContext.setDefaultTimeout(STEP_TIMEOUT_MS);
+    appContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
     const app = await appContext.newPage();
     app.on("pageerror", error => console.error("V21.2 APP PAGE ERROR:", error.message));
     app.on("console", message => { if (message.type() === "error") console.error("V21.2 CONSOLE:", message.text()); });
@@ -232,8 +243,9 @@ function server() {
       throw error;
     }
 
+    console.log("[browser] Migration safety snapshot and manual migration");
     await app.locator('[data-view="data"]').click();
-    const snapshotDownloadPromise = app.waitForEvent("download");
+    const snapshotDownloadPromise = app.waitForEvent("download", { timeout: STEP_TIMEOUT_MS });
     await app.locator("#legacy-snapshot").click();
     const snapshotDownload = await snapshotDownloadPromise;
     const snapshotName = snapshotDownload.suggestedFilename();
@@ -266,6 +278,7 @@ function server() {
       throw new Error("Real V21.2 app migration or module data checks failed.");
     }
 
+    console.log("[browser] Full backup and invalid/valid restore");
     const backupDownloadPromise = app.waitForEvent("download");
     await app.locator("#backup-download").click();
     const backupDownload = await backupDownloadPromise;
@@ -316,6 +329,7 @@ function server() {
         navigator.serviceWorker.addEventListener("controllerchange", () => { clearTimeout(timer); resolve(); }, { once: true });
       }
     }));
+    console.log("[browser] Real app offline reload");
     await appContext.setOffline(true);
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
@@ -326,7 +340,10 @@ function server() {
 
     // A page reload is not a browser restart. Reopen the same persistent profile
     // in a fresh browser process and prove IndexedDB records survive a cold start.
+    console.log("[browser] Cold-start persistence");
     appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true });
+    appContext.setDefaultTimeout(STEP_TIMEOUT_MS);
+    appContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
     const reopened = await appContext.newPage();
     reopened.on("pageerror", error => console.error("V21.2 REOPEN PAGE ERROR:", error.message));
     await reopened.goto(base + "/v21.2/");
@@ -347,4 +364,4 @@ function server() {
     await browser.close();
     await new Promise(resolve => httpServer.close(resolve));
   }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+})().catch(error => { console.error("[browser] FAILED:", error && error.stack || error); process.exitCode = 1; });
