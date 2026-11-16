@@ -89,3 +89,46 @@ test("restore preview reports additions, changes, unchanged and removals without
   assert.equal(writes, 0);
   delete sandbox.window.ProjectComebackDB;
 });
+
+test("restore requires confirmation and atomically replaces stores while retaining a pre-restore snapshot", async () => {
+  const { indexedDB } = require("fake-indexeddb");
+  const dbWindow = { indexedDB };
+  const dbSandbox = { window: dbWindow };
+  const dbSource = fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8");
+  vm.runInNewContext(dbSource, dbSandbox);
+  const backupSource = fs.readFileSync(path.join(__dirname, "../src/data/backup.js"), "utf8");
+  vm.runInNewContext(backupSource, dbSandbox);
+  const db = dbWindow.ProjectComebackDB;
+  const restore = dbWindow.ProjectComebackBackup;
+
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(db.name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+
+  await db.put("profile", { id: "old-profile", displayName: "Before restore" });
+  await db.put("hikingRecords", { id: "old-hike", moduleId: "hiking", title: "Old hike", date: "2026-01-01" });
+  const incoming = validEnvelope();
+  incoming.data.profile = [{ id: "new-profile", displayName: "Restored profile" }];
+  incoming.data.hikingRecords = [{ id: "new-hike", moduleId: "hiking", status: "completed", title: "Restored hike", date: "2026-01-02" }];
+  incoming.data.schedules = [{ id: "new-schedule", moduleId: "gym", status: "planned", title: "Restored plan", date: "2026-01-03" }];
+
+  await assert.rejects(() => restore.restoreBackup(incoming), /explicit user confirmation/);
+  assert.equal(await db.count("profile"), 1);
+  assert.equal((await db.get("profile", "old-profile")).displayName, "Before restore");
+
+  const result = await restore.restoreBackup(incoming, { confirmed: true });
+  assert.equal(result.restored, true);
+  assert.equal(result.safetySnapshotStored, true);
+  assert.equal(await db.get("profile", "old-profile"), undefined);
+  assert.equal((await db.get("profile", "new-profile")).displayName, "Restored profile");
+  assert.equal((await db.get("hikingRecords", "new-hike")).title, "Restored hike");
+  assert.equal((await db.get("schedules", "new-schedule")).title, "Restored plan");
+
+  const snapshot = await db.get("metadata", result.restoreId);
+  assert.equal(snapshot.type, "pre-restore-safety-snapshot");
+  assert.equal(snapshot.data.profile[0].id, "old-profile");
+  assert.equal(snapshot.data.hikingRecords[0].id, "old-hike");
+});
