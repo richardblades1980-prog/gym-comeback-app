@@ -11,18 +11,18 @@ function loadMigration(values) {
     key(index) { return [...data.keys()][index] ?? null; },
     getItem(key) { return data.has(key) ? data.get(key) : null; }
   };
-  const state = { marker: null, legacy: [], committed: null };
+  const state = { markers: {}, legacy: [], committed: null };
   const db = {
-    async getMeta() { return state.marker; },
+    async getMeta(id) { return state.markers[id] || null; },
     async importLegacySnapshot(snapshot, id) {
       state.legacy = Object.entries(snapshot).map(([key, rawValue]) => ({ id: key, key, rawValue }));
       return { status: "pending-verification", snapshotId: id + "-safety-snapshot" };
     },
     async getAll(name) { return name === "legacyRecords" ? state.legacy : []; },
-    async setMeta(id, value, type) { state.marker = { id, value, type }; },
+    async setMeta(id, value, type) { state.markers[id] = { id, value, type }; },
     async commitLegacyMigration(projection, id, summary) {
       state.committed = { projection, id, summary };
-      state.marker = { id, value: { status: "complete", counts: summary.counts } };
+      state.markers[id] = { id, value: { status: "complete", counts: summary.counts } };
       return { status: "complete", writtenCount: Object.values(projection).reduce((n, list) => n + list.length, 0), counts: summary.counts };
     }
   };
@@ -49,7 +49,7 @@ test("full migration snapshots raw values then commits all typed projections", a
   assert.equal(result.status, "complete");
   assert.equal(result.verified, true);
   assert.equal(result.originalStorageUnchanged, true);
-  assert.equal(state.marker.value.status, "complete");
+  assert.equal(state.markers["migration-v21.2a-raw-snapshot-v1"].value.status, "complete");
   assert.equal(state.committed.projection.profile.length, 1);
   assert.equal(state.committed.projection.equipment.length, 1);
   assert.equal(state.committed.projection.weighIns.length, 1);
@@ -69,7 +69,7 @@ test("invalid workout JSON is warned and preserved while other migration data ca
   assert.equal(result.warnings.length, 1);
   assert.equal(state.committed.projection.sessions.length, 0);
   assert.equal(state.committed.projection.profile.length, 1);
-  assert.equal(state.marker.value.status, "complete");
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
   assert.equal(state.legacy.length, 2);
 });
 
@@ -83,9 +83,26 @@ test("migration resumes from a verified raw snapshot without duplicating the sna
   });
   const snapshotResult = await migration.importLegacyData();
   assert.equal(snapshotResult.status, "snapshot-verified");
-  assert.equal(state.marker.value.status, "snapshot-verified");
+  assert.equal(state.markers["migration-v21.2a-raw-snapshot-v1"].value.status, "snapshot-verified");
   const result = await migration.migrateAndVerify();
   assert.equal(result.status, "complete");
   assert.ok(state.committed);
   assert.equal(state.legacy.length, 2);
+});
+
+
+test("legacy raw-only complete marker cannot bypass typed migration", async () => {
+  const { migration, state } = loadMigration({
+    "gym-comeback-profile": JSON.stringify({ age: "44" })
+  });
+  state.markers["migration-v21.2a"] = {
+    id: "migration-v21.2a",
+    type: "migration",
+    value: { status: "complete", recordCount: 1 }
+  };
+  const result = await migration.migrateAndVerify();
+  assert.equal(result.status, "complete");
+  assert.ok(state.committed);
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
+  assert.equal(state.markers["migration-v21.2a-raw-snapshot-v1"].value.status, "snapshot-verified");
 });
