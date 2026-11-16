@@ -43,8 +43,16 @@ function server() {
     });
     await page.goto(base + "/tests/fixtures/browser-migration.html");
     try {
-      await page.waitForFunction(() => document.querySelector("#result").textContent.startsWith("{") &&
-        !document.querySelector("#result").textContent.includes("ready"), null, { timeout: 15000 });
+      await page.waitForFunction(() => {
+        const text = document.querySelector("#result").textContent;
+        if (!text.startsWith("{")) return false;
+        try {
+          const result = JSON.parse(text);
+          return Boolean(result.error || result.firstStatus);
+        } catch (_) {
+          return false;
+        }
+      }, null, { timeout: 15000 });
     } catch (error) {
       throw new Error("Migration fixture did not finish. DOM result: " + await page.locator("#result").textContent());
     }
