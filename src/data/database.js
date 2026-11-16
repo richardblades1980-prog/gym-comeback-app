@@ -222,6 +222,7 @@
     open,
     get,
     getAll,
+    getAllByIndex,
     put,
     remove,
     count,
