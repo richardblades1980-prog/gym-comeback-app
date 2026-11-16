@@ -24,7 +24,6 @@ async function refresh(){
 async function inspectMigration(){
  const info=await ProjectComebackMigration.inspect();
  $("migration-status").textContent=info.legacyKeyCount+" legacy Gym data keys found. Migration status: "+info.status+". Original browser storage will not be deleted.";
- if(info.status==="complete"){$("migration-result").hidden=false;$("migration-result").textContent="Typed migration is already marked complete. Re-running is safe and will not duplicate migrated records.";}
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
 $("today-date").textContent=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
