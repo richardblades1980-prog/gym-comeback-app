@@ -253,7 +253,19 @@ function server() {
         !overviewCheck.completed.includes("1 records")) {
       throw new Error("Training overview did not show separate Gym and Hiking completed summaries: " + JSON.stringify(overviewCheck));
     }
+    await app.locator('[data-view="schedule"]').click();
+    await app.waitForFunction(() => document.querySelector("#schedule-range-overview").textContent.includes("Browser test gym session"));
+    const planningOutlook = await app.evaluate(() => ({
+      gym: document.querySelector("#schedule-range-summary").textContent,
+      entries: document.querySelector("#schedule-range-overview").textContent
+    }));
+    if (!planningOutlook.gym.includes("1") || !planningOutlook.entries.includes("Gym") ||
+        !planningOutlook.entries.includes("Browser test gym session")) {
+      throw new Error("30-day planning outlook did not show the scheduled Gym activity and separate module summary: " + JSON.stringify(planningOutlook));
+    }
+    await app.locator('[data-view="overview"]').click();
     console.log("PASS dashboard shows upcoming schedule and separate Gym/Hiking completed summaries");
+    console.log("PASS 30-day planning outlook shows scheduled activities with separate Gym/Hiking totals");
 
     console.log("[browser] Module pause, preservation and re-enable");
     await app.locator('[data-view="overview"]').click();
