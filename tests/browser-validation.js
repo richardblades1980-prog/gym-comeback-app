@@ -107,12 +107,11 @@ function server() {
     });
     await app.goto(base + "/v21.2/");
     const contrastAudit = await app.evaluate(() => {
-      const channel = value => {
-        const match = value.match(/[0-9.]+/);
-        return match ? Number(match[0]) : 0;
-      };
       const rgb = value => {
-        const parts = value.match(/[0-9.]+/g).map(Number);
+        const hex = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        const parts = hex
+          ? (hex[1].length === 3 ? [...hex[1]].map(x => parseInt(x + x, 16)) : hex[1].match(/../g).map(x => parseInt(x, 16)))
+          : value.match(/[0-9.]+/g).map(Number);
         return parts.slice(0, 3).map(v => {
           v /= 255;
           return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
