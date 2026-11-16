@@ -1,0 +1,22 @@
+name: V21.2A backup validation
+
+on:
+  push:
+    branches:
+      - V21.2-development
+  pull_request:
+    branches:
+      - V21.2-development
+
+jobs:
+  backup-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run backup validation tests
+        run: node --test tests/backup-validation.test.js
