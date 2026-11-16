@@ -53,7 +53,13 @@
       if (!match) continue;
       const week = Number(match[1]);
       const day = Number(match[2]);
-      const log = parseJson(snapshot[key], key);
+      let log;
+      try {
+        log = parseJson(snapshot[key], key);
+      } catch (error) {
+        warnings.push({ key, reason: "Workout log contains invalid JSON; retained only in legacyRecords." });
+        continue;
+      }
       if (!log || typeof log !== "object" || Array.isArray(log)) {
         warnings.push({ key, reason: "Workout log is empty or not an object; retained only in legacyRecords." });
         continue;
