@@ -30,7 +30,7 @@ function loadMigration(values) {
   for (const file of ["gym-migration.js", "shared-migration.js", "migration.js"]) {
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data", file), "utf8"), sandbox);
   }
-  return { migration: sandbox.window.ProjectComebackMigration, state, storage };
+  return { migration: sandbox.window.ProjectComebackMigration, state, storage, db };
 }
 
 test("full migration snapshots raw values then commits all typed projections", async () => {
@@ -121,29 +121,30 @@ test("empty legacy storage completes a verified zero-record migration", async ()
 });
 
 test("failed typed commit can be retried from the verified raw snapshot", async () => {
-  const { migration, state, storage } = loadMigration({
+  const { migration, state, storage, db } = loadMigration({
     "gym-comeback-profile": JSON.stringify({ age: "44" }),
     "gym-comeback-readiness": JSON.stringify({ "2026-11-10": { energy: 4 } })
   });
-  const originalCommit = state;
+  const originalCommit = db.commitLegacyMigration;
   let attempts = 0;
-  const db = migration;
-  // Simulate a transient transaction conflict at the persistence boundary by
-  // replacing the test database commit method before the migration call.
-  const sandboxState = originalCommit;
-  const result = await (async () => {
-    const first = await db.importLegacyData();
-    assert.equal(first.status, "snapshot-verified");
-    assert.equal(sandboxState.legacy.length, 2);
-    return first;
-  })();
-  assert.equal(result.originalStorageUnchanged, true);
-  assert.equal(storage.getItem("gym-comeback-profile"), JSON.stringify({ age: "44" }));
+  db.commitLegacyMigration = async (...args) => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("Simulated IndexedDB transaction conflict.");
+    return originalCommit(...args);
+  };
+
+  await assert.rejects(migration.migrateAndVerify(), /Simulated IndexedDB transaction conflict/);
+  assert.equal(attempts, 1);
   assert.equal(state.markers["migration-v21.2a-raw-snapshot-v1"].value.status, "snapshot-verified");
-  // The full retry/idempotency path is exercised by rerunning migrateAndVerify
-  // after the raw snapshot is already present.
-  const completed = await db.migrateAndVerify();
-  assert.equal(completed.status, "complete");
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"], undefined);
+  assert.equal(state.legacy.length, 2);
+  assert.equal(storage.getItem("gym-comeback-profile"), JSON.stringify({ age: "44" }));
+  assert.equal(storage.getItem("gym-comeback-readiness"), JSON.stringify({ "2026-11-10": { energy: 4 } }));
+
+  const retried = await migration.migrateAndVerify();
+  assert.equal(retried.status, "complete");
+  assert.equal(attempts, 2);
   assert.equal(state.legacy.length, 2);
   assert.ok(state.committed);
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
 });
