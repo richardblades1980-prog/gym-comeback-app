@@ -145,7 +145,21 @@ function server() {
     if (!snapshotName.endsWith(".json")) throw new Error("Legacy safety snapshot was not downloaded.");
     await app.locator("#migration-confirm").check();
     await app.locator("#migration-run").click();
-    await app.waitForFunction(() => document.querySelector("#migration-result").textContent.includes("Migration status: complete"));
+    try {
+      await app.waitForFunction(() => document.querySelector("#migration-result").textContent.includes("Migration status: complete"), null, { timeout: 10000 });
+    } catch (error) {
+      const diagnostics = await app.evaluate(async () => ({
+        notice: document.querySelector("#notice").textContent,
+        result: document.querySelector("#migration-result").textContent,
+        confirmChecked: document.querySelector("#migration-confirm").checked,
+        confirmDisabled: document.querySelector("#migration-confirm").disabled,
+        runDisabled: document.querySelector("#migration-run").disabled,
+        rawRecords: await ProjectComebackDB.getAll("legacyRecords"),
+        marker: await ProjectComebackDB.getMeta("migration-v21.2a-typed-projection-v1")
+      }));
+      console.error("MIGRATION FORM DIAGNOSTICS:", JSON.stringify(diagnostics));
+      throw error;
+    }
     const migrated = await app.evaluate(async () => ({
       sessions: await ProjectComebackDB.getAllByIndex("sessions", "by_module", "gym"),
       hikes: await ProjectComebackDB.getAllByIndex("hikingRecords", "by_module", "hiking"),
