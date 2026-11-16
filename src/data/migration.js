@@ -155,19 +155,16 @@
     }
 
     const rawResult = await importLegacyData();
-    if (rawResult.status === "already-imported") {
-      return { status: "already-complete", counts: rawResult.counts || {} };
-    }
-
     const snapshot = snapshotLegacyStorage(global.localStorage);
     const keys = Object.keys(snapshot).sort();
     const legacyRecords = await db.getAll("legacyRecords");
     const rawByKey = new Map(legacyRecords.map(item => [item.key, item.rawValue]));
     const missing = keys.filter(key => !rawByKey.has(key));
+    const removed = [...rawByKey.keys()].filter(key => !Object.prototype.hasOwnProperty.call(snapshot, key));
     const changed = keys.filter(key => rawByKey.get(key) !== snapshot[key]);
-    if (missing.length || changed.length) {
+    if (missing.length || removed.length || changed.length) {
       throw new Error("Raw legacy snapshot is not verified. Missing: " + missing.join(", ") +
-        "; changed: " + changed.join(", "));
+        "; removed: " + removed.join(", ") + "; changed: " + changed.join(", "));
     }
 
     const gymProjection = gym.normaliseSnapshot(snapshot);
