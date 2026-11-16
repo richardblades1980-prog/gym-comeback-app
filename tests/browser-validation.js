@@ -272,6 +272,30 @@ function server() {
     if (!backupDownload.suggestedFilename().includes("Full-Backup")) {
       throw new Error("Full backup download did not start.");
     }
+    const backupPath = await backupDownload.path();
+    if (!backupPath) throw new Error("Downloaded full backup file is unavailable for restore validation.");
+    await app.locator('#restore-file').setInputFiles(backupPath);
+    await app.waitForFunction(() => !document.querySelector("#restore-preview").hidden &&
+      document.querySelector("#restore-preview").textContent.includes("Valid backup"));
+    if (await app.locator("#restore-apply").isEnabled()) {
+      throw new Error("Restore became enabled before explicit confirmation.");
+    }
+    await app.locator("#restore-confirm").check();
+    if (!(await app.locator("#restore-apply").isEnabled())) {
+      throw new Error("Restore did not enable after explicit confirmation.");
+    }
+    await app.locator("#restore-apply").click();
+    await app.waitForFunction(() => document.querySelector("#notice").textContent.includes("Restore completed"));
+    const restoreVerification = await app.evaluate(async () => ({
+      profileCount: await ProjectComebackDB.count("profile"),
+      hikeCount: await ProjectComebackDB.count("hikingRecords"),
+      scheduleCount: await ProjectComebackDB.count("schedules"),
+      safetySnapshots: (await ProjectComebackDB.getAll("metadata")).filter(item => item.type === "pre-restore-safety-snapshot").length
+    }));
+    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 ||
+        restoreVerification.safetySnapshots < 1) {
+      throw new Error("Full backup restore UI did not preserve records or create a pre-restore snapshot: " + JSON.stringify(restoreVerification));
+    }
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     const persisted = await app.locator("#hiking-count").textContent();
