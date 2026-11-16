@@ -35,19 +35,22 @@
     let durationMinutes = 0;
     let durationRecordedCount = 0;
     for (const record of records) {
-      if (record.durationMinutes === undefined || record.durationMinutes === null) {
+      const rawDuration = record.durationMinutes !== undefined ? record.durationMinutes : record.sessionTime;
+      if (rawDuration === undefined || rawDuration === null || rawDuration === "") {
         byDate[record.date] = byDate[record.date] || { sessions: 0, durationMinutes: 0, durationRecordedCount: 0 };
         byDate[record.date].sessions += 1;
         continue;
       }
-      if (!Number.isFinite(record.durationMinutes) || record.durationMinutes < 0) {
-        throw new Error(moduleId + " record " + record.id + " has an invalid durationMinutes value.");
+      const minutes = typeof rawDuration === "number" ? rawDuration :
+        (typeof rawDuration === "string" && rawDuration.trim() !== "" ? Number(rawDuration) : NaN);
+      if (!Number.isFinite(minutes) || minutes < 0) {
+        throw new Error(moduleId + " record " + record.id + " has an invalid recorded duration.");
       }
-      durationMinutes += record.durationMinutes;
+      durationMinutes += minutes;
       durationRecordedCount += 1;
       byDate[record.date] = byDate[record.date] || { sessions: 0, durationMinutes: 0, durationRecordedCount: 0 };
       byDate[record.date].sessions += 1;
-      byDate[record.date].durationMinutes += record.durationMinutes;
+      byDate[record.date].durationMinutes += minutes;
       byDate[record.date].durationRecordedCount += 1;
     }
     return {
