@@ -6,7 +6,7 @@
   "use strict";
 
   const DB_NAME = "ProjectComebackDB";
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
   const STORES = {
     profile: { keyPath: "id", indexes: [] },
     objectives: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
@@ -15,7 +15,7 @@
     weighIns: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }] },
     modules: { keyPath: "id", indexes: [{ name: "by_enabled", keyPath: "enabled" }] },
     programmes: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }, { name: "by_status", keyPath: "status" }] },
-    sessions: { keyPath: "id", indexes: [{ name: "by_module_date", keyPath: ["moduleId", "date"] }, { name: "by_programme", keyPath: "programmeId" }, { name: "by_status", keyPath: "status" }] },
+    sessions: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }, { name: "by_module_date", keyPath: ["moduleId", "date"] }, { name: "by_programme", keyPath: "programmeId" }, { name: "by_status", keyPath: "status" }] },
     exerciseRecords: { keyPath: "id", indexes: [{ name: "by_session", keyPath: "sessionId" }, { name: "by_module", keyPath: "moduleId" }] },
     setRecords: { keyPath: "id", indexes: [{ name: "by_exercise", keyPath: "exerciseRecordId" }, { name: "by_session", keyPath: "sessionId" }, { name: "by_module", keyPath: "moduleId" }] },
     hikingRecords: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }, { name: "by_programme", keyPath: "programmeId" }, { name: "by_module", keyPath: "moduleId" }] },
