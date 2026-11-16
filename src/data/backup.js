@@ -110,6 +110,63 @@
     return { data: cloneJson(data), validation };
   }
 
+  function stableJson(value) {
+    if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
+    if (value && typeof value === "object") {
+      return "{" + Object.keys(value).sort().map(key =>
+        JSON.stringify(key) + ":" + stableJson(value[key])
+      ).join(",") + "}";
+    }
+    return JSON.stringify(value);
+  }
+
+  async function previewRestore(input) {
+    const parsed = await parseBackup(input);
+    const dbApi = global.ProjectComebackDB;
+    if (!dbApi) throw new Error("Load database.js before backup.js.");
+    const currentRecords = {};
+    await Promise.all(STORE_NAMES.map(async name => {
+      currentRecords[name] = await dbApi.getAll(name);
+    }));
+
+    const stores = {};
+    for (const name of STORE_NAMES) {
+      const current = currentRecords[name];
+      const incoming = parsed.data.data[name];
+      const currentById = new Map(current.map(record => [String(record.id), record]));
+      const incomingIds = new Set(incoming.map(record => String(record.id)));
+      let unchanged = 0;
+      let changed = 0;
+      let added = 0;
+      for (const record of incoming) {
+        const existing = currentById.get(String(record.id));
+        if (!existing) added += 1;
+        else if (stableJson(existing) === stableJson(record)) unchanged += 1;
+        else changed += 1;
+      }
+      const removed = current.filter(record => !incomingIds.has(String(record.id))).length;
+      stores[name] = {
+        current: current.length,
+        incoming: incoming.length,
+        added,
+        changed,
+        unchanged,
+        removed
+      };
+    }
+
+    return {
+      valid: true,
+      appVersion: parsed.data.appVersion || null,
+      exportedAt: parsed.data.exportedAt || null,
+      includedModules: Array.isArray(parsed.data.includedModules) ? parsed.data.includedModules.slice() : [],
+      backupScope: parsed.data.backupScope || "full",
+      totalIncomingRecords: parsed.validation.totalRecords,
+      stores,
+      warning: "Restoring replaces all current records in the listed stores. Review this preview and create a separate backup before confirming."
+    };
+  }
+
   async function restoreBackup(input, options) {
     const opts = options || {};
     if (opts.confirmed !== true) {
@@ -178,6 +235,7 @@
     createBackupJson,
     downloadBackup,
     parseBackup,
+    previewRestore,
     validateBackup: validateEnvelope,
     restoreBackup
   });
