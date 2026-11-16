@@ -67,3 +67,31 @@ test("preserves multiple weigh-ins on the same date with distinct stable IDs", (
   assert.equal(result.weighIns[0].legacyRawValue, JSON.stringify({ date: "2026-11-10", weight: 82.5 }));
   assert.equal(result.weighIns[1].legacyRawValue, JSON.stringify({ date: "2026-11-10", weight: 82.1 }));
 });
+
+test("empty snapshot produces no typed shared records or warnings", () => {
+  const result = migration.normaliseSnapshot({});
+  assert.deepEqual(result.profile, []);
+  assert.deepEqual(result.equipment, []);
+  assert.deepEqual(result.readiness, []);
+  assert.deepEqual(result.weighIns, []);
+  assert.deepEqual(result.preferences, []);
+  assert.deepEqual(result.warnings, []);
+});
+
+test("malformed profile and readiness JSON are warned and not projected", () => {
+  const rawProfile = "{broken-profile";
+  const rawReadiness = "{broken-readiness";
+  const result = migration.normaliseSnapshot({
+    "gym-comeback-profile": rawProfile,
+    "gym-comeback-readiness": rawReadiness
+  });
+  assert.equal(result.profile.length, 0);
+  assert.equal(result.readiness.length, 0);
+  assert.deepEqual(Array.from(result.warnings, warning => warning.key), [
+    "gym-comeback-profile",
+    "gym-comeback-readiness"
+  ]);
+  // The normaliser is non-destructive: callers retain the exact raw snapshot.
+  assert.equal(rawProfile, "{broken-profile");
+  assert.equal(rawReadiness, "{broken-readiness");
+});
