@@ -107,6 +107,14 @@ function server() {
     });
     await app.goto(base + "/v21.2/");
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    const localDateCheck = await app.evaluate(() => {
+      const now = new Date();
+      const expected = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+      return { expected, hikeDate: document.querySelector('#hiking-form [name="date"]').value, scheduleDate: document.querySelector('#schedule-form [name="date"]').value };
+    });
+    if (localDateCheck.hikeDate !== localDateCheck.expected || localDateCheck.scheduleDate !== localDateCheck.expected) {
+      throw new Error("Hiking and Schedule defaults must use the phone local calendar date: " + JSON.stringify(localDateCheck));
+    }
     const beforeMigration = await app.evaluate(async () => ({
       rawCount: await ProjectComebackDB.count("legacyRecords"),
       typedMarker: await ProjectComebackDB.getMeta("migration-v21.2a-typed-projection-v1"),
