@@ -6,7 +6,7 @@
   "use strict";
 
   const DB_NAME = "ProjectComebackDB";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORES = {
     profile: { keyPath: "id", indexes: [] },
     objectives: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
@@ -22,7 +22,8 @@
     schedules: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }, { name: "by_module_date", keyPath: ["moduleId", "date"] }] },
     progression: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }] },
     preferences: { keyPath: "id", indexes: [] },
-    metadata: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] }
+    metadata: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
+    legacyRecords: { keyPath: "id", indexes: [{ name: "by_key", keyPath: "key" }] }
   };
 
   function requestResult(request) {
@@ -122,6 +123,64 @@
 
   async function setMeta(id, value, type) {
     return put("metadata", { id, value, type: type || "system" });
+  }
+
+  async function importLegacySnapshot(snapshot, snapshotId) {
+    if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+      throw new Error("A legacy storage snapshot object is required.");
+    }
+    const id = snapshotId || "legacy-localStorage-v21.2a";
+    const entries = Object.entries(snapshot);
+    if (entries.some(([key, value]) => !key || typeof value !== "string")) {
+      throw new Error("Legacy snapshot entries must contain a key and its original string value.");
+    }
+    const db = await open();
+    try {
+      const names = ["legacyRecords", "metadata"];
+      const tx = db.transaction(names, "readwrite");
+      const done = transactionDone(tx);
+      const legacyStore = tx.objectStore("legacyRecords");
+      const metaStore = tx.objectStore("metadata");
+      const existing = await requestResult(metaStore.get(id));
+      if (existing && existing.value && existing.value.status === "complete") {
+        await done;
+        return { status: "already-imported", recordCount: existing.value.recordCount };
+      }
+      const backupId = id + "-safety-snapshot";
+      const backup = {
+        id: backupId,
+        type: "legacy-safety-snapshot",
+        createdAt: new Date().toISOString(),
+        recordCount: entries.length,
+        entries: snapshot
+      };
+      await requestResult(metaStore.put(backup));
+      for (const [key, rawValue] of entries) {
+        await requestResult(legacyStore.put({
+          id: key,
+          key,
+          rawValue,
+          source: "localStorage",
+          importedAt: new Date().toISOString()
+        }));
+      }
+      await requestResult(metaStore.put({
+        id,
+        type: "migration",
+        value: {
+          status: "complete",
+          recordCount: entries.length,
+          completedAt: new Date().toISOString(),
+          snapshotId: backupId
+        }
+      }));
+      await done;
+      return { status: "complete", recordCount: entries.length, snapshotId: backupId };
+    } catch (error) {
+      throw error;
+    } finally {
+      db.close();
+    }
   }
 
   async function clearDatabase() {
