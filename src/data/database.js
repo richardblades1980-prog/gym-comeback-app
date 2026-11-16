@@ -202,6 +202,91 @@
     }
   }
 
+
+  // Commit every typed legacy projection and the completion marker atomically.
+  // Existing records are accepted only when they are the same migration projection;
+  // unrelated/newer user data causes the whole transaction to abort.
+  async function commitLegacyMigration(projection, markerId, summary) {
+    const mapping = {
+      profile: "profile",
+      equipment: "equipment",
+      readiness: "readiness",
+      weighIns: "weighIns",
+      preferences: "preferences",
+      sessions: "sessions",
+      exerciseRecords: "exerciseRecords",
+      setRecords: "setRecords"
+    };
+    if (!projection || typeof projection !== "object") throw new Error("A migration projection is required.");
+    const entries = [];
+    Object.entries(mapping).forEach(([field, storeName]) => {
+      const records = projection[field] || [];
+      if (!Array.isArray(records)) throw new Error("Migration projection field must be an array: " + field);
+      records.forEach(record => {
+        if (!record || typeof record.id !== "string" || !record.id) throw new Error("Every migrated record requires a stable id.");
+        entries.push({ storeName, record });
+      });
+    });
+    const ids = new Set();
+    entries.forEach(({ storeName, record }) => {
+      const token = storeName + ":" + record.id;
+      if (ids.has(token)) throw new Error("Duplicate migrated record id: " + token);
+      ids.add(token);
+    });
+
+    const db = await open();
+    try {
+      const names = [...new Set([...entries.map(item => item.storeName), "metadata"])];
+      const tx = db.transaction(names, "readwrite");
+      const done = transactionDone(tx);
+      const metaStore = tx.objectStore("metadata");
+      const marker = await requestResult(metaStore.get(markerId));
+      if (marker && marker.value && marker.value.status === "complete") {
+        await done;
+        return { status: "already-complete", counts: marker.value.counts || {} };
+      }
+
+      const existing = await Promise.all(entries.map(({ storeName, record }) =>
+        requestResult(tx.objectStore(storeName).get(record.id))));
+      const now = new Date().toISOString();
+      entries.forEach((entry, index) => {
+        const old = existing[index];
+        if (old) {
+          const sameSource = old.legacyKey === entry.record.legacyKey &&
+            old.legacyRawValue === entry.record.legacyRawValue;
+          if (!sameSource) {
+            tx.abort();
+            throw new Error("Migration conflict: existing " + entry.storeName + " record " + entry.record.id +
+              " does not match this legacy source. No migration records were committed.");
+          }
+        } else {
+          tx.objectStore(entry.storeName).put(Object.assign({}, entry.record, {
+            createdAt: now,
+            updatedAt: now,
+            migratedFromLegacy: true
+          }));
+        }
+      });
+      const counts = summary && summary.counts ? summary.counts : {};
+      metaStore.put({
+        id: markerId,
+        type: "migration",
+        value: Object.assign({}, summary || {}, {
+          status: "complete",
+          completedAt: now,
+          counts
+        }),
+        updatedAt: now
+      });
+      await done;
+      return { status: "complete", writtenCount: entries.length, counts };
+    } catch (error) {
+      throw error;
+    } finally {
+      db.close();
+    }
+  }
+
   async function clearDatabase() {
     const db = await open();
     try {
@@ -228,6 +313,7 @@
     count,
     getMeta,
     setMeta,
-    importLegacySnapshot
+    importLegacySnapshot,
+    commitLegacyMigration
   });
 })(window);
