@@ -32,7 +32,16 @@ async function refresh(){
  const db=ProjectComebackDB;
  const [gym,hikes,schedule,modules]=await Promise.all([db.getAllByIndex("sessions","by_module","gym"),db.getAllByIndex("hikingRecords","by_module","hiking"),db.getAll("schedules"),ProjectComebackModules.list()]);
  $("gym-count").textContent=gym.length;$("hiking-count").textContent=hikes.length;$("schedule-count").textContent=schedule.filter(x=>x.status==="planned"&&x.date>=today).length;
- $("module-cards").innerHTML=modules.map(m=>'<article class="module-card"><span class="module-tag">'+(m.enabled?"ACTIVE":"DISABLED")+'</span><h3>'+esc(m.name)+'</h3><p>'+(m.id==="gym"?"Your existing and future gym training records.":"Manual hike history and preparation.")+'</p></article>').join("");
+ $("module-cards").innerHTML=modules.map(m=>'<article class="module-card"><span class="module-tag">'+(m.enabled?"ACTIVE":"PAUSED")+'</span><h3>'+esc(m.name)+'</h3><p>'+(m.id==="gym"?"Your existing and future gym training records.":"Manual hike history and preparation.")+'</p><button class="secondary module-toggle" type="button" data-module-id="'+esc(m.id)+'" aria-pressed="'+(!m.enabled)+'">'+(m.enabled?"Pause module":"Enable module")+'</button></article>').join("");
+ const hikingEnabled=modules.some(m=>m.id==="hiking"&&m.enabled);
+ $("hiking-form").querySelectorAll("input,textarea,button").forEach(control=>{control.disabled=!hikingEnabled;});
+ $("hiking-form").setAttribute("aria-disabled",String(!hikingEnabled));
+ const scheduleSelect=$("schedule-form").elements.moduleId;
+ for(const option of scheduleSelect.options){const module=modules.find(m=>m.id===option.value);option.disabled=!module||!module.enabled;}
+ const available=[...scheduleSelect.options].filter(option=>!option.disabled);
+ if(scheduleSelect.selectedOptions[0]?.disabled&&available.length)scheduleSelect.value=available[0].value;
+ scheduleSelect.disabled=available.length===0;
+ $("schedule-form").querySelector('button[type="submit"]').disabled=available.length===0;
  const recent=[...gym.map(x=>({...x,_kind:"Gym"})),...hikes.map(x=>({...x,_kind:"Hiking"}))].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6);
  $("recent-records").innerHTML=recent.length?recent.map(x=>item(x.title||x.name||x.id,x.date||"Date not recorded",x._kind)).join(""):'<div class="empty-state">No records yet. Add a hike or bring across your existing Gym history.</div>';
  $("gym-records").innerHTML=gym.length?gym.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(x=>item(x.title||("Week "+(x.week||"")+" · Day "+(x.day||"")),x.date||"Date not recorded",(x.status||"incomplete")+" · "+(x.durationMinutes??"—")+" min")).join(""):'<div class="empty-state">No migrated Gym sessions found. Use Data &amp; backup to inspect and safely migrate V21.1 data.</div>';
@@ -45,6 +54,7 @@ async function inspectMigration(){
  $("migration-status").textContent=info.legacyKeyCount+" legacy Gym data keys found. Migration status: "+info.status+". Original browser storage will not be deleted.";
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
+ $("module-cards").addEventListener("click",async event=>{const button=event.target.closest("[data-module-id]");if(!button)return;const id=button.dataset.moduleId;try{button.disabled=true;const current=await ProjectComebackModules.get(id);await ProjectComebackModules.setEnabled(id,!current.enabled);await refresh();notice(current.enabled?"Module paused. Existing records have been kept.":"Module enabled. You can add and schedule activities again.");}catch(error){notice(error.message,true);}finally{button.disabled=false;}});
 $("today-date").textContent=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
 $("hiking-form").elements.date.value=today;$("schedule-form").elements.date.value=today;
 $("hiking-form").addEventListener("submit",async event=>{
