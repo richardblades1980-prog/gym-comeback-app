@@ -194,7 +194,7 @@
         }
       }));
       await done;
-      return { status: "complete", recordCount: entries.length, snapshotId: backupId };
+      return { status: "pending-verification", recordCount: entries.length, snapshotId: backupId };
     } catch (error) {
       throw error;
     } finally {
