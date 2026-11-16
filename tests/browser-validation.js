@@ -117,9 +117,19 @@ function server() {
     await app.locator('[data-view="hiking"]').click();
     await app.locator('#hiking-form [name="title"]').fill("Browser test hike");
     await app.locator('#hiking-form [name="date"]').fill("2026-11-16");
+    await app.locator('#hiking-form [name="distanceKm"]').fill("0");
+    await app.locator('#hiking-form button[type="submit"]').click();
+    if (await app.locator("#hiking-count").textContent() !== "0") {
+      throw new Error("Hiking form accepted a zero distance measurement.");
+    }
     await app.locator('#hiking-form [name="distanceKm"]').fill("4.25");
+    await app.locator('#hiking-form [name="routeName"]').fill("East-West Walk");
     await app.locator('#hiking-form button[type="submit"]').click();
     await app.waitForFunction(() => document.querySelector("#hiking-count").textContent === "1");
+    const hikeRecord = await app.evaluate(async () => (await ProjectComebackDB.getAllByIndex("hikingRecords", "by_module", "hiking"))[0]);
+    if (hikeRecord.distanceKm !== 4.25 || hikeRecord.routeName !== "East-West Walk") {
+      throw new Error("Hiking measurement or route name was not saved correctly.");
+    }
     await app.locator('[data-view="schedule"]').click();
     await app.locator('#schedule-form [name="title"]').fill("Browser test gym session");
     await app.locator('#schedule-form [name="date"]').fill("2026-11-17");
