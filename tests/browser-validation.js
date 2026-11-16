@@ -107,6 +107,18 @@ function server() {
     });
     await app.goto(base + "/v21.2/");
     if (await app.locator(".skip-link").count() !== 1 || await app.locator("#main-content").getAttribute("tabindex") !== "-1") throw new Error("Keyboard skip navigation is missing.");
+    await app.keyboard.press("Tab");
+    if (await app.evaluate(() => document.activeElement?.classList.contains("skip-link")) !== true) throw new Error("Skip link is not the first keyboard focus target.");
+    await app.keyboard.press("Enter");
+    if (await app.evaluate(() => document.activeElement?.id) !== "main-content") throw new Error("Skip link did not move focus to the main landmark.");
+    const labelledControls = await app.evaluate(() => [...document.querySelectorAll("#view-hiking input, #view-hiking textarea, #view-schedule input, #view-schedule select")]
+      .filter(control => control.type !== "hidden" && !control.labels?.length && !control.getAttribute("aria-label") && !control.getAttribute("aria-labelledby"))
+      .map(control => control.outerHTML));
+    if (labelledControls.length) throw new Error("Form controls without accessible labels: " + labelledControls.join("\\n"));
+    await app.setViewportSize({ width: 375, height: 812 });
+    const narrowLayout = await app.evaluate(() => ({ viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth }));
+    if (narrowLayout.page > narrowLayout.viewport) throw new Error("V21.2 layout has horizontal page overflow at 375px: " + JSON.stringify(narrowLayout));
+    await app.setViewportSize({ width: 1280, height: 900 });
     if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") throw new Error("Initial navigation state is not exposed accessibly.");
     await app.locator('[data-view="hiking"]').click();
     if (await app.locator('[data-view="hiking"]').getAttribute("aria-current") !== "page" || await app.locator('[data-view="overview"]').getAttribute("aria-current") !== null) throw new Error("Active navigation state did not update accessibly.");
