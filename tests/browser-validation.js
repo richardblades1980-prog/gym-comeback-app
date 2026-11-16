@@ -28,6 +28,9 @@ function server() {
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
+    page.on("pageerror", error => console.error("BROWSER PAGE ERROR:", error.message));
+    page.on("console", message => { if (message.type() === "error") console.error("BROWSER CONSOLE:", message.text()); });
+    page.on("requestfailed", request => console.error("BROWSER REQUEST FAILED:", request.url(), request.failure()?.errorText));
     await page.addInitScript(() => {
       localStorage.setItem("gym-comeback-profile", JSON.stringify({ goal: "strength", age: 45 }));
       localStorage.setItem("gym-comeback-w1-d1", JSON.stringify({
@@ -39,8 +42,12 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await page.goto(base + "/tests/fixtures/browser-migration.html");
-    await page.waitForFunction(() => document.querySelector("#result").textContent.startsWith("{") &&
-      !document.querySelector("#result").textContent.includes("ready"), null, { timeout: 15000 });
+    try {
+      await page.waitForFunction(() => document.querySelector("#result").textContent.startsWith("{") &&
+        !document.querySelector("#result").textContent.includes("ready"), null, { timeout: 15000 });
+    } catch (error) {
+      throw new Error("Migration fixture did not finish. DOM result: " + await page.locator("#result").textContent());
+    }
     const first = JSON.parse(await page.locator("#result").textContent());
     if (first.error) throw new Error("Browser migration failed: " + first.error);
     if (first.firstStatus !== "complete" || first.secondStatus !== "already-complete" ||
