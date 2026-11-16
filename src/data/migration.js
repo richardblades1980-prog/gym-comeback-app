@@ -1,6 +1,6 @@
-/* Project Comeback V21.2A — non-destructive legacy migration inspection.
- * This phase inventories and snapshots legacy localStorage only.
- * It deliberately does not import records or mark migration complete.
+/* Project Comeback V21.2A — safe, restartable legacy storage migration.
+ * Every legacy localStorage value is preserved byte-for-byte as a string.
+ * Original localStorage is never changed or deleted by this module.
  */
 (function (global) {
   "use strict";
@@ -44,34 +44,31 @@
     }
   }
 
-  async function inspect() {
-    const db = global.ProjectComebackDB;
-    if (!db) throw new Error("Load database.js before migration.js.");
-    const marker = await db.getMeta(MARKER_ID);
-    const keys = listLegacyKeys(global.localStorage);
+  function classifyKeys(keys) {
     const categories = {
-      workoutDays: keys.filter(key => /^gym-comeback-w\\d+-d\\d+$/.test(key)),
+      workoutDays: keys.filter(key => /^gym-comeback-w\d+-d\d+$/.test(key)),
       exerciseConfigs: keys.filter(key => key.startsWith("gym-comeback-ex-config-v1-")),
       setStatuses: keys.filter(key => key.startsWith("gym-comeback-set-status-v1-")),
       dayUnlocks: keys.filter(key => key.startsWith("gym-comeback-day-unlock-v1-")),
       other: []
     };
-    const known = new Set([
-      "gym-comeback-profile", "gym-comeback-gear", "gym-comeback-custom-gear",
-      "gym-comeback-readiness", "gym-comeback-weigh-ins", "gym-comeback-rest-state",
-      "gym-comeback-rest-alert", "gym-comeback-default-rest", "gym-comeback-max-weeks",
-      "gym-comeback-preferred-day", "gym-comeback-landing-page",
-      "gym-comeback-hide-quick-start", "gym-comeback-show-bodyweight-load"
-    ]);
     const classified = new Set([
       ...categories.workoutDays, ...categories.exerciseConfigs,
       ...categories.setStatuses, ...categories.dayUnlocks
     ]);
-    categories.other = keys.filter(key => known.has(key) || !classified.has(key));
+    categories.other = keys.filter(key => !classified.has(key));
+    return categories;
+  }
+
+  async function inspect() {
+    const db = global.ProjectComebackDB;
+    if (!db) throw new Error("Load database.js before migration.js.");
+    const marker = await db.getMeta(MARKER_ID);
+    const keys = listLegacyKeys(global.localStorage);
     return {
-      status: marker && marker.value === "verified" ? "verified" : "inspection-only",
+      status: marker && marker.value && marker.value.status === "complete" ? "complete" : "ready-to-import",
       legacyKeyCount: keys.length,
-      categories,
+      categories: classifyKeys(keys),
       legacyKeys: keys,
       marker: marker || null
     };
@@ -106,10 +103,40 @@
     return json;
   }
 
+  async function importLegacyData() {
+    const db = global.ProjectComebackDB;
+    if (!db) throw new Error("Load database.js before migration.js.");
+    const current = await inspect();
+    if (current.status === "complete") {
+      return { status: "already-imported", recordCount: current.marker.value.recordCount };
+    }
+    const snapshot = snapshotLegacyStorage(global.localStorage);
+    if (Object.keys(snapshot).length !== current.legacyKeyCount) {
+      throw new Error("Legacy storage changed during inspection. Please retry the migration.");
+    }
+    const result = await db.importLegacySnapshot(snapshot, MARKER_ID);
+    const verify = await db.getAll("legacyRecords");
+    const importedKeys = new Set(verify.map(record => record.key));
+    const missing = Object.keys(snapshot).filter(key => !importedKeys.has(key));
+    if (missing.length) {
+      throw new Error("Migration verification failed. Missing legacy keys: " + missing.join(", "));
+    }
+    const unchanged = Object.entries(snapshot).every(([key, value]) => global.localStorage.getItem(key) === value);
+    if (!unchanged) {
+      throw new Error("Legacy localStorage changed unexpectedly. Do not continue; retain the safety snapshot.");
+    }
+    return Object.assign({}, result, {
+      verified: true,
+      originalStorageUnchanged: true,
+      verifiedRecordCount: Object.keys(snapshot).length
+    });
+  }
+
   global.ProjectComebackMigration = Object.freeze({
     inspect,
     createSafetySnapshot,
     downloadSafetySnapshot,
+    importLegacyData,
     parseLegacyJson,
     legacyPrefix: LEGACY_PREFIX,
     snapshotFormatVersion: SNAPSHOT_FORMAT
