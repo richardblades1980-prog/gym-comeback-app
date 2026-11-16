@@ -148,3 +148,36 @@ test("failed typed commit can be retried from the verified raw snapshot", async 
   assert.ok(state.committed);
   assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
 });
+
+
+test("repeated migration after typed completion is idempotent", async () => {
+  const { migration, state, storage } = loadMigration({
+    "gym-comeback-profile": JSON.stringify({ age: "44" }),
+    "gym-comeback-w1-d1": JSON.stringify({
+      date: "2026-11-10", sessionTime: "40",
+      exercises: [{ name: "Squat", setCount: 1, sets: [{ weight: "10", reps: "8" }] }]
+    })
+  });
+  const first = await migration.migrateAndVerify();
+  assert.equal(first.status, "complete");
+  const committedProjection = state.committed.projection;
+  const second = await migration.migrateAndVerify();
+  assert.equal(second.status, "already-complete");
+  assert.equal(state.committed.projection, committedProjection);
+  assert.equal(state.legacy.length, 2);
+  assert.equal(storage.getItem("gym-comeback-profile"), JSON.stringify({ age: "44" }));
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
+});
+
+test("completed marker cannot hide changes to original legacy storage", async () => {
+  const { migration, state, storage } = loadMigration({
+    "gym-comeback-profile": JSON.stringify({ age: "44" })
+  });
+  await migration.migrateAndVerify();
+  storage.setItem = (key, value) => {
+    // The source is deliberately changed after the first successful migration.
+    storage.getItem = candidate => candidate === key ? value : null;
+  };
+  await assert.rejects(migration.migrateAndVerify(), /Raw legacy snapshot is not verified/);
+  assert.equal(state.markers["migration-v21.2a-typed-projection-v1"].value.status, "complete");
+});
