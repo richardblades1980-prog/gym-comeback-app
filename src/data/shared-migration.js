@@ -70,7 +70,7 @@
               return;
             }
             weighIns.push({
-              id: "gym-weigh-in-" + item.date,
+              id: "gym-weigh-in-" + item.date + "-" + String(index + 1),
               date: item.date,
               weight,
               moduleId: "gym",
