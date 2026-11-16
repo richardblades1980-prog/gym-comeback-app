@@ -62,8 +62,8 @@ test("preserves multiple weigh-ins on the same date with distinct stable IDs", (
   const result = migration.normaliseSnapshot({ "gym-comeback-weigh-ins": raw });
   assert.equal(result.weighIns.length, 3);
   assert.equal(new Set(result.weighIns.map(item => item.id)).size, 3);
-  assert.deepEqual(result.weighIns.map(item => item.weight), [82.5, 82.1, 81.9]);
-  assert.deepEqual(result.weighIns.map(item => item.legacyIndex), [0, 1, 2]);
+  assert.deepEqual(Array.from(result.weighIns, item => item.weight), [82.5, 82.1, 81.9]);
+  assert.deepEqual(Array.from(result.weighIns, item => item.legacyIndex), [0, 1, 2]);
   assert.equal(result.weighIns[0].legacyRawValue, JSON.stringify({ date: "2026-11-10", weight: 82.5 }));
   assert.equal(result.weighIns[1].legacyRawValue, JSON.stringify({ date: "2026-11-10", weight: 82.1 }));
 });
