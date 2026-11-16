@@ -7,22 +7,24 @@
   <meta name="description" content="Project Comeback V21.2 — Gym Comeback and Hiking Preparation">
   <title>Project Comeback V21.2</title>
   <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./app.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="./"><span class="brand-mark">PC</span><span><strong>PROJECT COMEBACK</strong><small>VERSION 21.2</small></span></a>
-      <span id="connection-state" class="status-pill">Starting…</span>
+      <span id="connection-state" class="status-pill" role="status" aria-live="polite">Starting…</span>
     </header>
-    <main>
+    <main id="main-content" tabindex="-1">
       <section class="welcome">
         <div><p class="eyebrow">YOUR TRAINING, YOUR PACE</p><h1>Build your comeback.</h1><p class="muted">One place for your gym work and hiking preparation.</p></div>
         <div class="date-card"><span id="today-label">TODAY</span><strong id="today-date">—</strong></div>
       </section>
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       <nav class="tabs" aria-label="Main navigation">
-        <button class="tab active" data-view="overview">Overview</button>
+        <button class="tab active" data-view="overview" aria-current="page">Overview</button>
         <button class="tab" data-view="gym">Gym</button>
         <button class="tab" data-view="hiking">Hiking</button>
         <button class="tab" data-view="schedule">Schedule</button>
