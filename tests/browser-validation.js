@@ -243,7 +243,19 @@ function server() {
       throw error;
     }
 
-    console.log("[browser] Migration safety snapshot and manual migration");
+    await app.locator('[data-view="overview"]').click();
+    await app.waitForFunction(() => document.querySelector("#upcoming-overview").textContent.includes("Browser test gym session"));
+    const overviewCheck = await app.evaluate(() => ({
+      upcoming: document.querySelector("#upcoming-overview").textContent,
+      completed: document.querySelector("#completed-overview").textContent
+    }));
+    if (!overviewCheck.completed.includes("Gym") || !overviewCheck.completed.includes("Hiking") ||
+        !overviewCheck.completed.includes("1 records")) {
+      throw new Error("Training overview did not show separate Gym and Hiking completed summaries: " + JSON.stringify(overviewCheck));
+    }
+    console.log("PASS dashboard shows upcoming schedule and separate Gym/Hiking completed summaries");
+
+        console.log("[browser] Migration safety snapshot and manual migration");
     await app.locator('[data-view="data"]').click();
     const snapshotDownloadPromise = app.waitForEvent("download", { timeout: STEP_TIMEOUT_MS });
     await app.locator("#legacy-snapshot").click();
