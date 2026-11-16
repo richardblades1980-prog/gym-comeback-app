@@ -28,6 +28,22 @@ async function refreshTrainingOverview(){
  const moduleCard=(name,data)=>'<article class="module-card"><span class="module-tag">COMPLETED</span><h3>'+name+'</h3><p><strong>'+data.sessionCount+'</strong> records in the last 30 days</p><p>'+renderDuration(data)+'</p><small>'+data.durationMissingCount+' record(s) without a recorded duration</small></article>';
  $("completed-overview").innerHTML=moduleCard("Gym",summary.gym)+moduleCard("Hiking",summary.hiking);
 }
+
+async function refreshScheduleOutlook(){
+ const to=shiftDate(today,29);
+ const range=await ProjectComebackProgrammeManager.rangeOverview(today,to);
+ const gymMinutes=range.days.reduce((sum,day)=>sum+day.entries.filter(entry=>entry.moduleId==="gym").reduce((n,entry)=>n+(Number(entry.durationMinutes)||0),0),0);
+ const hikingMinutes=range.days.reduce((sum,day)=>sum+day.entries.filter(entry=>entry.moduleId==="hiking").reduce((n,entry)=>n+(Number(entry.durationMinutes)||0),0),0);
+ $("schedule-range-summary").innerHTML=
+   '<article class="module-card"><span class="module-tag">GYM</span><h3>'+range.totals.gymSessions+'</h3><p>Scheduled activities</p><small>'+gymMinutes+' min planned duration recorded</small></article>'+
+   '<article class="module-card"><span class="module-tag">HIKING</span><h3>'+range.totals.hikingSessions+'</h3><p>Scheduled activities</p><small>'+hikingMinutes+' min planned duration recorded</small></article>';
+ $("schedule-range-overview").innerHTML=range.days.length?range.days.map(day=>{
+   const entries=day.entries.map(entry=>item(entry.title,(entry.moduleId==="gym"?"Gym":"Hiking")+(entry.durationMinutes!==undefined?" · "+entry.durationMinutes+" min planned":""),entry.status||"planned")).join("");
+   const readiness=day.readiness?'<p class="overview-note">Readiness entry recorded for this date.</p>':"";
+   return '<section class="overview-day"><h3>'+esc(formatDate(day.date))+'</h3>'+entries+readiness+'</section>';
+ }).join(""):'<div class="empty-state">No scheduled activities in the next 30 days.</div>';
+}
+
 async function refresh(){
  const db=ProjectComebackDB;
  const [gym,hikes,schedule,modules]=await Promise.all([db.getAllByIndex("sessions","by_module","gym"),db.getAllByIndex("hikingRecords","by_module","hiking"),db.getAll("schedules"),ProjectComebackModules.list()]);
@@ -48,6 +64,7 @@ async function refresh(){
  $("hiking-records").innerHTML=hikes.length?hikes.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>item(x.title,x.date,(x.distanceKm!==undefined?x.distanceKm+" km":"Distance not recorded"))).join(""):'<div class="empty-state">No hikes recorded yet.</div>';
  $("schedule-records").innerHTML=schedule.length?schedule.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>item(x.title,x.date,(x.moduleId==="gym"?"Gym":"Hiking")+" · "+x.status)).join(""):'<div class="empty-state">Nothing scheduled yet.</div>';
  await refreshTrainingOverview();
+ await refreshScheduleOutlook();
 }
 async function inspectMigration(){
  const info=await ProjectComebackMigration.inspect();
