@@ -106,6 +106,13 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await app.goto(base + "/v21.2/");
+    if (await app.locator(".skip-link").count() !== 1 || await app.locator("#main-content").getAttribute("tabindex") !== "-1") throw new Error("Keyboard skip navigation is missing.");
+    if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") throw new Error("Initial navigation state is not exposed accessibly.");
+    await app.locator('[data-view="hiking"]').click();
+    if (await app.locator('[data-view="hiking"]').getAttribute("aria-current") !== "page" || await app.locator('[data-view="overview"]').getAttribute("aria-current") !== null) throw new Error("Active navigation state did not update accessibly.");
+    await app.locator('[data-view="overview"]').click();
+    const manifest = await app.evaluate(async () => { const link = document.querySelector('link[rel="manifest"]'); const response = await fetch(link.href); return response.json(); });
+    if (!manifest.icons || !manifest.icons.some(icon => icon.src === "./icon.svg" && icon.purpose.includes("maskable"))) throw new Error("PWA manifest icon metadata is missing.");
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     const localDateCheck = await app.evaluate(() => {
       const now = new Date();
