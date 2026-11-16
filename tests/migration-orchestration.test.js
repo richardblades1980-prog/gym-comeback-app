@@ -23,6 +23,9 @@ function loadMigration(values) {
     async getAll(name) { return name === "legacyRecords" ? state.legacy : []; },
     async setMeta(id, value, type) { state.markers[id] = { id, value, type }; },
     async commitLegacyMigration(projection, id, summary) {
+      if (state.markers[id] && state.markers[id].value && state.markers[id].value.status === "complete") {
+        return { status: "already-complete", counts: state.markers[id].value.counts || {} };
+      }
       state.committed = { projection, id, summary };
       state.markers[id] = { id, value: { status: "complete", counts: summary.counts } };
       return { status: "complete", writtenCount: Object.values(projection).reduce((n, list) => n + list.length, 0), counts: summary.counts };
