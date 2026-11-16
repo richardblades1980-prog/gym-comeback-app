@@ -78,7 +78,9 @@ test("preserves malformed or unsupported workout logs as warnings rather than dr
   });
   assert.equal(result.sessions.length, 0);
   assert.equal(result.warnings.length, 2);
-  assert.throws(() => migration.normaliseSnapshot({ "gym-comeback-w1-d1": "{bad json" }), /Invalid legacy JSON/);
+  const malformed = migration.normaliseSnapshot({ "gym-comeback-w1-d1": "{bad json" });
+  assert.equal(malformed.sessions.length, 0);
+  assert.equal(malformed.warnings.length, 1);
 });
 
 test("normalisation is deterministic across repeated runs", () => {
