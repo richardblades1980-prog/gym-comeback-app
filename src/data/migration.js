@@ -66,7 +66,7 @@
     const marker = await db.getMeta(MARKER_ID);
     const keys = listLegacyKeys(global.localStorage);
     return {
-      status: marker && marker.value && marker.value.status === "complete" ? "complete" : "ready-to-import",
+      status: marker && marker.value ? marker.value.status : "ready-to-import",
       legacyKeyCount: keys.length,
       categories: classifyKeys(keys),
       legacyKeys: keys,
@@ -107,8 +107,8 @@
     const db = global.ProjectComebackDB;
     if (!db) throw new Error("Load database.js before migration.js.");
     const current = await inspect();
-    if (current.status === "complete") {
-      return { status: "already-imported", recordCount: current.marker.value.recordCount };
+    if (current.status === "complete" || current.status === "snapshot-verified") {
+      return { status: current.status, recordCount: current.marker.value.recordCount, snapshotId: current.marker.value.snapshotId };
     }
     const snapshot = snapshotLegacyStorage(global.localStorage);
     if (Object.keys(snapshot).length !== current.legacyKeyCount) {
@@ -131,16 +131,76 @@
       throw new Error("Legacy localStorage changed unexpectedly. Do not continue; retain the safety snapshot.");
     }
     await db.setMeta(MARKER_ID, {
-      status: "complete",
+      status: "snapshot-verified",
       recordCount: Object.keys(snapshot).length,
-      completedAt: new Date().toISOString(),
+      verifiedAt: new Date().toISOString(),
       snapshotId: result.snapshotId
     }, "migration");
     return Object.assign({}, result, {
-      status: "complete",
+      status: "snapshot-verified",
       verified: true,
       originalStorageUnchanged: true,
       verifiedRecordCount: Object.keys(snapshot).length
+    });
+  }
+
+
+  async function migrateAndVerify() {
+    const db = global.ProjectComebackDB;
+    const gym = global.ProjectComebackGymMigration;
+    const shared = global.ProjectComebackSharedMigration;
+    if (!db || !gym || !shared) {
+      throw new Error("Load database.js, gym-migration.js and shared-migration.js before running the full migration.");
+    }
+
+    const rawResult = await importLegacyData();
+    if (rawResult.status === "already-imported") {
+      return { status: "already-complete", counts: rawResult.counts || {} };
+    }
+
+    const snapshot = snapshotLegacyStorage(global.localStorage);
+    const keys = Object.keys(snapshot).sort();
+    const legacyRecords = await db.getAll("legacyRecords");
+    const rawByKey = new Map(legacyRecords.map(item => [item.key, item.rawValue]));
+    const missing = keys.filter(key => !rawByKey.has(key));
+    const changed = keys.filter(key => rawByKey.get(key) !== snapshot[key]);
+    if (missing.length || changed.length) {
+      throw new Error("Raw legacy snapshot is not verified. Missing: " + missing.join(", ") +
+        "; changed: " + changed.join(", "));
+    }
+
+    const gymProjection = gym.normaliseSnapshot(snapshot);
+    const sharedProjection = shared.normaliseSnapshot(snapshot);
+    const projection = {
+      profile: sharedProjection.profile,
+      equipment: sharedProjection.equipment,
+      readiness: sharedProjection.readiness,
+      weighIns: sharedProjection.weighIns,
+      preferences: sharedProjection.preferences,
+      sessions: gymProjection.sessions,
+      exerciseRecords: gymProjection.exerciseRecords,
+      setRecords: gymProjection.setRecords
+    };
+    const warnings = [...gymProjection.warnings, ...sharedProjection.warnings];
+    const counts = Object.fromEntries(Object.entries(projection).map(([name, records]) => [name, records.length]));
+    const summary = {
+      sourceKeyCount: keys.length,
+      counts,
+      warningCount: warnings.length,
+      warnings,
+      snapshotId: MARKER_ID + "-safety-snapshot"
+    };
+
+    const unchanged = keys.every(key => global.localStorage.getItem(key) === snapshot[key]);
+    if (!unchanged) throw new Error("Legacy localStorage changed during migration. No typed records were committed.");
+
+    const committed = await db.commitLegacyMigration(projection, MARKER_ID, summary);
+    return Object.assign({}, committed, {
+      verified: true,
+      originalStorageUnchanged: true,
+      sourceKeyCount: keys.length,
+      warnings,
+      counts
     });
   }
 
@@ -149,6 +209,7 @@
     createSafetySnapshot,
     downloadSafetySnapshot,
     importLegacyData,
+    migrateAndVerify,
     parseLegacyJson,
     legacyPrefix: LEGACY_PREFIX,
     snapshotFormatVersion: SNAPSHOT_FORMAT
