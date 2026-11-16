@@ -35,7 +35,7 @@ test("rejects impossible dates and reversed ranges", () => {
 test("rejects invalid recorded duration rather than silently counting it", () => {
   assert.throws(() => workload.summariseRange("2026-11-01", "2026-11-30", [
     { id: "g1", moduleId: "gym", date: "2026-11-02", status: "completed", durationMinutes: -10 }
-  ], []), /invalid durationMinutes/);
+  ], []), /invalid recorded durationMinutes/);
 });
 
 test("ignores incomplete and out-of-range records", () => {
