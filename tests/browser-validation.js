@@ -274,6 +274,15 @@ function server() {
     }
     const backupPath = await backupDownload.path();
     if (!backupPath) throw new Error("Downloaded full backup file is unavailable for restore validation.");
+    const invalidBackupPath = path.join(phoneProfile, "invalid-backup.json");
+    fs.writeFileSync(invalidBackupPath, "{ definitely not valid JSON");
+    await app.locator('#restore-file').setInputFiles(invalidBackupPath);
+    await app.waitForFunction(() => !document.querySelector("#restore-preview").hidden &&
+      document.querySelector("#restore-preview").textContent.length > 0);
+    if (await app.locator("#restore-apply").isEnabled() ||
+        await app.locator("#restore-confirm-wrap").isVisible()) {
+      throw new Error("Invalid backup file exposed an enabled restore action or confirmation control.");
+    }
     await app.locator('#restore-file').setInputFiles(backupPath);
     await app.waitForFunction(() => !document.querySelector("#restore-preview").hidden &&
       document.querySelector("#restore-preview").textContent.includes("Valid backup"));
