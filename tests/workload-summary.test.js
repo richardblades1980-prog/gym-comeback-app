@@ -46,3 +46,11 @@ test("ignores incomplete and out-of-range records", () => {
   assert.equal(result.gym.sessionCount, 0);
   assert.equal(result.gym.durationMinutes, 0);
 });
+
+test("reads the legacy Gym sessionTime field without losing its recorded minutes", () => {
+  const result = workload.summariseRange("2026-11-01", "2026-11-30", [
+    { id: "legacy-gym-1", moduleId: "gym", date: "2026-11-10", status: "completed", sessionTime: "42" }
+  ], []);
+  assert.equal(result.gym.durationMinutes, 42);
+  assert.equal(result.gym.durationRecordedCount, 1);
+});
