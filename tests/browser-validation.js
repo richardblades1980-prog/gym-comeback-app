@@ -282,14 +282,23 @@ function server() {
         !hikingReenabled.hikeControlsEnabled || !hikingReenabled.hikingScheduleEnabled) {
       throw new Error("Re-enabling Hiking did not restore entry/scheduling while retaining records: " + JSON.stringify(hikingReenabled));
     }
+    // The app has not migrated legacy Gym data yet. Seed a Gym-owned session
+    // so this browser test can verify pause preserves an existing record.
+    await app.evaluate(async () => ProjectComebackModules.putOwnedRecord("gym", "sessions", {
+      id: "browser-test-gym-session", moduleId: "gym", date: "2026-11-16",
+      title: "Browser preservation session", status: "completed", durationMinutes: 42
+    }));
+    const gymRecordsBeforePause = await app.evaluate(() => ProjectComebackDB.count("sessions"));
     await app.locator('[data-module-id="gym"]').click();
     await app.waitForFunction(() => document.querySelector('[data-module-id="gym"]')?.textContent.includes("Enable module"));
     const gymPaused = await app.evaluate(async () => ({
       module: await ProjectComebackModules.get("gym"),
       records: await ProjectComebackDB.count("sessions"),
+      preserved: await ProjectComebackDB.get("sessions", "browser-test-gym-session"),
       gymScheduleDisabled: document.querySelector('#schedule-form [name="moduleId"] option[value="gym"]').disabled
     }));
-    if (gymPaused.module.enabled || gymPaused.records !== 1 || !gymPaused.gymScheduleDisabled) {
+    if (gymPaused.module.enabled || gymPaused.records !== gymRecordsBeforePause ||
+        gymPaused.preserved?.title !== "Browser preservation session" || !gymPaused.gymScheduleDisabled) {
       throw new Error("Pausing Gym did not preserve history and block scheduling: " + JSON.stringify(gymPaused));
     }
     await app.locator('[data-module-id="gym"]').click();
