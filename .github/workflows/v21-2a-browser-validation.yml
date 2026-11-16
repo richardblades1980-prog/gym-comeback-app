@@ -11,6 +11,7 @@ on:
 jobs:
   chromium-validation:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -26,3 +27,4 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run browser migration and offline tests
         run: node tests/browser-validation.js
+        timeout-minutes: 10
