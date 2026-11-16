@@ -126,8 +126,9 @@ function server() {
     await app.waitForFunction(() => document.querySelector("#schedule-count").textContent === "1");
 
     await app.locator('[data-view="data"]').click();
-    const snapshotDownload = await app.waitForEvent("download");
+    const snapshotDownloadPromise = app.waitForEvent("download");
     await app.locator("#legacy-snapshot").click();
+    const snapshotDownload = await snapshotDownloadPromise;
     const snapshotName = snapshotDownload.suggestedFilename();
     if (!snapshotName.endsWith(".json")) throw new Error("Legacy safety snapshot was not downloaded.");
     await app.locator("#migration-confirm").check();
@@ -144,9 +145,10 @@ function server() {
       throw new Error("Real V21.2 app migration or module data checks failed.");
     }
 
-    const backupDownload = await app.waitForEvent("download");
+    const backupDownloadPromise = app.waitForEvent("download");
     await app.locator("#backup-download").click();
-    if (!(await backupDownload).suggestedFilename().includes("Full-Backup")) {
+    const backupDownload = await backupDownloadPromise;
+    if (!backupDownload.suggestedFilename().includes("Full-Backup")) {
       throw new Error("Full backup download did not start.");
     }
     await app.reload();
