@@ -67,15 +67,19 @@ test("invalid workout JSON prevents typed commit while raw snapshot remains pres
   assert.equal(state.legacy.length, 1);
 });
 
-test("migration refuses to proceed if source changes after raw snapshot import", async () => {
-  const { migration, state, storage } = loadMigration({ "gym-comeback-profile": JSON.stringify({ age: "44" }) });
-  await migration.importLegacyData();
-  // Simulate source drift by changing the stored raw value in the underlying test storage.
-  const original = storage.getItem("gym-comeback-profile");
-  assert.equal(original, JSON.stringify({ age: "44" }));
-  // The actual read-only storage fixture is stable; the snapshot verification is exercised
-  // through the full flow and the raw values are asserted before commit.
+test("migration resumes from a verified raw snapshot without duplicating the snapshot step", async () => {
+  const { migration, state } = loadMigration({
+    "gym-comeback-profile": JSON.stringify({ age: "44" }),
+    "gym-comeback-w1-d1": JSON.stringify({
+      date: "2026-11-10", sessionTime: "40",
+      exercises: [{ name: "Squat", setCount: 1, sets: [{ weight: "10", reps: "8" }] }]
+    })
+  });
+  const snapshotResult = await migration.importLegacyData();
+  assert.equal(snapshotResult.status, "snapshot-verified");
+  assert.equal(state.marker.value.status, "snapshot-verified");
   const result = await migration.migrateAndVerify();
   assert.equal(result.status, "complete");
   assert.ok(state.committed);
+  assert.equal(state.legacy.length, 2);
 });
