@@ -11,6 +11,23 @@ function hideNotice(){$("notice").hidden=true;}
 function setBusy(button,busy,label){button.disabled=busy;if(busy)button.dataset.label=button.textContent;button.textContent=busy?"Working…":(label||button.dataset.label||button.textContent);}
 function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="view-"+name);document.querySelectorAll(".tab").forEach(b=>{const active=b.dataset.view===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});hideNotice();}
 function item(title,meta,tag){return '<div class="record-item"><div><strong>'+esc(title)+'</strong><small>'+esc(meta)+'</small></div><small>'+esc(tag||"")+'</small></div>';}
+function shiftDate(date,days){const value=new Date(date+"T12:00:00");value.setDate(value.getDate()+days);return [value.getFullYear(),String(value.getMonth()+1).padStart(2,"0"),String(value.getDate()).padStart(2,"0")].join("-");}
+function formatDate(date){return new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});}
+function renderDuration(summary){return summary.durationRecordedCount?summary.durationMinutes+" min recorded":"Duration not recorded";}
+async function refreshTrainingOverview(){
+ const upcomingDays=await Promise.all(Array.from({length:7},(_,index)=>ProjectComebackProgrammeManager.dayOverview(shiftDate(today,index))));
+ const activeDays=upcomingDays.filter(day=>day.totalScheduled);
+ $("upcoming-overview").innerHTML=activeDays.length?activeDays.map(day=>{
+   const entries=day.entries.map(entry=>item(entry.title, (entry.moduleId==="gym"?"Gym":"Hiking")+(entry.durationMinutes!==undefined?" · "+entry.durationMinutes+" min planned":""),entry.status||"planned")).join("");
+   const notes=(day.readiness?'<p class="overview-note">Readiness entry recorded for this date.</p>':"")+
+     day.flags.map(flag=>'<p class="overview-note">'+esc(flag)+'</p>').join("");
+   return '<section class="overview-day"><h3>'+esc(formatDate(day.date))+'</h3>'+entries+notes+'</section>';
+ }).join(""):'<div class="empty-state">Nothing planned for the next seven days. Add a Gym or Hiking activity in Schedule.</div>';
+ const from=shiftDate(today,-29);
+ const summary=await ProjectComebackWorkload.rangeOverview(from,today);
+ const moduleCard=(name,data)=>'<article class="module-card"><span class="module-tag">COMPLETED</span><h3>'+name+'</h3><p><strong>'+data.sessionCount+'</strong> records in the last 30 days</p><p>'+renderDuration(data)+'</p><small>'+data.durationMissingCount+' record(s) without a recorded duration</small></article>';
+ $("completed-overview").innerHTML=moduleCard("Gym",summary.gym)+moduleCard("Hiking",summary.hiking);
+}
 async function refresh(){
  const db=ProjectComebackDB;
  const [gym,hikes,schedule,modules]=await Promise.all([db.getAllByIndex("sessions","by_module","gym"),db.getAllByIndex("hikingRecords","by_module","hiking"),db.getAll("schedules"),ProjectComebackModules.list()]);
@@ -21,6 +38,7 @@ async function refresh(){
  $("gym-records").innerHTML=gym.length?gym.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(x=>item(x.title||("Week "+(x.week||"")+" · Day "+(x.day||"")),x.date||"Date not recorded",(x.status||"incomplete")+" · "+(x.durationMinutes??"—")+" min")).join(""):'<div class="empty-state">No migrated Gym sessions found. Use Data &amp; backup to inspect and safely migrate V21.1 data.</div>';
  $("hiking-records").innerHTML=hikes.length?hikes.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>item(x.title,x.date,(x.distanceKm!==undefined?x.distanceKm+" km":"Distance not recorded"))).join(""):'<div class="empty-state">No hikes recorded yet.</div>';
  $("schedule-records").innerHTML=schedule.length?schedule.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>item(x.title,x.date,(x.moduleId==="gym"?"Gym":"Hiking")+" · "+x.status)).join(""):'<div class="empty-state">Nothing scheduled yet.</div>';
+ await refreshTrainingOverview();
 }
 async function inspectMigration(){
  const info=await ProjectComebackMigration.inspect();
