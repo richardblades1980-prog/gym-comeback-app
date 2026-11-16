@@ -79,6 +79,11 @@
           <label>Planned duration (minutes)<input name="durationMinutes" type="number" min="0" step="1" placeholder="Optional"></label>
           <div class="full form-actions"><button class="primary" type="submit">Add to schedule</button></div>
         </form>
+        <div class="panel training-overview">
+          <div class="section-heading"><div><p class="eyebrow">NEXT 30 DAYS</p><h2>Planning outlook</h2><p class="muted">Scheduled activities grouped by date. Gym and Hiking counts and planned durations stay separate.</p></div></div>
+          <div id="schedule-range-summary" class="module-grid"></div>
+          <div id="schedule-range-overview" class="record-list empty-state">Loading your planning outlook…</div>
+        </div>
         <div class="panel"><div id="schedule-records" class="record-list empty-state">Nothing scheduled yet.</div></div>
       </section>
       <section id="view-data" class="view" hidden>
