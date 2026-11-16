@@ -208,6 +208,6 @@
     count,
     getMeta,
     setMeta,
-    clearDatabase
+    importLegacySnapshot
   });
 })(window);
