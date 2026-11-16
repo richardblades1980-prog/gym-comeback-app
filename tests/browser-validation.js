@@ -128,22 +128,40 @@ function server() {
       const input = document.querySelector('#hiking-form input');
       const panel = document.querySelector('.panel');
       const secondary = document.querySelector('.secondary');
-      const focus = getComputedStyle(input);
       const inputStyle = getComputedStyle(input);
       const panelStyle = getComputedStyle(panel);
       const secondaryStyle = getComputedStyle(secondary);
       const root = getComputedStyle(document.documentElement);
+      const variable = name => root.getPropertyValue(name).trim();
+      const muted = getComputedStyle(document.querySelector('.muted')).color;
+      const footer = getComputedStyle(document.querySelector('footer')).color;
+      const eyebrow = getComputedStyle(document.querySelector('.eyebrow')).color;
+      const label = getComputedStyle(document.querySelector('#hiking-form label')).color;
+      const buttonText = getComputedStyle(document.querySelector('.primary')).color;
       return {
+        textPrimary: ratio(variable('--text'), variable('--bg')),
+        textMutedOnPage: ratio(muted, variable('--bg')),
+        textMutedOnPanel: ratio(muted, variable('--panel')),
+        footerText: ratio(footer, variable('--bg')),
+        accentText: ratio(eyebrow, variable('--bg')),
+        formLabelText: ratio(label, variable('--panel')),
+        primaryButtonText: ratio(buttonText, variable('--accent')),
+        inputText: ratio(inputStyle.color, inputStyle.backgroundColor),
         inputBoundary: ratio(inputStyle.borderTopColor, inputStyle.backgroundColor),
-        panelBoundary: ratio(panelStyle.borderTopColor, root.getPropertyValue('--panel').trim()),
-        secondaryBoundary: ratio(secondaryStyle.borderTopColor, root.getPropertyValue('--panel2').trim()),
-        focusIndicator: ratio(root.getPropertyValue('--accent').trim(), root.getPropertyValue('--bg').trim())
+        panelBoundary: ratio(panelStyle.borderTopColor, variable('--panel')),
+        secondaryBoundary: ratio(secondaryStyle.borderTopColor, variable('--panel2')),
+        focusIndicator: ratio(variable('--accent'), variable('--bg'))
       };
     });
-    for (const [name, value] of Object.entries(contrastAudit)) {
-      if (value < 3) throw new Error(name + " contrast is below 3:1: " + value.toFixed(2));
+    const textChecks = ["textPrimary","textMutedOnPage","textMutedOnPanel","footerText","accentText","formLabelText","primaryButtonText","inputText"];
+    const controlChecks = ["inputBoundary","panelBoundary","secondaryBoundary","focusIndicator"];
+    for (const name of textChecks) {
+      if (contrastAudit[name] < 4.5) throw new Error(name + " text contrast is below 4.5:1: " + contrastAudit[name].toFixed(2));
     }
-    console.log("PASS control-boundary and focus-indicator contrast (3:1 minimum): " + JSON.stringify(contrastAudit));
+    for (const name of controlChecks) {
+      if (contrastAudit[name] < 3) throw new Error(name + " contrast is below 3:1: " + contrastAudit[name].toFixed(2));
+    }
+    console.log("PASS text contrast (4.5:1) and control/focus contrast (3:1): " + JSON.stringify(contrastAudit));
     if (await app.locator(".skip-link").count() !== 1 || await app.locator("#main-content").getAttribute("tabindex") !== "-1") throw new Error("Keyboard skip navigation is missing.");
     await app.keyboard.press("Tab");
     if (await app.evaluate(() => document.activeElement?.classList.contains("skip-link")) !== true) throw new Error("Skip link is not the first keyboard focus target.");
