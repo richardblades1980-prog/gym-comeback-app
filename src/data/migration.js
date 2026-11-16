@@ -118,13 +118,24 @@
     const verify = await db.getAll("legacyRecords");
     const importedKeys = new Set(verify.map(record => record.key));
     const missing = Object.keys(snapshot).filter(key => !importedKeys.has(key));
-    if (missing.length) {
-      throw new Error("Migration verification failed. Missing legacy keys: " + missing.join(", "));
+    const mismatched = Object.entries(snapshot).filter(([key, value]) => {
+      const record = verify.find(item => item.key === key);
+      return !record || record.rawValue !== value;
+    }).map(([key]) => key);
+    if (missing.length || mismatched.length) {
+      throw new Error("Migration verification failed. Missing keys: " + missing.join(", ") +
+        ". Mismatched values: " + mismatched.join(", "));
     }
     const unchanged = Object.entries(snapshot).every(([key, value]) => global.localStorage.getItem(key) === value);
     if (!unchanged) {
       throw new Error("Legacy localStorage changed unexpectedly. Do not continue; retain the safety snapshot.");
     }
+    await db.setMeta(MARKER_ID, {
+      status: "complete",
+      recordCount: Object.keys(snapshot).length,
+      completedAt: new Date().toISOString(),
+      snapshotId: result.snapshotId
+    }, "migration");
     return Object.assign({}, result, {
       verified: true,
       originalStorageUnchanged: true,
