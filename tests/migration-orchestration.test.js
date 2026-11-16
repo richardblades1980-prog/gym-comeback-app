@@ -49,7 +49,7 @@ test("full migration snapshots raw values then commits all typed projections", a
   assert.equal(result.status, "complete");
   assert.equal(result.verified, true);
   assert.equal(result.originalStorageUnchanged, true);
-  assert.equal(state.markers["migration-v21.2a-raw-snapshot-v1"].value.status, "complete");
+  assert.equal(state.markers["migration-v21.2a-raw-snapshot-v1"].value.status, "snapshot-verified");
   assert.equal(state.committed.projection.profile.length, 1);
   assert.equal(state.committed.projection.equipment.length, 1);
   assert.equal(state.committed.projection.weighIns.length, 1);
