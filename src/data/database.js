@@ -168,9 +168,9 @@
         id,
         type: "migration",
         value: {
-          status: "complete",
+          status: "pending-verification",
           recordCount: entries.length,
-          completedAt: new Date().toISOString(),
+          importedAt: new Date().toISOString(),
           snapshotId: backupId
         }
       }));
