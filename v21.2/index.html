@@ -47,9 +47,10 @@
         <form id="hiking-form" class="panel form-grid">
           <label>Hike name<input name="title" required maxlength="100" placeholder="e.g. Mount Langi Ghiran"></label>
           <label>Date<input name="date" type="date" required></label>
-          <label>Distance (km)<input name="distanceKm" type="number" min="0" step="0.01" placeholder="Optional"></label>
-          <label>Duration (minutes)<input name="durationMinutes" type="number" min="0" step="1" placeholder="Optional"></label>
+          <label>Distance (km)<input name="distanceKm" type="number" min="0.01" step="0.01" placeholder="Optional"></label>
+          <label>Duration (minutes)<input name="durationMinutes" type="number" min="1" step="1" placeholder="Optional"></label>
           <label>Elevation gain (m)<input name="elevationGainM" type="number" min="0" step="1" placeholder="Optional"></label>
+          <label>Route / trail<input name="routeName" maxlength="120" placeholder="Optional"></label>
           <label>Terrain<input name="terrain" maxlength="80" placeholder="Optional"></label>
           <label class="full">Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="How did it go?"></textarea></label>
           <div class="full form-actions"><button class="primary" type="submit">Save completed hike</button></div>
