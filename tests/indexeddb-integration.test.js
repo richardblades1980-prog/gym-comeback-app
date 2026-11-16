@@ -54,6 +54,9 @@ test("real IndexedDB commits all typed stores and completion marker atomically",
     assert.equal(saved.length, records.length, store + " record count");
     assert.equal(saved[0].migratedFromLegacy, true, store + " migration flag");
   }
+  const gymSessions = await db.getAllByIndex("sessions", "by_module", "gym");
+  assert.equal(gymSessions.length, 1, "Gym-owned sessions can be read through the module index");
+  assert.equal(db.version, 4, "database schema version includes the Gym session module index");
   const marker = await db.getMeta(markerId);
   assert.equal(marker.value.status, "complete");
   assert.deepEqual(JSON.parse(JSON.stringify(marker.value.counts)), summary.counts);
