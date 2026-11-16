@@ -255,6 +255,47 @@ function server() {
     }
     console.log("PASS dashboard shows upcoming schedule and separate Gym/Hiking completed summaries");
 
+    console.log("[browser] Module pause, preservation and re-enable");
+    await app.locator('[data-view="overview"]').click();
+    const hikingBeforePause = await app.evaluate(async () => ProjectComebackDB.count("hikingRecords"));
+    await app.locator('[data-module-id="hiking"]').click();
+    await app.waitForFunction(() => document.querySelector('[data-module-id="hiking"]')?.textContent.includes("Enable module"));
+    const hikingPaused = await app.evaluate(async () => ({
+      module: await ProjectComebackModules.get("hiking"),
+      records: await ProjectComebackDB.count("hikingRecords"),
+      hikeControlsDisabled: [...document.querySelectorAll("#hiking-form input,#hiking-form textarea,#hiking-form button")].every(control => control.disabled),
+      hikingScheduleDisabled: document.querySelector('#schedule-form [name="moduleId"] option[value="hiking"]').disabled
+    }));
+    if (hikingPaused.module.enabled || hikingPaused.records !== hikingBeforePause ||
+        !hikingPaused.hikeControlsDisabled || !hikingPaused.hikingScheduleDisabled) {
+      throw new Error("Pausing Hiking did not preserve records and block new entries/scheduling: " + JSON.stringify(hikingPaused));
+    }
+    await app.locator('[data-module-id="hiking"]').click();
+    await app.waitForFunction(() => document.querySelector('[data-module-id="hiking"]')?.textContent.includes("Pause module"));
+    const hikingReenabled = await app.evaluate(async () => ({
+      module: await ProjectComebackModules.get("hiking"),
+      records: await ProjectComebackDB.count("hikingRecords"),
+      hikeControlsEnabled: [...document.querySelectorAll("#hiking-form input,#hiking-form textarea,#hiking-form button")].every(control => !control.disabled),
+      hikingScheduleEnabled: !document.querySelector('#schedule-form [name="moduleId"] option[value="hiking"]').disabled
+    }));
+    if (!hikingReenabled.module.enabled || hikingReenabled.records !== hikingBeforePause ||
+        !hikingReenabled.hikeControlsEnabled || !hikingReenabled.hikingScheduleEnabled) {
+      throw new Error("Re-enabling Hiking did not restore entry/scheduling while retaining records: " + JSON.stringify(hikingReenabled));
+    }
+    await app.locator('[data-module-id="gym"]').click();
+    await app.waitForFunction(() => document.querySelector('[data-module-id="gym"]')?.textContent.includes("Enable module"));
+    const gymPaused = await app.evaluate(async () => ({
+      module: await ProjectComebackModules.get("gym"),
+      records: await ProjectComebackDB.count("sessions"),
+      gymScheduleDisabled: document.querySelector('#schedule-form [name="moduleId"] option[value="gym"]').disabled
+    }));
+    if (gymPaused.module.enabled || gymPaused.records !== 1 || !gymPaused.gymScheduleDisabled) {
+      throw new Error("Pausing Gym did not preserve history and block scheduling: " + JSON.stringify(gymPaused));
+    }
+    await app.locator('[data-module-id="gym"]').click();
+    await app.waitForFunction(() => document.querySelector('[data-module-id="gym"]')?.textContent.includes("Pause module"));
+    console.log("PASS module pause/re-enable preserves records and blocks new module activity while paused");
+
         console.log("[browser] Migration safety snapshot and manual migration");
     await app.locator('[data-view="data"]').click();
     const snapshotDownloadPromise = app.waitForEvent("download", { timeout: STEP_TIMEOUT_MS });
