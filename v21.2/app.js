@@ -1,7 +1,8 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const today=new Date().toISOString().slice(0,10);
+const localNow=new Date();
+const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
 let safetySnapshotSaved=false,restorePayload=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
