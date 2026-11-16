@@ -59,12 +59,18 @@ test("full migration snapshots raw values then commits all typed projections", a
   assert.equal(storage.getItem("gym-comeback-profile"), JSON.stringify({ age: "44" }));
 });
 
-test("invalid workout JSON prevents typed commit while raw snapshot remains preserved", async () => {
-  const { migration, state } = loadMigration({ "gym-comeback-w1-d1": "{broken" });
-  await assert.rejects(migration.migrateAndVerify(), /Invalid legacy JSON/);
-  assert.equal(state.committed, null);
-  assert.equal(state.marker.value.status, "snapshot-verified");
-  assert.equal(state.legacy.length, 1);
+test("invalid workout JSON is warned and preserved while other migration data can commit", async () => {
+  const { migration, state } = loadMigration({
+    "gym-comeback-profile": JSON.stringify({ age: "44" }),
+    "gym-comeback-w1-d1": "{broken"
+  });
+  const result = await migration.migrateAndVerify();
+  assert.equal(result.status, "complete");
+  assert.equal(result.warnings.length, 1);
+  assert.equal(state.committed.projection.sessions.length, 0);
+  assert.equal(state.committed.projection.profile.length, 1);
+  assert.equal(state.marker.value.status, "complete");
+  assert.equal(state.legacy.length, 2);
 });
 
 test("migration resumes from a verified raw snapshot without duplicating the snapshot step", async () => {
