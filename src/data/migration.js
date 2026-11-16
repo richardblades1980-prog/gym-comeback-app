@@ -6,7 +6,8 @@
   "use strict";
 
   const LEGACY_PREFIX = "gym-comeback-";
-  const MARKER_ID = "migration-v21.2a";
+  const RAW_MARKER_ID = "migration-v21.2a-raw-snapshot-v1";
+  const MARKER_ID = "migration-v21.2a-typed-projection-v1";
   const SNAPSHOT_FORMAT = 2;
 
   function storageAvailable(storage) {
@@ -114,7 +115,7 @@
     if (Object.keys(snapshot).length !== current.legacyKeyCount) {
       throw new Error("Legacy storage changed during inspection. Please retry the migration.");
     }
-    const result = await db.importLegacySnapshot(snapshot, MARKER_ID);
+    const result = await db.importLegacySnapshot(snapshot, RAW_MARKER_ID);
     const verify = await db.getAll("legacyRecords");
     const importedKeys = new Set(verify.map(record => record.key));
     const missing = Object.keys(snapshot).filter(key => !importedKeys.has(key));
@@ -130,7 +131,7 @@
     if (!unchanged) {
       throw new Error("Legacy localStorage changed unexpectedly. Do not continue; retain the safety snapshot.");
     }
-    await db.setMeta(MARKER_ID, {
+    await db.setMeta(RAW_MARKER_ID, {
       status: "snapshot-verified",
       recordCount: Object.keys(snapshot).length,
       verifiedAt: new Date().toISOString(),
@@ -188,7 +189,7 @@
       counts,
       warningCount: warnings.length,
       warnings,
-      snapshotId: MARKER_ID + "-safety-snapshot"
+      snapshotId: RAW_MARKER_ID + "-safety-snapshot"
     };
 
     const unchanged = keys.every(key => global.localStorage.getItem(key) === snapshot[key]);
