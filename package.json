@@ -4,6 +4,7 @@
   "version": "21.2.0",
   "description": "Project Comeback V21.2A validation test dependencies",
   "devDependencies": {
-    "fake-indexeddb": "6.2.4"
+    "fake-indexeddb": "6.2.4",
+    "playwright": "1.56.1"
   }
 }
