@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Project Comeback V21.2 — Gym Comeback and Hiking Preparation">
+  <title>Project Comeback V21.2</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./"><span class="brand-mark">PC</span><span><strong>PROJECT COMEBACK</strong><small>VERSION 21.2</small></span></a>
+      <span id="connection-state" class="status-pill">Starting…</span>
+    </header>
+    <main>
+      <section class="welcome">
+        <div><p class="eyebrow">YOUR TRAINING, YOUR PACE</p><h1>Build your comeback.</h1><p class="muted">One place for your gym work and hiking preparation.</p></div>
+        <div class="date-card"><span id="today-label">TODAY</span><strong id="today-date">—</strong></div>
+      </section>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab active" data-view="overview">Overview</button>
+        <button class="tab" data-view="gym">Gym</button>
+        <button class="tab" data-view="hiking">Hiking</button>
+        <button class="tab" data-view="schedule">Schedule</button>
+        <button class="tab" data-view="data">Data &amp; backup</button>
+      </nav>
+      <section id="view-overview" class="view">
+        <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your training space</h2></div><span class="subtle">Stored on this device</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span>Gym sessions</span><strong id="gym-count">—</strong><small>Saved records</small></article>
+          <article class="stat-card"><span>Hiking records</span><strong id="hiking-count">—</strong><small>Manual entries</small></article>
+          <article class="stat-card"><span>Planned activities</span><strong id="schedule-count">—</strong><small>Upcoming schedule</small></article>
+        </div>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">YOUR MODULES</p><h2>Separate spaces, shared overview</h2></div></div><div id="module-cards" class="module-grid"></div></div>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Latest records</h2></div></div><div id="recent-records" class="record-list empty-state">No records yet. Add a hike or bring across your existing Gym history.</div></div>
+      </section>
+      <section id="view-gym" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">GYM COMEBACK</p><h2>Your gym history</h2><p class="muted">Existing workout records are kept separate from Hiking.</p></div></div>
+        <div class="panel"><div id="gym-records" class="record-list empty-state">No migrated Gym sessions found.</div></div>
+      </section>
+      <section id="view-hiking" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">HIKING PREPARATION</p><h2>Record a hike</h2><p class="muted">Manual activity recording. GPS tracking is not part of this release.</p></div></div>
+        <form id="hiking-form" class="panel form-grid">
+          <label>Hike name<input name="title" required maxlength="100" placeholder="e.g. Mount Langi Ghiran"></label>
+          <label>Date<input name="date" type="date" required></label>
+          <label>Distance (km)<input name="distanceKm" type="number" min="0" step="0.01" placeholder="Optional"></label>
+          <label>Duration (minutes)<input name="durationMinutes" type="number" min="0" step="1" placeholder="Optional"></label>
+          <label>Elevation gain (m)<input name="elevationGainM" type="number" min="0" step="1" placeholder="Optional"></label>
+          <label>Terrain<input name="terrain" maxlength="80" placeholder="Optional"></label>
+          <label class="full">Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="How did it go?"></textarea></label>
+          <div class="full form-actions"><button class="primary" type="submit">Save completed hike</button></div>
+        </form>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">HIKING HISTORY</p><h2>Recorded hikes</h2></div></div><div id="hiking-records" class="record-list empty-state">No hikes recorded yet.</div></div>
+      </section>
+      <section id="view-schedule" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">SHARED PLANNER</p><h2>Plan an activity</h2><p class="muted">Gym and Hiking stay distinct; this is a shared calendar only.</p></div></div>
+        <form id="schedule-form" class="panel form-grid">
+          <label>Activity<input name="title" required maxlength="100" placeholder="e.g. Upper body session"></label>
+          <label>Date<input name="date" type="date" required></label>
+          <label>Module<select name="moduleId"><option value="gym">Gym Comeback</option><option value="hiking">Hiking Preparation</option></select></label>
+          <label>Planned duration (minutes)<input name="durationMinutes" type="number" min="0" step="1" placeholder="Optional"></label>
+          <div class="full form-actions"><button class="primary" type="submit">Add to schedule</button></div>
+        </form>
+        <div class="panel"><div id="schedule-records" class="record-list empty-state">Nothing scheduled yet.</div></div>
+      </section>
+      <section id="view-data" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">YOUR DATA</p><h2>Backup &amp; migration</h2><p class="muted">Your records stay in this browser. Keep your own backup copy.</p></div></div>
+        <div class="panel">
+          <h3>Full V21.2 backup</h3><p class="muted">Export all app stores to a versioned JSON file.</p>
+          <button id="backup-download" class="primary">Download full backup</button>
+        </div>
+        <div class="panel">
+          <h3>Restore preview</h3><p class="muted">Choose a Project Comeback JSON backup to see what would change. Nothing is restored until you explicitly confirm.</p>
+          <label>Backup file<input id="restore-file" type="file" accept="application/json,.json"></label>
+          <div id="restore-preview" class="preview-box" hidden></div>
+          <label id="restore-confirm-wrap" class="check-row" hidden><input id="restore-confirm" type="checkbox"> I understand this replaces the current records in the backup stores.</label>
+          <button id="restore-apply" class="danger" disabled>Confirm restore</button>
+        </div>
+        <div class="panel">
+          <h3>Bring across V21.1 Gym data</h3>
+          <p class="muted">Migration is optional and never runs automatically. First download a safety snapshot of the original Gym localStorage data. The original V21.1 keys are retained.</p>
+          <div id="migration-status" class="migration-summary">Checking legacy storage…</div>
+          <button id="legacy-snapshot" class="secondary">Download legacy safety snapshot</button>
+          <label id="migration-confirm-wrap" class="check-row"><input id="migration-confirm" type="checkbox" disabled> I have saved the safety snapshot and explicitly want to migrate this data into V21.2.</label>
+          <button id="migration-run" class="primary" disabled>Run migration</button>
+          <div id="migration-result" class="preview-box" hidden></div>
+        </div>
+      </section>
+      <footer><span>PROJECT COMEBACK V21.2A</span><span>Local-first · Your data stays yours</span></footer>
+    </main>
+  </div>
+  <script src="./assets/database.js"></script>
+  <script src="./assets/gym-migration.js"></script>
+  <script src="./assets/shared-migration.js"></script>
+  <script src="./assets/migration.js"></script>
+  <script src="./assets/module-registry.js"></script>
+  <script src="./assets/backup.js"></script>
+  <script src="./assets/programme-manager.js"></script>
+  <script src="./assets/workload-summary.js"></script>
+  <script src="./app.js"></script>
+  <script src="./register.js"></script>
+</body>
+</html>
