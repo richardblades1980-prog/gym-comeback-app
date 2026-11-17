@@ -244,6 +244,8 @@ function server() {
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="gym"]').click();
+    await app.locator("#gym-workout-day").selectOption("1");
+    await app.locator("#gym-workout-date").fill("2026-11-18");
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const resumedWorkout = await app.evaluate(() => ({
       weight: document.querySelector('[data-gym-field="weight"]').value,
