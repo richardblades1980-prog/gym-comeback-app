@@ -325,10 +325,25 @@ During development:
 
 | 2026-11-17 | `f3b2863` | Added browser regression coverage for same-day load consolidation, single-point trends, missing/undated/invalid loads and explicitly saved bodyweight resistance | Backup #44037390136 passed; browser #44037389938 was running when this handover update was prepared |
 
-### Next actions (resume here)
 
-1. Confirm browser validation #44037389938 for commit `f3b2863b3a8a39ba22bd846b5f5ca7425347a111`; inspect its job logs if it fails and correct the regression fixture or assertions before proceeding.
-2. Once the edge-case tests pass, inspect migrated Gym data semantics for historical exercise-name consistency, date completeness and optional bodyweight-load records; preserve exact names and do not fuzzy-match different movements.
+### Cold-start persistence validation and startup readiness
+- Investigated browser validation failure on commit `18af847109fa2c1615fc6d844eab289195e8e999`: cold-start test reopened the same Chromium profile and read Overview counters immediately after the UI announced "Local database ready". The three counters still showed their initial em-dash placeholders while assessment count was available. This was a UI readiness race; the original assertion did not independently check the underlying Gym/Hiking/schedule stores, so no data-loss claim was made.
+- Updated `v21.2/app.js` so startup waits for `refresh()`, `refreshAssessments()` and `inspectMigration()` before announcing "Local database ready". Commit `ce3289be254c4791f8da0a5e109ddf76b0f34fdc`.
+- Strengthened `tests/browser-validation.js` cold-start assertion to check both visible Overview counts and direct IndexedDB counts for `sessions`, `hikingRecords`, `schedules` and `assessments`. Commit `54285d281832a9c8ee0f2d3e190091f20eacca53`.
+- Latest branch head verified as `54285d281832a9c8ee0f2d3e190091f20eacca53` on `V21.2-development`; no production branch changes.
+- Browser validation #44040162794 passed on the exact latest head: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44040162794
+- Backup validation #44040162938 passed on the exact latest head: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44040162938
+- Earlier startup-readiness commit browser validation #44040134709 also passed: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44040134709
+- Note for later review: the successful browser log still contains a non-fatal `IndexedDB transaction failed.` page error during assessment UI testing; assessment tests and full browser validation nevertheless passed. Investigate its originating operation before treating it as harmless.
+
+### Working-session interaction protocol additions (2026-11-17)
+- When work is complete and user input is needed to continue, clearly say ready and provide a functioning **Next** button.
+- When GitHub Actions or another asynchronous process is still running, give an estimated check-back time and check the result directly when possible; do not imply completion while it is pending.
+- At the end of a chat/page, prepare a compact, current handover with project/task, branch/head, completed work, remaining work, validation links/status, decisions and exact next action. Provide a **Copy handover** button so the user can paste it into the next chat. Keep the repository handover manual as the durable source of truth.
+
+### Next actions (resume here)
+1. Investigate the non-fatal IndexedDB transaction page error seen during assessment UI testing; identify its originating operation and determine whether it is an expected rejected test operation or an actual application defect.
+2. Inspect migrated Gym data semantics for historical exercise-name consistency, date completeness and optional bodyweight-load records; preserve exact names and do not fuzzy-match different movements.
 3. Consider additional Gym progress measures only where source fields and units are explicit. Keep Hiking separate and do not infer personal bests, one-rep maximums, technique or physiological strength gains.
 4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
 5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
