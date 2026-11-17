@@ -266,19 +266,18 @@ During development:
 
 ### Current status — last checked 17 November 2026
 
-- Active branch: `V21.2-development`.
-- Latest feature/test commit: `50bb56ea691e7ca13383f7f09193c8f55cb08032`.
-- Browser validation for this exact commit: **success**, run [#44035968465](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035968465).
-- Backup validation for this exact commit: **success**, run [#44035968444](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035968444).
-- Gym Overview journey includes completed session/exercise/set/repetition summaries and a dated Recorded exercise history grouped by exercise name.
-- The history displays completed session dates and saved set weight entries, reps and duration where present. Weight entries are shown exactly as saved; no unit or improvement is inferred.
-- Missing set values remain explicit; incomplete sessions and their linked exercises/sets are excluded.
-- Browser regression creates two completed dated sessions for the same exercise, checks both saved set entries appear, creates an incomplete session to verify exclusion, and cleans up all test records.
-- Browser regression also checks the completed-workload summary after the second Gym session is added. The first updated run exposed that this fixture changed the existing workload count expectation; the test was updated to expect two records, and the final browser run passed.
-- Service-worker shell cache is v13 for the updated Overview/app assets.
-- Hiking milestones remain implemented and validated: completed hikes, recorded distance/elevation totals with contributor counts, longest recorded walk and duration.
-- Assessment baseline/follow-up protections and assessment timeline remain implemented.
-- No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
+- Active development branch: `V21.2-development`.
+- Gym recorded-load progression implementation is on the active branch; latest feature commit before this manual update is `ef951f508f08c389fbd10e37188ef95b63e9bca9`.
+- Browser validation for that exact feature commit: **success**, run [#44036619049](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44036619049).
+- Backup validation for that exact feature commit: **success**, run [#44036619300](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44036619300).
+- Source audit: the production `main` app identifies itself as V21.1B.2.1 (main commit `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; `index.html` blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`). The release notes `README-V21.1B.2.txt` and `VERSION-V21.1B.2.txt` were also inspected.
+- Original Gym UI labels exercise-set weight as `Weight (kg)`, numeric input `min=0`, `step=0.5`. Bodyweight/mobility weight fields are hidden by default but can be shown to record added resistance. The UI records normal reps, timed holds, and timed reps separately; timed reps store weight where applicable, actual time and reps.
+- Original progress logic groups weighted sets by exact exercise name, uses positive recorded weights and displays kg; its strength chart selects the heaviest recorded set per workout date. It does not label the trend as a one-rep maximum. The new V21.2A summary follows the same evidence boundary but uses completed sessions only.
+- Gym exercise history now calculates each exercise's heaviest positive recorded set per dated completed session, compares the first and latest dated load, and states the change in kg. Missing/zero/invalid loads do not enter the comparison; undated sessions remain visible in the raw history but are not used in the dated comparison. Same-day entries are consolidated to the highest recorded load for that date.
+- The comparison explicitly says these are recorded loads, not a one-rep maximum. It does not claim strength improvement or infer technique, effort or physiological adaptation.
+- Browser regression uses the same exercise over two completed dates (15 kg then 20 kg) and verifies the displayed comparison is +5 kg. The incomplete session is excluded; missing reps remain explicit. Browser run #44036619049 and backup run #44036619300 both passed for the exact feature commit.
+- Offline shell cache is v14 for the updated app assets.
+- No merge or deployment has been performed. `main` and the protected V21.1 baseline remain untouched.
 
 ### Recent change log
 
@@ -321,10 +320,17 @@ During development:
 | 2026-11-17 | `a77c279` | Added dated Gym exercise history grouped by exercise, with saved set values and explicit no-unit/no-improvement wording; bumped shell cache to v13 | Backup #44035610739 passed; browser #44035610941 failed on an outdated summary test expectation |
 | 2026-11-17 | `4769bc6` | Updated browser regression expectations for two completed sessions and four sets in the Gym history fixture | Backup #44035745360 passed; browser #44035745340 exposed a downstream workload count assertion that also needed updating |
 | 2026-11-17 | `50bb56e` | Updated the existing workload test to expect two completed Gym records after adding the dated history fixture | Browser #44035968465 and backup #44035968444 passed |
+| 2026-11-17 | `9b50c20` | Added per-exercise dated heaviest recorded-load comparison in kg, based on completed sessions; raw history remains visible | Browser and backup checks completed on subsequent cache/style head |
+| 2026-11-17 | `ef951f5` | Finalized Gym load-trend styling and bumped offline shell cache to v14 | Browser #44036619049 and backup #44036619300 passed |
 
 ### Next actions (resume here)
 
-1. Finish and inspect browser validation #44035745340 for exact feature/test SHA `4769bc6776cc1eccccea4e782e8cedd86d52ffb2`; if it fails, inspect the browser log and correct the regression before proceeding.
+1. Inspect the migrated Gym data semantics for historical exercise-name consistency, date completeness and optional bodyweight-load records; preserve exact names and do not fuzzy-match different movements.
+2. Add regression coverage for missing/undated loads, zero/invalid weights, multiple same-day entries, and exercises with only one dated load. Keep those cases non-comparable rather than manufacturing a trend.
+3. Consider additional Gym progress measures only where source fields and units are explicit. Keep Hiking separate and do not infer personal bests, one-rep maximums, technique or physiological strength gains.
+4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
+5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
+
 2. Review the protected V21.1 source and actual legacy Gym data-entry labels to determine whether weight values have a documented, consistent unit and whether exercise names/recording modes support like-for-like comparisons. Do not modify V21.1 or `main`.
 3. Only after that source review, decide whether a defensible exercise-specific progression comparison can be added. Never infer personal bests or improvement from incomparable records.
 4. Keep Gym and Hiking separate, preserve missing-value behavior, and continue isolated browser tests with cleanup.
