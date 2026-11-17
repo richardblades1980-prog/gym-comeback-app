@@ -101,6 +101,8 @@ test("production delivery service verifies immutable assets and exposes offline 
   assert.match(deliverySource,/async function lookup/);
   assert.match(deliverySource,/catalogueReleases.*exerciseDefinitions.*exerciseVariations.*metadata/s);
   assert.match(deliverySource,/active-exercise-catalogue-release/);
+  assert.match(deliverySource,/assetVerificationStatus: "verified"/);
+  assert.match(deliverySource,/release\.assetVerificationStatus !== "verified"/);
   assert.match(deliverySource,/local catalogue materialisation is incomplete or stale/);
   assert.equal(bundledDeliverySource, deliverySource, "the app shell must load the same reviewed delivery implementation");
   assert.match(htmlSource,/assets\/catalogue-delivery\.js/);
