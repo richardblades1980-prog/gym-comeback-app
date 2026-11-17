@@ -153,7 +153,6 @@ test("timed-set stopwatch persists across reload, resumes from its timestamp, su
   let loaded = await workout.loadSession(created.workout.session.id);
   let loadedSet = loaded.exerciseRecords[0].sets[0];
   assert.ok(Number.isFinite(loadedSet.stopwatchStartedAt));
-  assert.ok(workout.stopwatchElapsedMs === undefined || true);
 
   const stopped = await workout.stopStopwatch(loaded, exercise.id, 1);
   assert.equal(stopped.stopwatchStartedAt, undefined);
