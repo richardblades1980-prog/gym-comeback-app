@@ -252,10 +252,13 @@ function server() {
       weight: document.querySelector('[data-gym-field="weight"]').value,
       reps: document.querySelector('[data-gym-field="reps"]').value,
       firstStatus: document.querySelector("#gym-workout-exercises .gym-set-row .gym-set-state").textContent,
-      lockedLaterSet: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector("input").disabled
+      nextSetState: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector(".gym-set-state").textContent,
+      nextSetEnabled: !document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector("input").disabled,
+      thirdSetLocked: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[2].querySelector("input").disabled
     }));
     if (resumedWorkout.weight !== "15" || resumedWorkout.reps !== "12" ||
-        !resumedWorkout.firstStatus.includes("completed") || !resumedWorkout.lockedLaterSet) {
+        !resumedWorkout.firstStatus.includes("completed") || !resumedWorkout.nextSetState.includes("not started") ||
+        !resumedWorkout.nextSetEnabled || !resumedWorkout.thirdSetLocked) {
       throw new Error("Workout values or set state did not survive reload/resume: " + JSON.stringify(resumedWorkout));
     }
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
