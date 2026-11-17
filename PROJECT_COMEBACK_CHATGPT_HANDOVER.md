@@ -1,3 +1,61 @@
+# Project Comeback — live handover status
+
+> **Checked against GitHub:** 17 November 2026. This summary is a navigation aid; the live branch, source files and workflow runs remain authoritative.
+
+## Current state
+
+- **Active development branch:** `V21.2-development`
+- **Verified branch head at this checkpoint:** `bb3e8237ca1fa45f5f6ace8c8e2394dd31b2e8ff`
+- **Latest handover commit:** [bb3e823](https://github.com/richardblades1980-prog/gym-comeback-app/commit/bb3e8237ca1fa45f5f6ace8c8e2394dd31b2e8ff)
+- **Browser validation:** [run #44048381531 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44048381531)
+- **Backup validation:** [run #44048381632 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44048381632)
+- Both validation runs were checked against the exact handover commit SHA above. This establishes the state at this checkpoint, not the status of any later commit.
+- **Production boundary:** `main` and the V21.1 baseline remain untouched. No merge or deployment is authorised.
+
+## Immediate work in progress
+
+1. Continue the source-grounded Gym historical exercise-name audit.
+2. Resolve the collision risks in legacy normalised matching and exercise-configuration keys only after focused regression tests establish the intended identity rules.
+3. Check the V21.2 history presentation grouping separately; it currently groups names by lower-cased text, which can combine case-only variants.
+4. Keep original names and raw workout values intact. Do not silently rename historical records or infer aliases.
+5. For every meaningful code/test commit, verify both browser and backup Actions runs against the exact resulting SHA. Revalidate any later handover-only commit too.
+
+## Verified decision register
+
+### Confirmed implementation and safety decisions
+
+- IndexedDB is the V21.2 primary application database; full JSON backup is the primary backup format.
+- Gym and Hiking remain separate first-class modules. Hiking records are not Gym workouts.
+- V21.1 localStorage remains intact during migration; migration is restart-safe, idempotent and non-destructive.
+- Preserve original legacy JSON and exact supplied exercise names. Missing names remain missing and are warned; do not invent fallback names.
+- Invalid calendar dates remain undated with a warning; genuinely absent dates remain undated without a warning.
+- Blank resistance stays blank; only explicitly recorded resistance is carried forward.
+- Ambiguous multiple same-date completion snapshots do not prove which active workout they belong to; migrated session remains incomplete and all evidence keys are retained.
+- Do not infer 1RM, physiological strength gain, technique, effort, bodyweight load, exercise classification or completion from absent data.
+- The V21.2 browser bundles must remain byte-identical to their canonical `src/` sources; the browser workflow checks this parity.
+
+### Open questions — not approved decisions
+
+- Whether exercise identity should use exact names, a verified alias map, or a collision-aware matching policy.
+- Whether punctuation/spacing/case variants in existing records are intended aliases or distinct exercises.
+- Whether the legacy per-day exercise configuration key should be replaced or migrated collision-safely.
+- Whether the V21.2 journey should show case-only name variants separately or under an explicitly verified alias.
+- No actual user legacy dataset has been inspected; do not claim these risks have affected the user's records.
+
+## Live audit checklist
+
+- [x] Confirm live development branch and exact head before work.
+- [x] Confirm final handover commit browser and backup validations.
+- [x] Inspect V21.1 exercise normalisation, previous-week prefill and history matching.
+- [x] Inspect V21.2 journey grouping and canonical migration/test layout.
+- [ ] Add focused, reproducible collision regression coverage.
+- [ ] Decide identity/alias policy from source evidence and compatibility requirements.
+- [ ] Implement only the approved collision-safe change, with canonical/bundle parity.
+- [ ] Run focused tests, full browser validation and backup validation on the exact code commit.
+- [ ] Update this handover and validate the exact final handover commit.
+
+---
+
 # Project Comeback — ChatGPT Continuation & Development Manual
 
 **Purpose:** This is the handover guide for continuing Project Comeback in a new ChatGPT conversation. Attach or paste this file at the start of a new chat and say: “Continue Project Comeback using this handover manual. First inspect the live GitHub branch and verify the current state before making changes.”
