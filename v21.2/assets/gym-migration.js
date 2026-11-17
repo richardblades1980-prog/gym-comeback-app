@@ -21,6 +21,12 @@
     return Number.isFinite(number) ? number : null;
   }
 
+  function isValidCalendarDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(value + "T00:00:00.000Z");
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }
+
   function collectStatusSnapshots(snapshot, week, day, date) {
     const prefix = "gym-comeback-set-status-v1-" + week + "-" + day + "-" + (date || "undated") + "-";
     return Object.entries(snapshot).filter(([key]) => key.startsWith(prefix)).map(([key, raw]) => ({
@@ -30,7 +36,7 @@
   }
 
   function inferCompletion(exercises, snapshots) {
-    if (!exercises.length || !snapshots.length) return "incomplete";
+    if (!exercises.length || !snapshots.length || exercises.some(exercise => !String(exercise.name || "").trim())) return "incomplete";
     const allComplete = snapshots.some(snapshot => exercises.every(exercise => {
       const count = Math.max(1, Math.min(8, Number(exercise.setCount) || 3));
       return Array.from({ length: count }, (_, index) => index + 1)
@@ -68,14 +74,24 @@
         warnings.push({ key, reason: "Workout log has no exercises array; retained only in legacyRecords." });
         continue;
       }
-      const date = typeof log.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(log.date) ? log.date : null;
+      const date = isValidCalendarDate(log.date) ? log.date : null;
+      if (log.date !== undefined && log.date !== null && log.date !== "" && date === null) {
+        warnings.push({ key, reason: "Workout date is invalid; session retained as undated and original value preserved in legacyRawValue." });
+      }
       const id = "gym-session-w" + week + "-d" + day;
-      const exerciseData = log.exercises.map((exercise, index) => ({
-        source: exercise,
-        index,
-        name: typeof exercise.name === "string" ? exercise.name : "Exercise " + (index + 1),
-        setCount: Math.max(1, Math.min(8, Number(exercise.setCount) || (Array.isArray(exercise.sets) ? exercise.sets.length : 3)))
-      }));
+      const exerciseData = log.exercises.map((exercise, index) => {
+        const source = exercise && typeof exercise === "object" && !Array.isArray(exercise) ? exercise : {};
+        const name = typeof source.name === "string" ? source.name : "";
+        if (!name.trim()) {
+          warnings.push({ key, reason: "Exercise " + (index + 1) + " has no usable name; no fallback name was invented and the original workout remains preserved in legacyRawValue." });
+        }
+        return {
+          source,
+          index,
+          name,
+          setCount: Math.max(1, Math.min(8, Number(source.setCount) || (Array.isArray(source.sets) ? source.sets.length : 3)))
+        };
+      });
       const snapshots = collectStatusSnapshots(snapshot, week, day, date);
       const status = inferCompletion(exerciseData, snapshots);
       const durationRaw = log.sessionTime;
