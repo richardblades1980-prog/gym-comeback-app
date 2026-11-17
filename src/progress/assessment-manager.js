@@ -49,7 +49,7 @@
   async function addFollowUp(input) {
     const record = validateAssessment(input, "follow-up");
     if (record.id === BASELINE_ID) throw new Error("A follow-up cannot use the protected baseline ID.");
-    await db().put("assessments", record);
+    await db().add("assessments", record);
     return record;
   }
   async function listHistory() {
