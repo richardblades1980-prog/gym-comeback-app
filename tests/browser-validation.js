@@ -802,9 +802,14 @@ function server() {
       gym: document.querySelector("#gym-count").textContent,
       hikes: document.querySelector("#hiking-count").textContent,
       schedule: document.querySelector("#schedule-count").textContent,
+      storedGym: await ProjectComebackDB.count("sessions"),
+      storedHikes: await ProjectComebackDB.count("hikingRecords"),
+      storedSchedule: await ProjectComebackDB.count("schedules"),
       assessments: await ProjectComebackDB.count("assessments")
     }));
-    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" || afterColdStart.assessments !== assessmentCountAfterRapidSubmit) {
+    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" ||
+        afterColdStart.storedGym !== 2 || afterColdStart.storedHikes !== 1 || afterColdStart.storedSchedule !== 1 ||
+        afterColdStart.assessments !== assessmentCountAfterRapidSubmit) {
       throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
     }
     console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
