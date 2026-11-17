@@ -148,14 +148,17 @@
     requiredString(releaseId, "Catalogue release ID");
     const db = global.ProjectComebackDB;
     if (!db) throw new Error("Load database.js before the identity service.");
-    const [versions, sessions, events] = await Promise.all([
+    const [versions, slots, sessions, events] = await Promise.all([
       db.getAll("programmeVersions"),
+      db.getAll("programmeSlots"),
       db.getAll("sessions"),
       db.getAll("identityReviewEvents")
     ]);
     const references = [];
     versions.filter(item => item.status === "published" && item.catalogueReleaseId === releaseId)
       .forEach(item => references.push({ type: "programmeVersion", id: item.id }));
+    slots.filter(item => item.catalogueReleaseId === releaseId)
+      .forEach(item => references.push({ type: "programmeSlot", id: item.id }));
     sessions.filter(item => item.status !== "cancelled" && item.status !== "deleted" && item.catalogueReleaseId === releaseId)
       .forEach(item => references.push({ type: "session", id: item.id }));
     events.filter(item => item.catalogueReleaseId === releaseId)
