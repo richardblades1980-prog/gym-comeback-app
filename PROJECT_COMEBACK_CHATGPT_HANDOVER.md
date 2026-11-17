@@ -802,3 +802,15 @@ This was a source-grounded design/inventory update only. No production catalogue
 - No gym brand/model or pin-selected/plate-loaded configuration has been confirmed. No aliases, variations, canonical IDs or production catalogue records were approved or created.
 - All programme source labels remain preserved and unresolved pending explicit review. No legacy root, application, database, backup, history, production main, merge or deployment changes.
 - Curation document refinement commit: `3ea6d364759b15c420c6fa92cd228262f887c49d`. This handover update requires exact-SHA browser and backup validation.
+
+
+---
+
+# Gym machine loading-system clarification — 2026-11-18
+
+- User confirmed their gym has a mixture of pin-selected and plate-loaded machines, as is common in gyms.
+- Catalogue design must support both loading systems. Record pin-selected/weight-stack versus plate-loaded as equipment/configuration metadata when known; do not treat loading system as a distinct exercise identity or infer it from an exercise name.
+- Keep loading system separate from movement configuration: chest-press converging handle path and iso-lateral independent arms; leg-press 45-degree sled, horizontal seated or vertical orientation; shoulder-press converging handle path.
+- The gym-wide mixture does not establish which specific loading system or geometry applies to any particular machine. Chest Press Machine, Leg Press and Shoulder Press Machine remain broad candidates on HOLD. Seated Leg Extension ↔ Leg Extension Machine remains conditional on confirming the optional-library row means a seated machine.
+- Updated curation review: `docs/V21.2-EXERCISE-IDENTITY-CURATION-REVIEW.md`.
+- No aliases, variations, canonical IDs, production catalogue records or UI changes were approved or created. Protected legacy root, database, backup/history contracts and production `main` remain unchanged.
