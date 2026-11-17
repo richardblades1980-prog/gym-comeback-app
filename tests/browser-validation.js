@@ -161,6 +161,29 @@ function server() {
       throw new Error("Baseline protection or assessment comparison failed: " + JSON.stringify(assessmentCheck));
     }
     console.log("PASS original baseline protection, follow-up history and missing-value comparisons");
+    console.log("[browser] Assessment screens and Before & Now UI");
+    await app.locator('[data-view="assessments"]').click();
+    if (!(await app.locator("#baseline-status").textContent()).includes("Saved") ||
+        !(await app.locator("#baseline-save").isDisabled()) ||
+        !(await app.locator("#assessment-history").textContent()).includes("Original baseline")) {
+      throw new Error("Assessment UI did not show and protect the existing original baseline.");
+    }
+    await app.locator('#followup-form [name="date"]').fill("2026-11-17");
+    await app.locator('#followup-form [name="comfortableWalkMinutes"]').fill("21");
+    await app.locator('#followup-form [name="stepUpsReps"]').fill("14");
+    await app.locator('#followup-form button[type="submit"]').click();
+    await app.waitForFunction(() => document.querySelector("#assessment-history").textContent.includes("17 Nov"));
+    await app.locator("#compare-first").selectOption("original-baseline");
+    const followupOption = await app.locator("#compare-second option").evaluateAll(options => options.find(option => option.textContent.includes("17 Nov"))?.value);
+    if (!followupOption) throw new Error("New follow-up assessment was not offered in the comparison selector.");
+    await app.locator("#compare-second").selectOption(followupOption);
+    const comparisonText = await app.locator("#assessment-comparison").textContent();
+    if (!comparisonText.includes("+9 minutes") || !comparisonText.includes("+6 repetitions") ||
+        !comparisonText.includes("Not comparable")) {
+      throw new Error("Before & Now UI comparison did not show expected changes and missing-value handling: " + comparisonText);
+    }
+    console.log("PASS assessment UI: immutable baseline, follow-up entry, history and selectable comparisons");
+
     const contrastAudit = await app.evaluate(() => {
       const rgb = value => {
         const hex = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
@@ -473,7 +496,7 @@ function server() {
       assessmentCount: await ProjectComebackDB.count("assessments"),
       safetySnapshots: (await ProjectComebackDB.getAll("metadata")).filter(item => item.type === "pre-restore-safety-snapshot").length
     }));
-    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 || restoreVerification.assessmentCount !== 2 ||
+    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 || restoreVerification.assessmentCount !== 3 ||
         restoreVerification.safetySnapshots < 1) {
       throw new Error("Full backup restore UI did not preserve records or create a pre-restore snapshot: " + JSON.stringify(restoreVerification));
     }
@@ -515,7 +538,7 @@ function server() {
       schedule: document.querySelector("#schedule-count").textContent,
       assessments: await ProjectComebackDB.count("assessments")
     }));
-    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" || afterColdStart.assessments !== 2) {
+    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" || afterColdStart.assessments !== 3) {
       throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
     }
     console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
