@@ -27,6 +27,8 @@ jobs:
         run: node --test tests/exercise-identity-contract.test.js
       - name: Run catalogue delivery and offline design contract
         run: node --test tests/catalogue-delivery-contract.test.js
+      - name: Run guide artwork manifest integrity contract
+        run: node --test tests/guide-assets-contract.test.js
       - name: Run real IndexedDB identity persistence and backup compatibility tests
         run: node --test tests/identity-persistence.test.js
       - name: Install Chromium
