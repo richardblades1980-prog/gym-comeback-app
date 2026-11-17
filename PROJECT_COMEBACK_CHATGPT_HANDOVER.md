@@ -401,7 +401,7 @@ During development:
 - Further audit of V21.1 index.html (blob e3eb0093648cc6c5d706bb5b1008b58ec01a5576): the workout collect() stores each set's weight input as its entered string, defaulting to an empty string. Bodyweight/mobility weight fields are hidden by default but may be shown to record added resistance. There is no separate persisted exercise-type flag in each saved exercise object that would justify reconstructing a blank load.
 - Migration already preserves each set weight as a string (or empty string) and preserves the full raw set and workout values. Added a focused regression proving a blank optional resistance stays blank and an explicitly entered 2.5 stays 2.5, with raw values preserved. No bodyweight, zero-load or added-resistance inference is made.
 - The original V21.1 app uses exact exercise-name matching for completion-status keys and exact matching when applying a saved workout to the active exercise list. Some other legacy functions (cross-week prefill and historical exercise display) use a normalized name comparison. This is a separate legacy behavior and a potential collision risk for punctuation/spacing variants; the migration continues to preserve names verbatim and does not adopt normalized/fuzzy matching. No actual user legacy dataset was available, so no claim is made about the user's own name consistency or missing records.
-- Optional resistance regression commit: 3a37114bf115bcdb433b1895f1bde97498a50efa. Backup validation #44047763668 PASS on exact SHA. Browser validation #44047763627 was still running (bundle parity passed; Chromium installation in progress) when this entry was prepared. Do not mark this commit fully validated until that run completes.
+- Optional resistance regression commit: 3a37114bf115bcdb433b1895f1bde97498a50efa. Backup validation #44047763668 PASS and browser validation #44047763627 PASS on the exact SHA. Browser run completed successfully, including bundle parity and Chromium migration/offline tests.
 - Current audit principle: keep exact exercise names; keep absent dates undated and invalid dates warned/undated; retain raw source values; keep blank weights blank; use only explicitly saved resistance values. Do not infer exercise classification, body mass, added load, completion, or physiological improvement from missing fields.
 
 ### Current next actions after same-date/optional-load audit
@@ -409,3 +409,8 @@ During development:
 2. Update this manual with the final result and commit it on V21.2-development; then validate browser and backup workflows on the exact handover commit.
 3. Continue reviewing source-grounded historical Gym name matching. Specifically assess the legacy normalized-name prefill/history behavior for collisions without silently changing historical records or introducing fuzzy matching into migration.
 4. Keep all work on V21.2-development; production main remains untouched. No merge or deployment without explicit approval.
+
+### Validation update — optional resistance regression (2026-11-17)
+- Browser validation #44047763627 completed with conclusion success on exact code/test SHA 3a37114bf115bcdb433b1895f1bde97498a50efa: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44047763627
+- Backup validation #44047763668 completed with conclusion success on the same exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44047763668
+- The handover update is now being finalized; validate the resulting handover commit separately before describing the branch head as fully validated.
