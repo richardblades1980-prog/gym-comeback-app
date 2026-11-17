@@ -61,8 +61,24 @@
         <div class="panel"><div class="section-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Latest records</h2></div></div><div id="recent-records" class="record-list empty-state">No records yet. Add a hike or bring across your existing Gym history.</div></div>
       </section>
       <section id="view-gym" class="view" hidden>
-        <div class="section-heading"><div><p class="eyebrow">GYM COMEBACK</p><h2>Your gym history</h2><p class="muted">Existing workout records are kept separate from Hiking.</p></div></div>
-        <div class="panel"><div id="gym-records" class="record-list empty-state">No migrated Gym sessions found.</div></div>
+        <div class="section-heading"><div><p class="eyebrow">GYM COMEBACK</p><h2>Your gym training</h2><p class="muted">Start or resume a session from your five-day base programme. Your entries save as you go.</p></div></div>
+        <div class="panel gym-workout-launch">
+          <div class="form-grid">
+            <label>Programme day<select id="gym-workout-day">
+              <option value="1">Day 1 — Chest, Back &amp; Quads</option>
+              <option value="2">Day 2 — Shoulders, Arms &amp; Hamstrings</option>
+              <option value="3">Day 3 — Full Body</option>
+              <option value="4">Day 4 — Upper Body</option>
+              <option value="5">Day 5 — Lower Body &amp; Core</option>
+            </select></label>
+            <label>Workout date<input id="gym-workout-date" type="date" required></label>
+          </div>
+          <div class="form-actions gym-launch-actions"><button id="gym-workout-start" class="primary" type="button">Start / resume workout</button><span id="gym-workout-status" class="subtle" role="status" aria-live="polite">Choose a day to begin.</span></div>
+        </div>
+        <div id="gym-workout-active" class="gym-workout-active" hidden>
+          <div class="panel"><div class="section-heading"><div><p class="eyebrow">WORKOUT IN PROGRESS</p><h2 id="gym-workout-title">—</h2><p id="gym-workout-progress" class="muted"></p></div><button id="gym-workout-finish" class="primary" type="button" disabled>Finish workout</button></div><div id="gym-workout-exercises" class="gym-workout-exercises"></div></div>
+        </div>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">GYM HISTORY</p><h2>Saved sessions</h2></div></div><div id="gym-records" class="record-list empty-state">No Gym sessions recorded yet.</div></div>
       </section>
       <section id="view-hiking" class="view" hidden>
         <div class="section-heading"><div><p class="eyebrow">HIKING PREPARATION</p><h2>Record a hike</h2><p class="muted">Manual activity recording. GPS tracking is not part of this release.</p></div></div>
