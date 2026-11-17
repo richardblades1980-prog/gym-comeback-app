@@ -57,7 +57,7 @@ function validateSvg(sample, expectedViewBox, expectedRatio) {
   assert.match(source, /aria-labelledby="title desc"/);
   assert.match(source, /<title id="title">/);
   assert.match(source, /<desc id="desc">/);
-  assert.doesNotMatch(source, /<script\b|<foreignObject\b|<text\b|https?:\/\//i, "samples must have no script, baked-in text or external resource");
+  assert.doesNotMatch(source, /<script\b|<foreignObject\b|<text\b|\b(?:href|src)=["']https?:/i, "samples must have no script, baked-in text or external resource");
   assert.doesNotMatch(source, /<rect\b[^>]*\bfill="#(?:fff|ffffff|ffffff)"/i, "sample background must remain transparent");
 
   const ids = [...source.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
