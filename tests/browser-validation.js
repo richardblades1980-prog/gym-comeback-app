@@ -241,6 +241,7 @@ function server() {
     await firstExercise.locator('[data-gym-field="reps"]').first().dispatchEvent("change");
     await firstExercise.locator('[data-gym-action="start"]').first().click();
     await firstExercise.locator('[data-gym-action="complete"]').first().click();
+    await firstExercise.locator('[data-gym-action="undo"]').first().waitFor();
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="gym"]').click();
