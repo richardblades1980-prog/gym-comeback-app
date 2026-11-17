@@ -330,9 +330,3 @@ During development:
 3. Consider additional Gym progress measures only where source fields and units are explicit. Keep Hiking separate and do not infer personal bests, one-rep maximums, technique or physiological strength gains.
 4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
 5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
-
-2. Review the protected V21.1 source and actual legacy Gym data-entry labels to determine whether weight values have a documented, consistent unit and whether exercise names/recording modes support like-for-like comparisons. Do not modify V21.1 or `main`.
-3. Only after that source review, decide whether a defensible exercise-specific progression comparison can be added. Never infer personal bests or improvement from incomparable records.
-4. Keep Gym and Hiking separate, preserve missing-value behavior, and continue isolated browser tests with cleanup.
-5. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
-
