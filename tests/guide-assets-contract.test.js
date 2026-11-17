@@ -48,7 +48,7 @@ test("manifest identity, version and package inventory are stable", () => {
 test("every packaged asset is an exact, checksummed V21.2-local copy of its source", () => {
   let total = 0;
   for (const asset of manifest.assets) {
-    assert.match(asset.assetId, /^[a-z0-9][a-z0-9.-]+$/);
+    assert.match(asset.assetId, /^[a-z0-9][a-z0-9._-]+$/);
     assert.ok(asset.path.startsWith("./assets/"), "asset path must be relative to the V21.2 app");
     assert.ok(!asset.path.includes(".."), "asset path must not traverse directories");
     assert.ok(!/^https?:/i.test(asset.path), "asset path must not be external");
