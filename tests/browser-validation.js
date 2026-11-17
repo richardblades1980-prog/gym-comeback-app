@@ -136,13 +136,46 @@ function server() {
       throw new Error("Skip link did not move focus to the main landmark.");
     }
     console.log("PASS skip link is first keyboard target and moves focus to main content");
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    const followUpGateBeforeBaseline = await app.evaluate(() => ({
+      status: document.querySelector("#followup-status").textContent,
+      controlsDisabled: [...document.querySelectorAll("#followup-form input,#followup-form textarea,#followup-form button")].every(control => control.disabled)
+    }));
+    if (!followUpGateBeforeBaseline.controlsDisabled ||
+        !followUpGateBeforeBaseline.status.includes("Save your original baseline")) {
+      throw new Error("Follow-up form was not clearly locked before the original baseline: " + JSON.stringify(followUpGateBeforeBaseline));
+    }
+    console.log("PASS follow-up form is unavailable until the original baseline is saved");
+
     console.log("[browser] Baseline and assessment history");
     const assessmentCheck = await app.evaluate(async () => {
       const service = ProjectComebackAssessments;
+      let followUpWithoutBaselineRejected = false;
+      try {
+        await service.addFollowUp({ date: "2026-11-14", measures: { stepUpsReps: 6 } });
+      } catch (error) {
+        followUpWithoutBaselineRejected = /Save the original baseline/.test(error.message);
+      }
       const baseline = await service.createBaseline({
         date: "2026-11-15",
         measures: { comfortableWalkMinutes: 12, stepUpsReps: 8, singleLegBalanceSeconds: 5 }
       });
+      let earlierDateRejected = false;
+      try {
+        await service.addFollowUp({ date: "2026-11-14", measures: { stepUpsReps: 7 } });
+      } catch (error) {
+        earlierDateRejected = /cannot be earlier than the original baseline date/.test(error.message);
+      }
+      let sameDayAccepted = false;
+      try {
+        const sameDay = await service.addFollowUp({
+          id: "assessment-same-day-allowed",
+          date: "2026-11-15",
+          measures: { stepUpsReps: 9 }
+        });
+        sameDayAccepted = sameDay.date === baseline.date;
+        await ProjectComebackDB.remove("assessments", sameDay.id);
+      } catch (_) {}
       const followUp = await service.addFollowUp({
         date: "2026-11-16",
         measures: { comfortableWalkMinutes: 18, stepUpsReps: 11 }
@@ -165,6 +198,9 @@ function server() {
         missingBalanceDifference: comparison.measures.singleLegBalanceSeconds.difference,
         overwriteRejected,
         followUpDuplicateRejected,
+        followUpWithoutBaselineRejected,
+        earlierDateRejected,
+        sameDayAccepted,
         latestDate: latest && latest.second.date,
         storedBaseline: await service.getBaseline()
       };
@@ -175,11 +211,14 @@ function server() {
         assessmentCheck.missingBalanceDifference !== null ||
         !assessmentCheck.overwriteRejected ||
         !assessmentCheck.followUpDuplicateRejected ||
+        !assessmentCheck.followUpWithoutBaselineRejected ||
+        !assessmentCheck.earlierDateRejected ||
+        !assessmentCheck.sameDayAccepted ||
         assessmentCheck.latestDate !== "2026-11-16" ||
         assessmentCheck.storedBaseline.measures.stepUpsReps !== 8) {
-      throw new Error("Baseline protection or assessment comparison failed: " + JSON.stringify(assessmentCheck));
+      throw new Error("Baseline sequencing, date rule or assessment comparison failed: " + JSON.stringify(assessmentCheck));
     }
-    console.log("PASS original baseline protection, follow-up history and missing-value comparisons");
+    console.log("PASS original baseline protection, baseline-first sequencing, same-day follow-ups and missing-value comparisons");
     console.log("[browser] Assessment screens and Before & Now UI");
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
@@ -188,6 +227,11 @@ function server() {
         !(await app.locator("#baseline-save").isDisabled()) ||
         !(await app.locator("#assessment-history").textContent()).includes("Original baseline")) {
       throw new Error("Assessment UI did not show and protect the existing original baseline.");
+    }
+    if (!(await app.locator('#followup-form button[type="submit"]').isEnabled()) ||
+        await app.locator('#followup-form [name="date"]').getAttribute("min") !== "2026-11-15" ||
+        !(await app.locator("#followup-status").textContent()).includes("on or after")) {
+      throw new Error("Saving the baseline did not unlock follow-ups with the correct minimum date.");
     }
     await app.locator('#followup-form [name="date"]').fill("2026-11-17");
     await app.locator('#followup-form [name="comfortableWalkMinutes"]').fill("21");
