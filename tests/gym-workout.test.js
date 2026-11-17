@@ -159,10 +159,12 @@ test("timed-set stopwatch persists across reload, resumes from its timestamp, su
   assert.ok(stopped.stopwatchElapsedMs >= 2000);
   assert.equal(stopped.duration, String(Math.round(stopped.stopwatchElapsedMs / 1000)));
 
+  await workout.updateSetValues(loaded, exercise.id, 1, { targetDuration: "30" });
   await workout.updateSetValues(loaded, exercise.id, 1, { duration: "9" });
   assert.equal(stopped.stopwatchStartedAt, undefined);
   assert.equal(stopped.stopwatchElapsedMs, 9000);
   assert.equal(stopped.duration, "9");
+  assert.equal(stopped.targetDuration, "30", "manual actual-time correction must not overwrite the target");
 
   await workout.startStopwatch(loaded, exercise.id, 1);
   const reset = await workout.resetStopwatch(loaded, exercise.id, 1);
