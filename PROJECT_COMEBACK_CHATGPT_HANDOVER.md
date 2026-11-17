@@ -267,28 +267,20 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Latest validated code commit: `f57be83e33eadba7cb3da6b3b38ac244a5dc6a62`.
-- Latest branch head including the handover-manual update: `77305c5c8d21eb184208ebe301b9034e3ce217f0`.
-- Browser validation for that exact branch head: **success**, run [#44013768316](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013768316).
-- Backup validation for that exact branch head: **success**, run [#44013768250](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013768250).
-- Browser validation for the exact latest SHA: **success**, run [#44013474634](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013474634).
-- Backup validation for the exact latest SHA: **success**, run [#44013474727](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013474727).
-- Assessment follow-up sequence remains approved and implemented: baseline required first; follow-up date may be the baseline date or later, never earlier. Service and UI both enforce it.
-- Comparison panel empty states are now stage-specific:
-  - No assessments: explains to save the original baseline, then add a follow-up.
-  - One baseline: explains that the starting point is saved and a follow-up is needed to compare.
-  - Two or more records: selectors allow comparison of any two saved assessments; identical selections prompt for two different assessments.
-- First Visual Progress Journey increment is implemented on the Overview as **Starting point to now**:
-  - Chronological milestones for the original baseline and each follow-up.
-  - Shows the three approved measures using saved values only.
-  - Follow-up entries show numerical change versus the original baseline only where both values exist.
-  - Missing metrics remain “Not recorded” and their change is “Not comparable to baseline”; no zero or progress value is invented.
-  - One-baseline state invites the user to add a follow-up; no-baseline state explains how to start.
-- The journey is rendered from the canonical assessment history and refreshed after baseline/follow-up changes and backup restore.
-- Browser regressions verify the empty journey state, single-baseline milestone, two-assessment timeline, baseline deltas, missing-value treatment, and the existing assessment, migration, backup, offline and cold-start flows.
-- Service-worker cache is now v9 to refresh the changed overview HTML, CSS and app script in installed offline shells.
-- Previous guardrails remain: immutable baseline, no duplicate submissions, duplicate follow-up IDs rejected, and restore refreshes assessment history and follow-up gating.
-- The next Visual Progress Journey increment should use actual saved Gym and Hiking records. Keep module data separated, never infer missing duration/intensity, and avoid invented personal-best or training values.
+- Latest implementation commit: `13d8787995dd8fa10bd4913895ed70fdc2369445`.
+- Browser validation for that exact commit: **success**, run [#44034519659](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44034519659).
+- Backup validation for that exact commit: **success**, run [#44034519611](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44034519611).
+- Hiking milestones are now included in the Overview progress journey, sourced only from completed saved `hikingRecords`:
+  - Completed hike count.
+  - Combined recorded distance and the number of hikes contributing distance.
+  - Combined recorded elevation gain and the number of hikes contributing elevation.
+  - Longest recorded walk, with hike title and date.
+  - Longest recorded duration, with hike title and date.
+  - Missing measurements are excluded from calculations and explicitly identified by contributor counts or “Not recorded”; no estimates are made.
+- Browser regression seeds a completed hike with distance, elevation and duration, plus a second completed hike with those measurements missing. It verifies totals and contributor counts.
+- The Hiking milestone section is separate from the assessment timeline and from Gym records.
+- Service-worker shell cache is now v10 for the updated overview HTML, CSS and app script.
+- Assessment baseline/follow-up protections and comparison timeline remain implemented.
 - No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
 
 ### Recent change log
@@ -325,12 +317,13 @@ During development:
 | 2026-11-17 | `8793f8a` | Added browser checks for the baseline and follow-up journey milestones | Included in final validation |
 | 2026-11-17 | `f57be83` | Bumped offline shell cache to v9 for the assessment journey timeline | Browser #44013474634 and backup #44013474727 passed |
 | 2026-11-17 | `77305c5` | Updated handover with the assessment comparison empty-state and first Visual Progress Journey milestone timeline | Browser #44013768316 and backup #44013768250 passed |
+| 2026-11-17 | `13d8787` | Added Hiking progress milestones to Overview; updated browser regression and offline shell cache to v10 | Browser #44034519659 and backup #44034519611 passed |
 
 ### Next actions (resume here)
 
-1. Begin the next Visual Progress Journey slice using existing completed Gym and Hiking records. Keep the modules separate and make missing fields explicit; do not infer durations, intensity, personal bests or improvements.
-2. Inspect the actual Gym set/exercise record fields and Hiking record fields before choosing the first summary or milestone calculation. Prefer a small slice with direct source-to-display traceability.
-3. Add browser coverage using isolated test records, confirm test data is removed or safely isolated, and validate the full app, offline shell and backup.
+1. Continue the Visual Progress Journey with a carefully scoped Gym milestone using actual saved exercise and set records. Inspect field semantics and units before calculating any strength, repetition or volume figures.
+2. Keep Gym and Hiking separate; avoid claiming personal bests, improvement or training volume where the underlying records do not support it.
+3. Add isolated browser coverage for the selected Gym metric, including missing/ambiguous values, and run browser, backup, bundle-parity and offline checks.
 4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
 5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
 
