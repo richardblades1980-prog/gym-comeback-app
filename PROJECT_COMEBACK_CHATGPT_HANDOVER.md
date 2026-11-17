@@ -3,7 +3,7 @@
 - **Active branch:** V21.2-development
 - **Implementation decision:** G2 PASS explicitly given by the user on 17 November 2026.
 - **Implementation base:** ad4e72d054a009d6500c7cd01f384440068fc4d9 (the exact live branch head inspected before implementation).
-- **Latest implementation/documentation commit before this handover update:** 6615515ed5caaed466423c02afc3c85bea0cd723.
+- **Latest implementation/gate-correction commit before this handover update:** 9d97bf765b669a165fe8ad81cb1fd6ee800d0cb0 (includes the canonical identity browser-bundle sync and clarifies the historical HOLD versus approved PASS).
 - **Delivery service:** src/data/catalogue-delivery.js; identical app bundle: v21.2/assets/catalogue-delivery.js.
 - **App wiring:** v21.2/index.html loads the service; v21.2/sw.js shell cache is v16 and precaches the service. Catalogue asset requests bypass generic shell caching; verified release bytes use a dedicated CacheStorage namespace.
 - **Atomic activation:** existing V6 IndexedDB stores only: catalogueReleases, exerciseDefinitions, exerciseVariations and metadata. Manifest, system definitions/variations and active pointer commit in one transaction. No database version/index change.
@@ -15,9 +15,9 @@
 - **Data boundary:** backup format and historical display snapshots unchanged. No automatic history rebinding or legacy migration.
 - **Production dataset limitation:** no approved production exercise catalogue dataset was present in the inspected repository. No production asset/manifest was invented or committed. The app remains unseeded until a real catalogue is curated, reviewed and packaged.
 - **Out of scope:** lookup UI, remote/CDN distribution, signing/authenticity architecture, schema/index changes, backup-format changes, release GC, merge and deployment.
-- **Validation limitation:** GitHub combined-status lookups for the implementation commits returned no status checks, and the available GitHub actions connector does not expose workflow dispatch or listing for push-triggered runs. Do not claim browser/backup workflows passed. Both workflows still need to be run against the final exact handover SHA; if unavailable, report that limitation rather than infer success.
+- **Validation on exact pre-handover SHA `9d97bf765b669a165fe8ad81cb1fd6ee800d0cb0`:** browser #44071011906 **PASS** (bundle parity, identity/catalogue contract tests, IndexedDB tests, Chromium migration and real offline catalogue lookup); backup #44071011865 **PASS**. Earlier browser #44069996933 failed at bundle parity because `src/data/exercise-identity.js` included direct `programmeSlots` references while `v21.2/assets/exercise-identity.js` was stale. The app bundle was synced; gate wording was clarified. Both workflows must still run on this new handover-documentation commit's exact SHA before final closeout.
 - **Protected baseline:** main must remain 0d0527a6463c3cfd0fbb54d69123316c9a384b42; V21.1 unchanged. No merge/deployment.
-- **Next:** validate both V21.2 browser and backup workflows on the exact final SHA, then curate/approve the real catalogue release asset before exposing lookup to users.
+- **Next:** validate both V21.2 browser and backup workflows on the exact final handover SHA, then curate/approve the real catalogue release asset before exposing lookup to users.
 
 ---
 # Project Comeback — catalogue delivery audit checkpoint (2026-11-17)
