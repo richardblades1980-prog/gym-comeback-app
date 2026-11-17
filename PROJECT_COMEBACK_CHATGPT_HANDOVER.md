@@ -2,6 +2,9 @@
 
 - **Active branch:** `V21.2-development`
 - **Latest validated design/test commit:** `3db53e95fe2641ec76dc5843a56797383a66913b`
+- **Final handover checkpoint commit:** `73176b18be322c4fc085ae5dfe94bc181254524d`
+- **Final handover browser #44066737582:** **PASS**, exact SHA matches: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44066737582
+- **Final handover backup #44066737544:** **PASS**, exact SHA matches: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44066737544
 - **Browser validation #44066426367:** **PASS**, exact SHA matches: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44066426367
 - **Backup validation #44066426518:** **PASS**, exact SHA matches: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44066426518
 - **Audited base:** `117cb5d98a0e5c16b6fb000d4ba80a4c28e4435e`
