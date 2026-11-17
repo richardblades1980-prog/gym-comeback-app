@@ -81,11 +81,34 @@ async function refresh(){
  $("recent-records").innerHTML=recent.length?recent.map(x=>item(x.title||x.name||x.id,x.date||"Date not recorded",x._kind)).join(""):'<div class="empty-state">No records yet. Add a hike or bring across your existing Gym history.</div>';
  $("gym-records").innerHTML=gym.length?gym.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(x=>item(x.title||("Week "+(x.week||"")+" · Day "+(x.day||"")),x.date||"Date not recorded",(x.status||"incomplete")+" · "+(x.durationMinutes??"—")+" min")).join(""):'<div class="empty-state">No migrated Gym sessions found. Use Data &amp; backup to inspect and safely migrate V21.1 data.</div>';
  $("hiking-records").innerHTML=hikes.length?hikes.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>item(x.title,x.date,(x.distanceKm!==undefined?x.distanceKm+" km":"Distance not recorded"))).join(""):'<div class="empty-state">No hikes recorded yet.</div>';
+ renderHikingJourney(hikes);
  $("schedule-records").innerHTML=schedule.length?schedule.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>item(x.title,x.date,(x.moduleId==="gym"?"Gym":"Hiking")+" · "+x.status)).join(""):'<div class="empty-state">Nothing scheduled yet.</div>';
  await refreshTrainingOverview();
  await refreshScheduleOutlook();
 }
 
+
+function renderHikingJourney(records){
+ const target=$("hiking-journey");
+ const hikes=records.filter(record=>record.status==="completed");
+ const measured=key=>hikes.filter(record=>record[key]!==""&&record[key]!==null&&record[key]!==undefined&&Number.isFinite(Number(record[key])));
+ const distance=measured("distanceKm"),elevation=measured("elevationGainM"),duration=measured("durationMinutes");
+ const totalDistance=distance.reduce((sum,record)=>sum+Number(record.distanceKm),0);
+ const totalElevation=elevation.reduce((sum,record)=>sum+Number(record.elevationGainM),0);
+ const longest=distance.reduce((best,record)=>!best||Number(record.distanceKm)>Number(best.distanceKm)?record:best,null);
+ const longestDuration=duration.reduce((best,record)=>!best||Number(record.durationMinutes)>Number(best.durationMinutes)?record:best,null);
+ const dateLabel=record=>record.date?new Date(record.date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"Date not recorded";
+ const metric=(label,value,detail)=>'<div class="hiking-journey-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>';
+ if(!hikes.length){target.innerHTML='<p class="empty-state">Your completed hikes will appear here as you record them. Only saved hiking details are included.</p>';return;}
+ const stats=[
+  metric("Completed hikes",String(hikes.length),"Saved completed hiking records"),
+  metric("Recorded distance",distance.length?totalDistance.toFixed(2)+" km":"Not recorded",distance.length+" of "+hikes.length+" hikes include distance"),
+  metric("Elevation gained",elevation.length?totalElevation.toFixed(0)+" m":"Not recorded",elevation.length+" of "+hikes.length+" hikes include elevation gain"),
+  metric("Longest walk",longest?Number(longest.distanceKm).toFixed(2)+" km":"Not recorded",longest?String(longest.title||"Untitled hike")+" · "+dateLabel(longest):"No recorded distance"),
+  metric("Longest recorded duration",longestDuration?Number(longestDuration.durationMinutes)+" min":"Not recorded",longestDuration?String(longestDuration.title||"Untitled hike")+" · "+dateLabel(longestDuration):"No recorded duration")
+ ].join("");
+ target.innerHTML='<div class="hiking-journey-grid">'+stats+'</div><p class="journey-data-note">Distance, elevation and duration totals use only hikes where that measurement was saved. No missing values are estimated.</p>';
+}
 function assessmentMeasures(form){
  const measures={};
  for(const key of ["comfortableWalkMinutes","stepUpsReps","singleLegBalanceSeconds"]){
