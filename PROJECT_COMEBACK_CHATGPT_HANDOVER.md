@@ -728,8 +728,8 @@ Protected legacy root `index.html` was inspected read-only (blob `e3eb0093648cc6
 - An optional exercise library of 42 entries, categorised as 18 bodyweight, 5 free-weight, 3 band, 4 cardio, 2 mobility and 10 machine entries.
 - 25 explicit exercise instruction / muscle-description entries in `machineDescriptions`; other library entries use a generic fallback guide and need review before being presented as fully documented.
 - Equipment mapping, gear matching, exercise substitutions, user-added extras, day-scoped swaps and configurable exercise/set behaviour.
-- Exercise guide uses equipment illustration and muscle tiles; 17 muscle-group JPGs are present in root `assets/`.
-- Root asset inventory contains 15 equipment SVGs, 10 machine-reference JPGs and 17 muscle-group JPGs. The three legacy celebration GIFs (`celebration-day1.gif`, `celebration-day2.gif`, `female-celebration.gif`) are present at repository root.
+- Exercise guide uses equipment illustration and muscle tiles; 16 muscle-group JPGs are present in root `assets/`.
+- Root asset inventory contains 15 equipment SVGs, 10 machine-reference JPGs and 16 muscle-group JPGs. The three legacy celebration GIFs (`celebration-day1.gif`, `celebration-day2.gif`, `female-celebration.gif`) are present at repository root.
 - The legacy guide uses a 450 ms press-and-hold gesture, with keyboard activation support. The guide includes equipment, instructions, highlighted muscle panels and safety text.
 - SAVE SESSION saves before opening the six-second celebration; male artwork varies by day, female artwork uses its own GIF, and the celebration can be skipped/dismissed.
 - Set completion drives the smart rest timer and sequence lock; rest controls include +15 seconds, skip and dismiss. Exercise completion is derived from set states and applies the subtle green card/label treatment.
@@ -747,7 +747,7 @@ The current V21.2 app shell is not yet the complete legacy workout UI. Its `v21.
 3. Model exercise definition, variation, equipment requirement, primary/secondary muscle groups, instructions, cautions, illustration references and aliases as separate, validated fields/references. Do not infer missing instructions or muscle targets.
 4. Separate strength exercises from cardio and mobility entries; retain their original category and programme role.
 5. Keep the five-day programme slots and gear/adaptation/swap behaviour as programme data, not as exercise identity. Never let an adaptive substitution silently rewrite the base programme or historical session.
-6. Review the 17 muscle illustration keys against the catalogue's allowed muscle vocabulary; missing or ambiguous mapping is a curation issue, not a reason to invent artwork.
+6. Review the 16 muscle illustration files against the 14 distinct muscle keys used by the optional library; all 14 current keys resolve. Missing or ambiguous mapping is a curation issue, not a reason to invent artwork.
 7. Mark incomplete guides explicitly. A generic fallback must not be represented as an exercise-specific instruction.
 8. The catalogue release remains immutable/checksummed and must pass the existing verified delivery path. Production data must be reviewed and approved before a release is packaged.
 
@@ -768,7 +768,7 @@ This was a source-grounded design/inventory update only. No production catalogue
 
 - Added `docs/V21.2-GYM-EXERCISE-SOURCE-REGISTER.md` from a fresh read-only inspection of the protected legacy root `index.html` at blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
 - Register inventories 42 optional-library rows, 32 slots across all five base programme days, 17 distinct base-programme labels, 25 explicit guide-description entries overall; 15 cover optional-library rows and 27 of 42 optional-library rows use generic fallback. Ten other descriptions cover programme-only labels.
-- All 42 machine-reference JPG paths and all 14 muscle keys used by the optional library resolve to existing files. Root asset inventory contains 15 equipment SVGs, 10 machine-reference JPGs and 17 muscle JPGs; three legacy celebration GIFs are also present.
+- All 42 machine-reference JPG paths and all 14 muscle keys used by the optional library resolve to existing files. Root asset inventory contains 15 equipment SVGs, 10 machine-reference JPGs and 16 muscle JPGs; three legacy celebration GIFs are also present.
 - Important source correction: the optional library's sixth array field is gear-match text used by `exerciseReady()`, not exercise aliases. Base-programme equipment matching is separately implemented in `baseExerciseReady()`. Do not turn gear terms into canonical identity aliases.
 - Ten base-programme labels do not directly match an optional-library row. The register lists them as review candidates and preserves source labels; no merges or IDs are approved.
 - 25 entries have explicit guide copy; 27 optional-library entries currently fall back to generic guide wording. Existing guide copy still needs content/safety review before production.
@@ -827,3 +827,18 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Machine loading system (pin-selected/weight stack versus plate-loaded) is separate from movement geometry and exercise identity. Leg press orientation and press handle path/independent-arm mechanics remain separate attributes.
 - No canonical IDs, aliases, variations, production catalogue records, workout UI, service-worker asset list, database/backup/history contract, protected root source, production `main`, merge or deployment changes.
 - The curation review, source register and guide draft remain documentation/review artifacts. Exact-SHA browser and backup validation is required for the final handover commit before treating this checkpoint as validated.
+
+
+---
+
+# V21.2 exercise-guide interface and offline asset design — 2026-11-18
+
+- Added `docs/V21.2-GUIDE-INTERFACE-OFFLINE-ASSET-DESIGN.md`. This is a design specification only; no app code, artwork, catalogue, DB, backup or service-worker behaviour changed.
+- Important source boundary: current V21.2 has Gym history, not the legacy five-day workout UI or exercise-guide modal. The guide is designed as a future Gym-workout component, not a feature to bolt onto the history screen.
+- Preserve legacy 450 ms hold-to-open and Enter/Space keyboard activation. Improve V21.2 with a labelled accessible dialog, visible Close button, Escape handling, focus trap/restoration, touch-scroll cancellation and protection for nested set/swap/collapse controls.
+- Keep guide artwork in a V21.2-local package, separate from both shell and verified catalogue release caches. Proposed versioned manifest records stable asset IDs, relative paths, MIME, exact bytes, SHA-256 and source provenance. Service-worker installation must verify every required asset before cache publication; failed staging must not replace the active cache.
+- Corrected the artwork inventory against the live GitHub directory: root `assets/` has 15 equipment SVGs, 10 machine-reference JPGs and **16** muscle JPGs (not 17). The optional library uses 14 distinct muscle keys and all 14 resolve. `machine-benches.jpg` and `machine-dumbbells.jpg` are the same Git blob/bytes. Three celebration GIFs total 2,118,831 bytes.
+- The legacy equipment mapping directly references 13 of the 15 equipment SVGs; `equipment-bench.svg` and `equipment-squat-rack.svg` are not referenced in protected root `index.html` and need separate usage justification before inclusion.
+- Proposed acceptance tests cover SHA-256/byte length/MIME, asset paths/provenance, offline cold start, all guide images, touch/keyboard/modal accessibility, no interference with workout buttons, celebration selection and cache isolation.
+- The 27 new guide drafts and 25 existing descriptions remain human-review drafts. No generic fallback may be presented as specific guidance. No IDs, aliases, variations, production guide records, UI, asset copies, service-worker changes, DB/backup/history changes, merge or deployment.
+- Prior guide draft checkpoint `19acfef3b942342551fee34628e703c91f097f55` has browser and backup validation PASS. The new documentation commits will each trigger the same exact-SHA workflows; this handover is not validated until both pass on its final commit.
