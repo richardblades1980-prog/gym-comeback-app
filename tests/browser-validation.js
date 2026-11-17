@@ -234,7 +234,52 @@ function server() {
     if (workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
+    // Exercise the timed-repetition UI against the real IndexedDB-backed workout record.
+    await app.evaluate(async () => {
+      const exerciseId = document.querySelector('[data-gym-field="weight"]').dataset.exerciseId;
+      const exercise = await ProjectComebackDB.get("exerciseRecords", exerciseId);
+      exercise.recordingMode = "timed-reps";
+      await ProjectComebackDB.put("exerciseRecords", exercise);
+    });
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    await app.locator('[data-view="gym"]').click();
+    await app.locator("#gym-workout-day").selectOption("1");
+    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const firstExercise = app.locator("#gym-workout-exercises .gym-exercise-card").first();
+    await firstExercise.locator('[data-gym-action="timer-start"]').first().click();
+    await app.waitForTimeout(1200);
+    const runningBeforeReload = await app.evaluate(() => ({
+      startedAt: Number(document.querySelector("[data-stopwatch-display]").dataset.stopwatchStartedAt),
+      display: document.querySelector("[data-stopwatch-display]").textContent
+    }));
+    if (!Number.isFinite(runningBeforeReload.startedAt) || runningBeforeReload.startedAt <= 0) {
+      throw new Error("Timed-set stopwatch did not persist its absolute start timestamp.");
+    }
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    await app.locator('[data-view="gym"]').click();
+    await app.locator("#gym-workout-day").selectOption("1");
+    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
+    const recovered = await app.evaluate(() => ({
+      startedAt: Number(document.querySelector("[data-stopwatch-display]").dataset.stopwatchStartedAt),
+      display: document.querySelector("[data-stopwatch-display]").textContent
+    }));
+    if (recovered.startedAt !== runningBeforeReload.startedAt || recovered.display === "00:00") {
+      throw new Error("Running stopwatch did not recover after app reload: " + JSON.stringify({ runningBeforeReload, recovered }));
+    }
+    await app.locator('[data-gym-action="timer-stop"]').first().click();
+    const stoppedDuration = await app.locator('[data-gym-field="duration"]').first().inputValue();
+    if (Number(stoppedDuration) < 1) throw new Error("Stopping the stopwatch did not save elapsed seconds.");
+    await app.locator('[data-gym-field="duration"]').first().fill("7");
+    await app.locator('[data-gym-field="duration"]').first().dispatchEvent("change");
+    await app.waitForFunction(() => document.querySelector('[data-gym-field="duration"]').value === "7");
+    await app.locator('[data-gym-action="timer-reset"]').first().click();
+    if (await app.locator('[data-gym-field="duration"]').first().inputValue() !== "") {
+      throw new Error("Reset did not clear the stopwatch result.");
+    }
     await firstExercise.locator('[data-gym-field="weight"]').first().fill("15");
     await firstExercise.locator('[data-gym-field="weight"]').first().dispatchEvent("change");
     await firstExercise.locator('[data-gym-field="reps"]').first().fill("12");
