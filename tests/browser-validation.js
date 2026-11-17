@@ -133,6 +133,10 @@ function server() {
       try {
         await service.createBaseline({ date: "2026-11-17", measures: { stepUpsReps: 99 } });
       } catch (error) { overwriteRejected = /cannot be overwritten/.test(error.message); }
+      let followUpDuplicateRejected = false;
+      try {
+        await service.addFollowUp({ id: followUp.id, date: "2026-11-17", measures: { stepUpsReps: 99 } });
+      } catch (error) { followUpDuplicateRejected = true; }
       const latest = await service.compareBaselineToLatest();
       return {
         baselineId: baseline.id,
@@ -141,6 +145,7 @@ function server() {
         walkDifference: comparison.measures.comfortableWalkMinutes.difference,
         missingBalanceDifference: comparison.measures.singleLegBalanceSeconds.difference,
         overwriteRejected,
+        followUpDuplicateRejected,
         latestDate: latest && latest.second.date,
         storedBaseline: await service.getBaseline()
       };
@@ -150,6 +155,7 @@ function server() {
         assessmentCheck.walkDifference !== 6 ||
         assessmentCheck.missingBalanceDifference !== null ||
         !assessmentCheck.overwriteRejected ||
+        !assessmentCheck.followUpDuplicateRejected ||
         assessmentCheck.latestDate !== "2026-11-16" ||
         assessmentCheck.storedBaseline.measures.stepUpsReps !== 8) {
       throw new Error("Baseline protection or assessment comparison failed: " + JSON.stringify(assessmentCheck));
@@ -464,9 +470,10 @@ function server() {
       profileCount: await ProjectComebackDB.count("profile"),
       hikeCount: await ProjectComebackDB.count("hikingRecords"),
       scheduleCount: await ProjectComebackDB.count("schedules"),
+      assessmentCount: await ProjectComebackDB.count("assessments"),
       safetySnapshots: (await ProjectComebackDB.getAll("metadata")).filter(item => item.type === "pre-restore-safety-snapshot").length
     }));
-    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 ||
+    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 || restoreVerification.assessmentCount !== 2 ||
         restoreVerification.safetySnapshots < 1) {
       throw new Error("Full backup restore UI did not preserve records or create a pre-restore snapshot: " + JSON.stringify(restoreVerification));
     }
