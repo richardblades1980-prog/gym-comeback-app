@@ -243,6 +243,8 @@ function server() {
     }
     console.log("PASS text contrast (4.5:1) and control/focus contrast (3:1): " + JSON.stringify(contrastAudit));
     if (await app.locator(".skip-link").count() !== 1 || await app.locator("#main-content").getAttribute("tabindex") !== "-1") throw new Error("Keyboard skip navigation is missing.");
+    // Start from the document rather than the last-used form control so this verifies the first Tab target.
+    await app.evaluate(() => document.activeElement?.blur());
     await app.keyboard.press("Tab");
     if (await app.evaluate(() => document.activeElement?.classList.contains("skip-link")) !== true) throw new Error("Skip link is not the first keyboard focus target.");
     await app.keyboard.press("Enter");
