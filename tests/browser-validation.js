@@ -508,7 +508,9 @@ function server() {
     if (!gymHistoryCheck.includes("Recorded exercise history") || !gymHistoryCheck.includes("Test squat") ||
         !gymHistoryCheck.includes("15") || !gymHistoryCheck.includes("6 reps") ||
         !gymHistoryCheck.includes("20") || !gymHistoryCheck.includes("10 reps") ||
-        !gymHistoryCheck.includes("2 completed sessions recorded")) {
+        !gymHistoryCheck.includes("2 completed sessions recorded") ||
+        !gymHistoryCheck.includes("first 15 kg") || !gymHistoryCheck.includes("latest 20 kg") ||
+        !gymHistoryCheck.includes("change +5 kg") || !gymHistoryCheck.includes("not a one-rep maximum")) {
       throw new Error("Gym exercise history did not show dated saved set entries: " + gymHistoryCheck);
     }
     const hikingJourneyCheck = await app.locator("#hiking-journey").textContent();
