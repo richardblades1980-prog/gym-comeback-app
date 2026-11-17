@@ -47,7 +47,10 @@
     return record;
   }
   async function addFollowUp(input) {
+    const baseline = await getBaseline();
+    if (!baseline) throw new Error("Save the original baseline before adding follow-up assessments.");
     const record = validateAssessment(input, "follow-up");
+    if (record.date < baseline.date) throw new Error("Follow-up assessment date cannot be earlier than the original baseline date.");
     if (record.id === BASELINE_ID) throw new Error("A follow-up cannot use the protected baseline ID.");
     await db().add("assessments", record);
     return record;
