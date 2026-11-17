@@ -119,6 +119,9 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await app.goto(base + "/v21.2/");
+    if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
+      throw new Error("Initial navigation state is not exposed accessibly.");
+    }
     console.log("[browser] Keyboard skip navigation");
     if (await app.locator(".skip-link").count() !== 1 ||
         await app.locator("#main-content").getAttribute("tabindex") !== "-1") {
@@ -266,10 +269,18 @@ function server() {
     const narrowLayout = await app.evaluate(() => ({ viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth }));
     if (narrowLayout.page > narrowLayout.viewport) throw new Error("V21.2 layout has horizontal page overflow at 375px: " + JSON.stringify(narrowLayout));
     await app.setViewportSize({ width: 1280, height: 900 });
-    if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") throw new Error("Initial navigation state is not exposed accessibly.");
+    if (await app.locator('[data-view="assessments"]').getAttribute("aria-current") !== "page") {
+      throw new Error("Active assessment navigation state is not exposed accessibly.");
+    }
     await app.locator('[data-view="hiking"]').click();
-    if (await app.locator('[data-view="hiking"]').getAttribute("aria-current") !== "page" || await app.locator('[data-view="overview"]').getAttribute("aria-current") !== null) throw new Error("Active navigation state did not update accessibly.");
+    if (await app.locator('[data-view="hiking"]').getAttribute("aria-current") !== "page" ||
+        await app.locator('[data-view="assessments"]').getAttribute("aria-current") !== null) {
+      throw new Error("Active navigation state did not update accessibly.");
+    }
     await app.locator('[data-view="overview"]').click();
+    if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
+      throw new Error("Navigation did not restore the Overview active state.");
+    }
     const manifest = await app.evaluate(async () => { const link = document.querySelector('link[rel="manifest"]'); const response = await fetch(link.href); return response.json(); });
     if (!manifest.icons || !manifest.icons.some(icon => icon.src === "./icon.svg" && icon.purpose.includes("maskable"))) throw new Error("PWA manifest icon metadata is missing.");
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
