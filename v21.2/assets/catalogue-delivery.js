@@ -6,7 +6,6 @@
   const ACTIVE_POINTER_ID = "active-exercise-catalogue-release";
   const CACHE_PREFIX = "project-comeback-v21-2a-catalogue-";
   const MANIFEST_SCHEMA_VERSION = 1;
-  const encoder = new TextEncoder();
 
   function fail(message) { throw new Error("Catalogue: " + message); }
   function requiredString(value, field) {
@@ -104,14 +103,15 @@
   async function getVerifiedBytes(manifest, suppliedBytes) {
     if (!global.caches || typeof global.caches.open !== "function") fail("CacheStorage is unavailable; verified offline delivery cannot be enabled.");
     const cache = await global.caches.open(cacheName(manifest));
-    const cached = await cache.match(manifest.assetUrl);
+    const assetRequestUrl = new URL(manifest.assetUrl, global.location.href).href;
+    const cached = await cache.match(assetRequestUrl);
     if (cached) {
       try {
         const cachedBytes = new Uint8Array(await cached.arrayBuffer());
         await parseAndValidate(manifest, cachedBytes);
         if (suppliedBytes === undefined) return cachedBytes;
       } catch (error) {
-        await cache.delete(manifest.assetUrl);
+        await cache.delete(assetRequestUrl);
       }
     }
     let bytes;
@@ -128,8 +128,8 @@
       bytes = new Uint8Array(await response.arrayBuffer());
     }
     await parseAndValidate(manifest, bytes);
-    await cache.put(manifest.assetUrl, new Response(bytes, { status: 200, headers: { "content-type": "application/json" } }));
-    const reread = await cache.match(manifest.assetUrl);
+    await cache.put(assetRequestUrl, new Response(bytes, { status: 200, headers: { "content-type": "application/json" } }));
+    const reread = await cache.match(assetRequestUrl);
     if (!reread) fail("verified asset could not be read back from CacheStorage.");
     const rereadBytes = new Uint8Array(await reread.arrayBuffer());
     await parseAndValidate(manifest, rereadBytes);
@@ -158,7 +158,7 @@
       const latestVersion = allReleases.filter(item => item.catalogueId === manifest.catalogueId)
         .reduce((latest, item) => Math.max(latest, Number(item.version) || 0), 0);
       const activeRecord = await requestResult(metadataStore.get(ACTIVE_POINTER_ID));
-      if (!existingRelease && manifest.version <= latestVersion) {
+      if ((!existingRelease && manifest.version <= latestVersion) || (existingRelease && manifest.version < latestVersion)) {
         tx.abort();
         await done.catch(() => {});
         fail("release versions must increase monotonically.");
@@ -173,7 +173,8 @@
       const incomingDefinitionIds = new Set(document.definitions.map(item => item.id));
       const incomingVariationIds = new Set(document.variations.map(item => item.id));
       for (const incoming of document.definitions) {
-        const collision = existingDefinitions.find(item => item.id === incoming.id && item.kind !== "system");
+        const collision = existingDefinitions.find(item => item.id === incoming.id &&
+          (item.kind !== "system" || item.sourceCatalogueId !== manifest.catalogueId));
         if (collision) {
           tx.abort(); await done.catch(() => {});
           fail("catalogue definition ID collides with a profile-owned definition.");
