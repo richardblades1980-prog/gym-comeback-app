@@ -9,6 +9,7 @@ const identitySource = read("src/data/exercise-identity.js");
 const deliverySource = read("src/data/catalogue-delivery.js");
 const bundledDeliverySource = read("v21.2/assets/catalogue-delivery.js");
 const databaseSource = read("src/data/database.js");
+const htmlSource = read("v21.2/index.html");
 const swSource = read("v21.2/sw.js");
 const backupSource = read("src/data/backup.js");
 const browserSource = read("tests/browser-validation.js");
@@ -85,7 +86,7 @@ test("source characterization: production service worker precaches shell, not ca
   assert.match(swSource,/project-comeback-v21-2a-shell-/);
   const shell=swSource.match(/const SHELL=\[(.*?)\];/s)?.[1]||"";
   assert.match(shell,/assets\/exercise-identity\.js/);
-  assert.doesNotMatch(shell,/catalogue/i);
+  assert.doesNotMatch(shell,/catalogues\/exercise/i);
   assert.match(swSource,/key\.startsWith\(CACHE_PREFIX\)&&key!==CACHE_NAME/);
   assert.match(swSource,/caches\.open\(CACHE_NAME\)\.then\(cache=>cache\.put\(request,copy\)\)/);
   assert.match(swSource,/catalogues\/exercise/);
@@ -102,6 +103,8 @@ test("production delivery service verifies immutable assets and exposes offline 
   assert.match(deliverySource,/active-exercise-catalogue-release/);
   assert.match(deliverySource,/local catalogue materialisation is incomplete or stale/);
   assert.equal(bundledDeliverySource, deliverySource, "the app shell must load the same reviewed delivery implementation");
+  assert.match(htmlSource,/assets\/catalogue-delivery\.js/);
+  assert.match(swSource,/assets\/catalogue-delivery\.js/);
   assert.match(deliverySource,/new URL\(manifest\.assetUrl, global\.location\.href\)/);
   assert.match(deliverySource,/metadataStore\.put\(/);
   assert.match(databaseSource,/const DB_VERSION = 6;/, "catalogue delivery must not require a schema change");
