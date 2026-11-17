@@ -864,3 +864,5 @@ This was a source-grounded design/inventory update only. No production catalogue
 - The test verifies the 41-entry manifest, package byte total, local path containment, MIME, exact SHA-256, Git blob SHA-1 provenance, byte-for-byte equality with source assets, 13 SVG mappings, all 14 optional-library muscle keys, the deduplicated machine-reference JPG alias and all three celebration GIFs.
 - This is build-time integrity coverage only. The manifest is not yet loaded by the app, and the new guide/celebration assets are not yet cached by the service worker. Runtime offline cache work and browser guide interaction tests remain separate steps.
 - Test/workflow commit: `89a2c4f221f83bae897d3295a6344df2da6bf4ce`; subsequent documentation commit follows. Recheck branch head and both exact-SHA workflows before calling the current checkpoint validated.
+
+- CI first caught a test-only regex that rejected underscores in source-derived muscle asset IDs such as `muscle.inner_thighs`; widened the allowed ID characters in `7d3c6b2ca56318f05f3ee7b559380f11504809bb`. The manifest and binary assets were unchanged. Corrected final-SHA browser validation is pending.
