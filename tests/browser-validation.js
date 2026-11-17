@@ -117,6 +117,20 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await app.goto(base + "/v21.2/");
+    console.log("[browser] Keyboard skip navigation");
+    if (await app.locator(".skip-link").count() !== 1 ||
+        await app.locator("#main-content").getAttribute("tabindex") !== "-1") {
+      throw new Error("Keyboard skip navigation is missing.");
+    }
+    await app.keyboard.press("Tab");
+    if (await app.evaluate(() => document.activeElement?.classList.contains("skip-link")) !== true) {
+      throw new Error("Skip link is not the first keyboard focus target.");
+    }
+    await app.keyboard.press("Enter");
+    if (await app.evaluate(() => document.activeElement?.id) !== "main-content") {
+      throw new Error("Skip link did not move focus to the main landmark.");
+    }
+    console.log("PASS skip link is first keyboard target and moves focus to main content");
     console.log("[browser] Baseline and assessment history");
     const assessmentCheck = await app.evaluate(async () => {
       const service = ProjectComebackAssessments;
@@ -242,13 +256,6 @@ function server() {
       if (contrastAudit[name] < 3) throw new Error(name + " contrast is below 3:1: " + contrastAudit[name].toFixed(2));
     }
     console.log("PASS text contrast (4.5:1) and control/focus contrast (3:1): " + JSON.stringify(contrastAudit));
-    if (await app.locator(".skip-link").count() !== 1 || await app.locator("#main-content").getAttribute("tabindex") !== "-1") throw new Error("Keyboard skip navigation is missing.");
-    // Start from the document rather than the last-used form control so this verifies the first Tab target.
-    await app.evaluate(() => document.activeElement?.blur());
-    await app.keyboard.press("Tab");
-    if (await app.evaluate(() => document.activeElement?.classList.contains("skip-link")) !== true) throw new Error("Skip link is not the first keyboard focus target.");
-    await app.keyboard.press("Enter");
-    if (await app.evaluate(() => document.activeElement?.id) !== "main-content") throw new Error("Skip link did not move focus to the main landmark.");
     const labelledControls = await app.evaluate(() => [...document.querySelectorAll("#view-hiking input, #view-hiking textarea, #view-schedule input, #view-schedule select")]
       .filter(control => control.type !== "hidden" && !control.labels?.length && !control.getAttribute("aria-label") && !control.getAttribute("aria-labelledby"))
       .map(control => control.outerHTML));
