@@ -175,6 +175,8 @@ test("restore on a device without old asset keeps snapshot readable and does not
   assert.equal(historical.rawValue,"{name:'  RDL (DB)  '}");
 });
 test("retention includes published versions, direct slot pins, non-terminal sessions and review events", () => {
+  assert.match(identitySource,/db\.getAll\("programmeSlots"\)/);
+  assert.match(identitySource,/type: "programmeSlot"/);
   const ids=retained({
     versions:[{status:"published",catalogueReleaseId:"v"},{status:"draft",catalogueReleaseId:"draft"}],
     slots:[{catalogueReleaseId:"slot"}],
