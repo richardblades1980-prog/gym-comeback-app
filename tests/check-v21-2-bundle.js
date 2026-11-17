@@ -10,7 +10,8 @@ const pairs = [
   ["src/modules/module-registry.js","v21.2/assets/module-registry.js"],
   ["src/data/backup.js","v21.2/assets/backup.js"],
   ["src/programme-manager/programme-manager.js","v21.2/assets/programme-manager.js"],
-  ["src/shared/workload-summary.js","v21.2/assets/workload-summary.js"]
+  ["src/shared/workload-summary.js","v21.2/assets/workload-summary.js"],
+  ["src/progress/assessment-manager.js","v21.2/assets/assessment-manager.js"]
 ];
 let failed = false;
 for (const [source,bundle] of pairs) {
