@@ -110,6 +110,8 @@
     const cached = await cache.match(assetRequestUrl);
     if (cached) {
       try {
+        const cachedType = (cached.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+        if (cachedType !== "application/json") fail("cached asset has an unexpected content type.");
         const cachedBytes = new Uint8Array(await cached.arrayBuffer());
         await parseAndValidate(manifest, cachedBytes);
         if (suppliedBytes === undefined) return cachedBytes;
@@ -134,6 +136,8 @@
     await cache.put(assetRequestUrl, new Response(bytes, { status: 200, headers: { "content-type": "application/json" } }));
     const reread = await cache.match(assetRequestUrl);
     if (!reread) fail("verified asset could not be read back from CacheStorage.");
+    const rereadType = (reread.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (rereadType !== "application/json") fail("cached asset read-back has an unexpected content type.");
     const rereadBytes = new Uint8Array(await reread.arrayBuffer());
     await parseAndValidate(manifest, rereadBytes);
     return rereadBytes;
