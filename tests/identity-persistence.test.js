@@ -181,7 +181,7 @@ test("catalogue release manifests are immutable and references retain used relea
   await assert.rejects(() => db.remove("catalogueReleases", release.id), /append-only/);
 
   await db.put("programmeVersions", { id: "programme-v1", programmeId: "programme-a", status: "published", catalogueReleaseId: release.id });
-  await db.put("programmeVersions", { id: "programme-draft", status: "draft", catalogueReleaseId: "draft-release" });
+  await db.put("programmeVersions", { id: "programme-draft", programmeId: "programme-a", status: "draft", catalogueReleaseId: "draft-release" });
   await db.put("sessions", { id: "session-active", status: "active", catalogueReleaseId: release.id });
   await db.put("sessions", { id: "session-cancelled", status: "cancelled", catalogueReleaseId: "cancelled-release" });
   await identity.recordIdentityReviewEvent({
