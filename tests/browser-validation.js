@@ -243,6 +243,22 @@ function server() {
       throw error;
     }
 
+    const workloadDate = await app.evaluate(() => {
+      const now = new Date();
+      return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+    });
+    await app.evaluate(async date => {
+      await ProjectComebackModules.putOwnedRecord("gym", "sessions", {
+        id: "browser-workload-gym", moduleId: "gym", date,
+        title: "Browser workload Gym record", status: "completed", durationMinutes: 17
+      });
+      await ProjectComebackModules.putOwnedRecord("hiking", "hikingRecords", {
+        id: "browser-workload-hike", moduleId: "hiking", date,
+        title: "Browser workload Hiking record", status: "completed"
+      });
+    }, workloadDate);
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="overview"]').click();
     await app.waitForFunction(() => document.querySelector("#upcoming-overview").textContent.includes("Browser test gym session"));
     const overviewCheck = await app.evaluate(() => ({
@@ -252,6 +268,12 @@ function server() {
     if (!overviewCheck.completed.includes("Gym") || !overviewCheck.completed.includes("Hiking") ||
         !overviewCheck.completed.includes("1 records")) {
       throw new Error("Training overview did not show separate Gym and Hiking completed summaries: " + JSON.stringify(overviewCheck));
+    }
+    const workloadCards = await app.locator("#completed-overview .workload-weeks").count();
+    if (workloadCards !== 2 || !overviewCheck.completed.includes("Week of") ||
+        !overviewCheck.completed.includes("17 min recorded") ||
+        !overviewCheck.completed.includes("without duration")) {
+      throw new Error("Weekly workload view did not show separate recorded Gym duration and missing Hiking duration: " + JSON.stringify({ workloadCards, completed: overviewCheck.completed }));
     }
     await app.locator('[data-view="schedule"]').click();
     await app.waitForFunction(() => document.querySelector("#schedule-range-overview").textContent.includes("Browser test gym session"));
@@ -263,8 +285,15 @@ function server() {
         !planningOutlook.entries.includes("Browser test gym session")) {
       throw new Error("30-day planning outlook did not show the scheduled Gym activity and separate module summary: " + JSON.stringify(planningOutlook));
     }
+    await app.evaluate(async () => {
+      await ProjectComebackDB.remove("sessions", "browser-workload-gym");
+      await ProjectComebackDB.remove("hikingRecords", "browser-workload-hike");
+    });
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="overview"]').click();
     console.log("PASS dashboard shows upcoming schedule and separate Gym/Hiking completed summaries");
+    console.log("PASS weekly workload rows show recorded duration and missing-duration counts without combining modules");
     console.log("PASS 30-day planning outlook shows scheduled activities with separate Gym/Hiking totals");
 
     console.log("[browser] Module pause, preservation and re-enable");
