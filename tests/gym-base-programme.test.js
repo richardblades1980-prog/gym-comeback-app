@@ -11,6 +11,8 @@ const sandbox = { window: {} };
 vm.runInNewContext(source, sandbox);
 const programme = sandbox.window.ProjectComebackGymBaseProgramme;
 
+const listDays = () => JSON.parse(JSON.stringify(programme.listDays()));
+
 const expected = [
   ["Chest Press Machine","Lat Pulldown","Seated Cable Row","Leg Press","Seated Leg Extension","Dumbbell Lateral Raise","Abdominal Crunch"],
   ["Incline Chest Press","Shoulder Press Machine","Seated Hamstring Curl","Seated Leg Extension","Cable Triceps Pushdown","Dumbbell Biceps Curl","Prone or Lying Leg Curl"],
@@ -24,7 +26,7 @@ test("source-preserved five-day programme has the documented 32 slots", () => {
   assert.deepEqual(JSON.parse(JSON.stringify(programme.validate())), {
     valid: true, dayCount: 5, slotCount: 32, slotCounts: [7,7,6,6,6]
   });
-  const days = programme.listDays();
+  const days = listDays();
   assert.equal(days.length, 5);
   days.forEach((day, index) => {
     assert.equal(day.dayNumber, index + 1);
@@ -33,7 +35,7 @@ test("source-preserved five-day programme has the documented 32 slots", () => {
 });
 
 test("source slot IDs are stable, unique and preserve repeated exercise slots", () => {
-  const days = programme.listDays();
+  const days = listDays();
   const slots = days.flatMap(day => day.slots);
   const ids = slots.map(item => item.slotId);
   assert.equal(slots.length, 32);
@@ -46,7 +48,7 @@ test("source snapshot preserves provenance and does not assign canonical identit
   assert.equal(programme.source.snapshotId, "gym-base-programme-source-v1");
   assert.equal(programme.source.sourceGitBlobSha, "e3eb0093648cc6c5d706bb5b1008b58ec01a5576");
   assert.equal(programme.source.status, "source-snapshot-not-published-programme");
-  for (const day of programme.listDays()) {
+  for (const day of listDays()) {
     for (const item of day.slots) {
       assert.equal(item.identityLinkStatus, "unreviewed");
       assert.equal(Object.hasOwn(item, "exerciseDefinitionId"), false);
@@ -58,7 +60,7 @@ test("source snapshot preserves provenance and does not assign canonical identit
 });
 
 test("Plank retains its legacy timed-hold default and other base slots use reps", () => {
-  for (const day of programme.listDays()) {
+  for (const day of listDays()) {
     for (const item of day.slots) {
       if (item.sourceExerciseLabel === "Plank") {
         assert.equal(item.defaultProgressionFocus, "duration");
