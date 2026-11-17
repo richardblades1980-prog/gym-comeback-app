@@ -1,3 +1,20 @@
+# Project Comeback — catalogue delivery audit checkpoint (2026-11-17)
+
+- **Active branch:** `V21.2-development`
+- **Audited base SHA:** `117cb5d98a0e5c16b6fb000d4ba80a4c28e4435e` (confirmed live before inspection)
+- **Audit:** design-first source-grounded catalogue delivery/offline lookup review.
+- **Design document:** `docs/V21.2-CATALOGUE-DELIVERY-OFFLINE-AUDIT.md`
+- **G2 gate:** `docs/V21.2-G2-CATALOGUE-DELIVERY-GATE.md` — **HOLD pending explicit user decision**.
+- **Regression suite:** `tests/catalogue-delivery-contract.test.js`; included in browser and backup workflows. These are source-characterization/design-contract tests, not production catalogue-loader tests.
+- **Finding:** release registration stores manifest metadata/checksum string but does not verify asset bytes or load a catalogue. The real service worker caches the app shell/identity script only; generic same-origin GETs share the shell cache and old shell caches are deleted on activation. Browser validation proves identity-service offline cold start, not catalogue lookup. V2 backup carries release metadata and display snapshots, not system asset bytes.
+- **Retention gap:** `getCatalogueReleaseReferences()` omits `programmeSlots`, although V2 backup validation accepts slot-level release references.
+- **Recommendation:** immutable versioned JSON + exact-byte SHA-256; separate release CacheStorage namespace; verify/stage before a single IndexedDB materialisation/active-pointer transaction; preserve prior release on failure; use snapshots for historical display and never substitute latest for a missing pinned release.
+- **Implementation boundary:** no catalogue asset, loader, lookup UI, service-worker behaviour, IndexedDB schema or backup-format implementation; no release GC. V21.1/`main` untouched; no merge/deployment.
+- **Validation:** this commit's exact-SHA browser and backup workflows must pass before closeout.
+- **Next:** review the G2 proposal and decide PASS / HOLD / REVISE / REJECT.
+
+---
+
 # Project Comeback — latest verified checkpoint (2026-11-17)
 
 - **Active branch:** `V21.2-development`
