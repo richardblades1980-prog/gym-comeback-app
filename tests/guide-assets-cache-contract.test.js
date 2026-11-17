@@ -11,7 +11,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "v21.2/assets/guides
 test("guide cache is separately versioned and isolated from shell and catalogue namespaces", () => {
   assert.match(sw, /project-comeback-v21-2a-guides-v1/);
   assert.match(sw, /project-comeback-v21-2a-shell-/);
-  assert.doesNotMatch(sw, /project-comeback-v21-2a-catalogue-/);\n  assert.match(sw, /Catalogue release assets are cached only by the verified release loader/);
+  assert.doesNotMatch(sw, /project-comeback-v21-2a-catalogue-/);
+  assert.match(sw, /Catalogue release assets are cached only by the verified release loader/);
   assert.match(sw, /key\.startsWith\(GUIDE_CACHE_PREFIX\)&&key!==GUIDE_CACHE_NAME/);
   assert.match(sw, /assets\/guides\//);
   assert.match(sw, /assets\/celebrations\//);

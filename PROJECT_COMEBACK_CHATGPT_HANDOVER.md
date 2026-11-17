@@ -881,3 +881,5 @@ This was a source-grounded design/inventory update only. No production catalogue
 
 
 - First cache-integration browser CI run #44170579614 caught a test assertion that incorrectly expected the service worker itself to declare the catalogue cache prefix. The architecture intentionally leaves catalogue cache ownership in the verified catalogue loader; the service worker only bypasses generic caching for catalogue assets. Four of five new cache-contract checks passed. Corrected the test to assert that the guide service worker does not manage the catalogue namespace. This is a test-only correction; service-worker/cache implementation unchanged. Re-run both workflows on the corrected exact SHA.
+
+- The first correction commit itself exposed a literal newline-escape typo in the edited test source; no application code was affected. This follow-up fixes the test file syntax. The browser workflow is rerun against the resulting exact commit.
