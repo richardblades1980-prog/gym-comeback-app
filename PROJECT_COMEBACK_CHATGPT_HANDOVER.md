@@ -773,5 +773,5 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Ten base-programme labels do not directly match an optional-library row. The register lists them as review candidates and preserves source labels; no merges or IDs are approved.
 - 25 entries have explicit guide copy; 27 optional-library entries currently fall back to generic guide wording. Existing guide copy still needs content/safety review before production.
 - The source register is documentary only. No production catalogue payload, canonical IDs, app/UI, service-worker, schema, backup or legacy root changes were made.
-- Next: review identity/variation candidates and complete the 17 guide gaps, then design the V21.2-local artwork package and offline tests. Keep the exercise guide, press-and-hold, set/rest controls, completion treatment and save/celebration buttons in the acceptance suite.
+- Next: review identity/variation candidates and complete the 27 guide gaps, then design the V21.2-local artwork package and offline tests. Keep the exercise guide, press-and-hold, set/rest controls, completion treatment and save/celebration buttons in the acceptance suite.
 - Commit adding source register: `3bc43868c21b2f30c286579a0d869a16dc67fa8b`. This handover update is a separate documentation commit and requires exact-SHA browser and backup validation.
