@@ -89,3 +89,58 @@ test("normalisation is deterministic across repeated runs", () => {
   const second = migration.normaliseSnapshot(raw);
   assert.deepEqual(JSON.parse(JSON.stringify(first)), JSON.parse(JSON.stringify(second)));
 });
+
+
+test("rejects impossible calendar dates and retains the original workout value", () => {
+  const raw = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "complete", "Plank::1": "complete" });
+  const log = JSON.parse(raw["gym-comeback-w2-d3"]);
+  log.date = "2026-02-30";
+  raw["gym-comeback-w2-d3"] = JSON.stringify(log);
+  const result = migration.normaliseSnapshot(raw);
+  assert.equal(result.sessions[0].date, null);
+  assert.equal(result.sessions[0].status, "incomplete");
+  assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
+  assert.ok(result.warnings.some(item => item.key === "gym-comeback-w2-d3" && item.reason.includes("date is invalid")));
+});
+
+test("accepts valid leap-day dates and leaves genuinely absent dates undated without warning", () => {
+  const leap = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "complete", "Plank::1": "complete" });
+  const leapLog = JSON.parse(leap["gym-comeback-w2-d3"]);
+  leapLog.date = "2024-02-29";
+  leap["gym-comeback-w2-d3"] = JSON.stringify(leapLog);
+  const leapResult = migration.normaliseSnapshot(leap);
+  assert.equal(leapResult.sessions[0].date, "2024-02-29");
+  assert.equal(leapResult.sessions[0].status, "completed");
+  assert.equal(leapResult.warnings.length, 0);
+  const undated = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "complete", "Plank::1": "complete" });
+  const undatedLog = JSON.parse(undated["gym-comeback-w2-d3"]);
+  delete undatedLog.date;
+  undated["gym-comeback-w2-d3"] = JSON.stringify(undatedLog);
+  const undatedResult = migration.normaliseSnapshot(undated);
+  assert.equal(undatedResult.sessions[0].date, null);
+  assert.equal(undatedResult.warnings.length, 0);
+});
+
+test("does not invent missing exercise names and preserves exact supplied names", () => {
+  const raw = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "complete", "Plank::1": "complete" });
+  const log = JSON.parse(raw["gym-comeback-w2-d3"]);
+  log.exercises[0].name = "  Goblet  squat (DB)  ";
+  delete log.exercises[1].name;
+  raw["gym-comeback-w2-d3"] = JSON.stringify(log);
+  const result = migration.normaliseSnapshot(raw);
+  assert.equal(result.exerciseRecords[0].name, "  Goblet  squat (DB)  ");
+  assert.equal(result.exerciseRecords[1].name, "");
+  assert.equal(result.sessions[0].status, "incomplete");
+  assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
+  assert.ok(result.warnings.some(item => item.reason.includes("no usable name")));
+});
+
+test("does not invent a name for a malformed exercise entry", () => {
+  const raw = fixture({});
+  const log = JSON.parse(raw["gym-comeback-w2-d3"]);
+  log.exercises[0] = null;
+  raw["gym-comeback-w2-d3"] = JSON.stringify(log);
+  const result = migration.normaliseSnapshot(raw);
+  assert.equal(result.exerciseRecords[0].name, "");
+  assert.ok(result.warnings.some(item => item.reason.includes("no usable name")));
+});
