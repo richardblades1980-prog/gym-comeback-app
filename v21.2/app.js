@@ -104,8 +104,11 @@ function renderGymJourney(sessions,exercises,sets){
  const sessionById=new Map(completed.map(record=>[record.id,record]));
  const groups=new Map();
  exerciseRows.forEach(exercise=>{
-  const name=String(exercise.name||"Unnamed exercise").trim()||"Unnamed exercise";
-  const key=name.toLocaleLowerCase();
+  const rawName=String(exercise.name||"Unnamed exercise");
+  const name=rawName.trim()||"Unnamed exercise";
+  // Exercise names are historical identifiers here: do not merge case,
+  // punctuation or spacing variants without an explicit alias decision.
+  const key=rawName;
   if(!groups.has(key))groups.set(key,{name,entries:[]});
   const session=sessionById.get(exercise.sessionId);
   const exerciseSets=setRows.filter(set=>set.exerciseRecordId===exercise.id).sort((a,b)=>Number(a.setNumber)-Number(b.setNumber));
