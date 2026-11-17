@@ -522,7 +522,7 @@ function server() {
       completed: document.querySelector("#completed-overview").textContent
     }));
     if (!overviewCheck.completed.includes("Gym") || !overviewCheck.completed.includes("Hiking") ||
-        !overviewCheck.completed.includes("1 records")) {
+        !overviewCheck.completed.includes("2 records in the last 30 days")) {
       throw new Error("Training overview did not show separate Gym and Hiking completed summaries: " + JSON.stringify(overviewCheck));
     }
     const workloadCards = await app.locator("#completed-overview .workload-weeks").count();
