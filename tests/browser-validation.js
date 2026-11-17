@@ -106,7 +106,8 @@ function server() {
     appContext.setDefaultTimeout(STEP_TIMEOUT_MS);
     appContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
     const app = await appContext.newPage();
-    app.on("pageerror", error => console.error("V21.2 APP PAGE ERROR:", error.message));
+    const appPageErrors = [];
+    app.on("pageerror", error => { appPageErrors.push(error.message); console.error("V21.2 APP PAGE ERROR:", error.message); });
     app.on("console", message => { if (message.type() === "error") console.error("V21.2 CONSOLE:", message.text()); });
     await app.addInitScript(() => {
       localStorage.setItem("gym-comeback-profile", JSON.stringify({ goal: "strength", age: 45 }));
@@ -286,7 +287,9 @@ function server() {
         postFollowUpCheck.latestDate !== "2026-11-17") {
       throw new Error("Follow-up history, duplicate ID or comparison service checks failed: " + JSON.stringify(postFollowUpCheck));
     }
-    console.log("PASS assessment UI: immutable baseline, follow-up entry, history, selectable comparisons and duplicate ID protection");
+    await app.waitForTimeout(50);
+    if (appPageErrors.length) throw new Error("Expected duplicate-ID rejection produced an unhandled application page error: " + appPageErrors.join(" | "));
+    console.log("PASS assessment UI: immutable baseline, follow-up entry, history, selectable comparisons and duplicate ID protection without unhandled page errors");
 
     const assessmentCountBeforeRapidSubmit = await app.evaluate(async () => (await ProjectComebackAssessments.listHistory()).length);
     await app.locator('#followup-form [name="date"]').fill("2026-11-17");
