@@ -267,13 +267,14 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Current validated code branch head: `e0241d2a09308c9ed27073d7dd654d90a448d886`.
-- Browser validation for that exact SHA: **success**, run [#44011654605](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44011654605).
-- Backup validation for that exact SHA: **success**, run [#44011654603](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44011654603).
+- Latest validated code commit: `fb74a5421f94b0fa3940e392fa1a9960ad9c0224`.
+- Browser validation for latest code commit `fb74a54`: **success**, run [#44012152284](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44012152284).
+- Backup validation for latest code commit `fb74a54`: **success**, run [#44012152325](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44012152325).
 - The user's approved follow-up rule is implemented: save the original baseline first; follow-ups may be dated on the same day or later, never earlier.
 - Canonical service `src/progress/assessment-manager.js` enforces baseline existence and date ordering. Browser bundle `v21.2/assets/assessment-manager.js` is synchronized and passed parity validation.
 - `v21.2/index.html` explains that follow-up assessments are unavailable before baseline creation and starts its controls disabled.
 - `v21.2/app.js` enables follow-up fields only when the immutable baseline exists, applies the baseline date as the form's minimum date, and adjusts the next default date when needed.
+- After a backup restore, the app refreshes assessment history and the baseline gate so controls cannot remain stale when a restored backup has a different assessment set.
 - Browser regressions verify: follow-up blocked before baseline; service rejects bypass attempts before baseline; earlier dates rejected; same-day follow-ups accepted; follow-up form unlocked after baseline; minimum date correctly displayed; immutable baseline; missing-value comparison; and duplicate-submit prevention.
 - The same browser run also passed migration/reload, offline fixture, skip-link keyboard access, assessment UI, contrast, navigation state, mobile width, PWA metadata, safety snapshot/manual migration, full backup/restore, offline app reload, and cold-start IndexedDB persistence.
 - Prior duplicate-submit guard remains in place for baseline and follow-up forms. Rapid repeated follow-up submissions create exactly one record.
@@ -304,6 +305,7 @@ During development:
 | 2026-11-17 | `adb0ef2` | Added follow-up lock explanation and disabled initial form controls in HTML | Intermediate checks correctly detected stale browser service bundle |
 | 2026-11-17 | `429154a` | Added browser tests for no-baseline rejection, earlier-date rejection, same-day allowance and UI unlock/date minimum | Intermediate parity run failed because browser bundle had not yet been synchronized |
 | 2026-11-17 | `e0241d2` | Synchronized browser assessment service with canonical baseline sequencing rules | Browser #44011654605 passed; backup #44011654603 passed |
+| 2026-11-17 | `fb74a54` | Refresh assessment history and baseline gate after restoring backup data | Browser #44012152284 passed; backup #44012152325 passed |
 
 ### Next actions (resume here)
 
