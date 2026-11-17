@@ -5,6 +5,7 @@ const root = path.resolve(__dirname, "..");
 const pairs = [
   ["src/data/database.js","v21.2/assets/database.js"],
   ["src/data/exercise-identity.js","v21.2/assets/exercise-identity.js"],
+  ["src/data/gym-base-programme.js","v21.2/assets/gym-base-programme.js"],
   ["src/data/gym-migration.js","v21.2/assets/gym-migration.js"],
   ["src/data/shared-migration.js","v21.2/assets/shared-migration.js"],
   ["src/data/migration.js","v21.2/assets/migration.js"],
