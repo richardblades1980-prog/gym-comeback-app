@@ -108,6 +108,10 @@ test("accepts valid leap-day dates and leaves genuinely absent dates undated wit
   const leapLog = JSON.parse(leap["gym-comeback-w2-d3"]);
   leapLog.date = "2024-02-29";
   leap["gym-comeback-w2-d3"] = JSON.stringify(leapLog);
+  const oldEvidenceKey = "gym-comeback-set-status-v1-2-3-2026-11-12-session-a";
+  const leapEvidenceKey = "gym-comeback-set-status-v1-2-3-2024-02-29-session-a";
+  leap[leapEvidenceKey] = leap[oldEvidenceKey];
+  delete leap[oldEvidenceKey];
   const leapResult = migration.normaliseSnapshot(leap);
   assert.equal(leapResult.sessions[0].date, "2024-02-29");
   assert.equal(leapResult.sessions[0].status, "completed");
