@@ -65,7 +65,7 @@ async function refreshScheduleOutlook(){
 
 async function refresh(){
  const db=ProjectComebackDB;
- const [gym,hikes,schedule,modules]=await Promise.all([db.getAllByIndex("sessions","by_module","gym"),db.getAllByIndex("hikingRecords","by_module","hiking"),db.getAll("schedules"),ProjectComebackModules.list()]);
+ const [gym,hikes,schedule,modules,gymExercises,gymSets]=await Promise.all([db.getAllByIndex("sessions","by_module","gym"),db.getAllByIndex("hikingRecords","by_module","hiking"),db.getAll("schedules"),ProjectComebackModules.list(),db.getAllByIndex("exerciseRecords","by_module","gym"),db.getAllByIndex("setRecords","by_module","gym")]);
  $("gym-count").textContent=gym.length;$("hiking-count").textContent=hikes.length;$("schedule-count").textContent=schedule.filter(x=>x.status==="planned"&&x.date>=today).length;
  $("module-cards").innerHTML=modules.map(m=>'<article class="module-card"><span class="module-tag">'+(m.enabled?"ACTIVE":"PAUSED")+'</span><h3>'+esc(m.name)+'</h3><p>'+(m.id==="gym"?"Your existing and future gym training records.":"Manual hike history and preparation.")+'</p><button class="secondary module-toggle" type="button" data-module-id="'+esc(m.id)+'" aria-pressed="'+(!m.enabled)+'">'+(m.enabled?"Pause module":"Enable module")+'</button></article>').join("");
  const hikingEnabled=modules.some(m=>m.id==="hiking"&&m.enabled);
@@ -82,12 +82,32 @@ async function refresh(){
  $("gym-records").innerHTML=gym.length?gym.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(x=>item(x.title||("Week "+(x.week||"")+" · Day "+(x.day||"")),x.date||"Date not recorded",(x.status||"incomplete")+" · "+(x.durationMinutes??"—")+" min")).join(""):'<div class="empty-state">No migrated Gym sessions found. Use Data &amp; backup to inspect and safely migrate V21.1 data.</div>';
  $("hiking-records").innerHTML=hikes.length?hikes.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>item(x.title,x.date,(x.distanceKm!==undefined?x.distanceKm+" km":"Distance not recorded"))).join(""):'<div class="empty-state">No hikes recorded yet.</div>';
  renderHikingJourney(hikes);
+ renderGymJourney(gym,gymExercises,gymSets);
  $("schedule-records").innerHTML=schedule.length?schedule.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>item(x.title,x.date,(x.moduleId==="gym"?"Gym":"Hiking")+" · "+x.status)).join(""):'<div class="empty-state">Nothing scheduled yet.</div>';
  await refreshTrainingOverview();
  await refreshScheduleOutlook();
 }
 
 
+
+function renderGymJourney(sessions,exercises,sets){
+ const target=$("gym-journey");
+ const completed=sessions.filter(record=>record.status==="completed");
+ const completedIds=new Set(completed.map(record=>record.id));
+ const exerciseRows=exercises.filter(record=>completedIds.has(record.sessionId));
+ const exerciseIds=new Set(exerciseRows.map(record=>record.id));
+ const setRows=sets.filter(record=>completedIds.has(record.sessionId)&&exerciseIds.has(record.exerciseRecordId));
+ const numericRepSets=setRows.filter(record=>typeof record.reps==="string"&&/^\\d+$/.test(record.reps.trim())&&Number(record.reps)>0);
+ const totalReps=numericRepSets.reduce((sum,record)=>sum+Number(record.reps),0);
+ const metric=(label,value,detail)=>'<div class="gym-journey-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>';
+ if(!completed.length){target.innerHTML='<p class="empty-state">Your completed Gym sessions will appear here as you save training. Only completed sessions and their linked set records are included.</p>';return;}
+ target.innerHTML='<div class="gym-journey-grid">'+[
+  metric("Completed sessions",String(completed.length),"Saved completed Gym sessions"),
+  metric("Exercises recorded",String(exerciseRows.length),"Exercises linked to completed sessions"),
+  metric("Sets recorded",String(setRows.length),"Sets linked to completed sessions"),
+  metric("Recorded repetitions",String(totalReps),numericRepSets.length+" of "+setRows.length+" sets include a numeric repetition count")
+ ].join("")+'</div><p class="journey-data-note">Repetitions are added only where a positive whole-number count was explicitly saved. Weight is not totalled because the stored records do not establish a consistent unit.</p>';
+}
 function renderHikingJourney(records){
  const target=$("hiking-journey");
  const hikes=records.filter(record=>record.status==="completed");
