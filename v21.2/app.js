@@ -97,7 +97,7 @@ function renderGymJourney(sessions,exercises,sets){
  const exerciseRows=exercises.filter(record=>completedIds.has(record.sessionId));
  const exerciseIds=new Set(exerciseRows.map(record=>record.id));
  const setRows=sets.filter(record=>completedIds.has(record.sessionId)&&exerciseIds.has(record.exerciseRecordId));
- const numericRepSets=setRows.filter(record=>typeof record.reps==="string"&&/^\\d+$/.test(record.reps.trim())&&Number(record.reps)>0);
+ const numericRepSets=setRows.filter(record=>typeof record.reps==="string"&&/^\d+$/.test(record.reps.trim())&&Number(record.reps)>0);
  const totalReps=numericRepSets.reduce((sum,record)=>sum+Number(record.reps),0);
  const metric=(label,value,detail)=>'<div class="gym-journey-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>';
  if(!completed.length){target.innerHTML='<p class="empty-state">Your completed Gym sessions will appear here as you save training. Only completed sessions and their linked set records are included.</p>';return;}
