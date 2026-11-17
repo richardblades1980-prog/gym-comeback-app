@@ -85,6 +85,75 @@ async function refresh(){
  await refreshTrainingOverview();
  await refreshScheduleOutlook();
 }
+
+function assessmentMeasures(form){
+ const measures={};
+ for(const key of ["comfortableWalkMinutes","stepUpsReps","singleLegBalanceSeconds"]){
+  const raw=form.elements[key].value;
+  if(raw!=="")measures[key]=Number(raw);
+ }
+ return measures;
+}
+function assessmentLabel(record){
+ return formatDate(record.date)+" · "+(record.kind==="baseline"?"Original baseline":"Follow-up");
+}
+function renderAssessmentComparison(){
+ const history=window._assessmentHistory||[];
+ const firstId=$("compare-first").value,secondId=$("compare-second").value;
+ const first=history.find(item=>item.id===firstId),second=history.find(item=>item.id===secondId);
+ if(!first||!second){$("assessment-comparison").innerHTML='<p class="empty-state">Save two assessments to compare your progress.</p>';return;}
+ if(first.id===second.id){$("assessment-comparison").innerHTML='<p class="empty-state">Choose two different assessments to see a comparison.</p>';return;}
+ const result=ProjectComebackAssessments.compare(first,second);
+ $("assessment-comparison").innerHTML='<div class="comparison-heading"><strong>'+esc(assessmentLabel(first))+'</strong><span>→</span><strong>'+esc(assessmentLabel(second))+'</strong></div>'+
+ Object.entries(result.measures).map(([key,m])=>{
+  const value=v=>v===null?"Not recorded":String(v)+(m.unit==="repetitions"?"": " "+m.unit);
+  const delta=m.difference===null?"Not comparable":(m.difference>0?"+":"")+String(Number(m.difference.toFixed(2)))+" "+m.unit;
+  return '<div class="comparison-row"><div><strong>'+esc(m.label)+'</strong><small>'+esc(value(m.first))+' → '+esc(value(m.second))+'</small></div><span class="comparison-delta">'+esc(delta)+'</span></div>';
+ }).join("");
+}
+async function refreshAssessments(){
+ const history=await ProjectComebackAssessments.listHistory();
+ window._assessmentHistory=history;
+ const baseline=history.find(item=>item.id===ProjectComebackAssessments.baselineId);
+ $("baseline-status").textContent=baseline?"Saved · "+formatDate(baseline.date):"Not recorded";
+ $("baseline-form").querySelectorAll("input,textarea,button").forEach(control=>control.disabled=!!baseline);
+ $("baseline-form").querySelector("button[type=submit]").textContent=baseline?"Original baseline saved":"Save original baseline";
+ const previousFirst=$("compare-first").value,previousSecond=$("compare-second").value;
+ const options=history.map(item=>'<option value="'+esc(item.id)+'">'+esc(assessmentLabel(item))+'</option>').join("");
+ $("compare-first").innerHTML=options;
+ $("compare-second").innerHTML=options;
+ if(history.some(item=>item.id===previousFirst))$("compare-first").value=previousFirst;
+ if(history.some(item=>item.id===previousSecond))$("compare-second").value=previousSecond;
+ if(history.length>1){
+  if(!$("compare-first").value)$("compare-first").value=history[0].id;
+  if(!$("compare-second").value||$("compare-second").value===$("compare-first").value)$("compare-second").value=history[history.length-1].id;
+ }
+ $("compare-first").disabled=history.length<2;$("compare-second").disabled=history.length<2;
+ $("assessment-history").innerHTML=history.length?history.slice().reverse().map(item=>{
+  const measures=Object.entries(item.measures).map(([key,value])=>ProjectComebackAssessments.metrics[key].label+": "+value+" "+ProjectComebackAssessments.metrics[key].unit).join(" · ");
+  return '<div class="record-item assessment-record"><div><strong>'+esc(assessmentLabel(item))+'</strong><small>'+esc(measures)+'</small>'+(item.notes?'<small>'+esc(item.notes)+'</small>':"")+'</div><small>'+Object.keys(item.measures).length+' measure(s)</small></div>';
+ }).join(""):'<div class="empty-state">No assessments recorded yet. Your first assessment will establish your original baseline.</div>';
+ renderAssessmentComparison();
+}
+$("baseline-form").elements.date.value=today;
+$("followup-form").elements.date.value=today;
+$("baseline-form").addEventListener("submit",async event=>{
+ event.preventDefault();const form=event.currentTarget;
+ try{
+  await ProjectComebackAssessments.createBaseline({date:form.elements.date.value,measures:assessmentMeasures(form),notes:form.elements.notes.value});
+  form.reset();await refreshAssessments();notice("Original baseline saved. It is now protected from being overwritten.");
+ }catch(error){notice(error.message,true);}
+});
+$("followup-form").addEventListener("submit",async event=>{
+ event.preventDefault();const form=event.currentTarget;
+ try{
+  await ProjectComebackAssessments.addFollowUp({date:form.elements.date.value,measures:assessmentMeasures(form),notes:form.elements.notes.value});
+  form.reset();form.elements.date.value=today;await refreshAssessments();notice("Follow-up assessment saved to your history.");
+ }catch(error){notice(error.message,true);}
+});
+$("compare-first").addEventListener("change",renderAssessmentComparison);
+$("compare-second").addEventListener("change",renderAssessmentComparison);
+
 async function inspectMigration(){
  const info=await ProjectComebackMigration.inspect();
  $("migration-status").textContent=info.legacyKeyCount+" legacy Gym data keys found. Migration status: "+info.status+". Original browser storage will not be deleted.";
@@ -125,7 +194,7 @@ $("restore-apply").addEventListener("click",async event=>{
  try{setBusy(b,true);const result=await ProjectComebackBackup.restoreBackup(restorePayload,{confirmed:true});restorePayload=null;$("restore-preview").hidden=true;$("restore-confirm-wrap").hidden=true;$("restore-file").value="";$("restore-confirm").checked=false;await refresh();notice("Restore completed. A pre-restore safety snapshot was saved in the database.");}catch(error){notice(error.message,true);}finally{setBusy(b,false,"Confirm restore");b.disabled=true;}
 });
 async function start(){
- try{await ProjectComebackDB.open();const result=await ProjectComebackModules.initialise();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");await refresh();await inspectMigration();if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
+ try{await ProjectComebackDB.open();const result=await ProjectComebackModules.initialise();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");await refresh();await refreshAssessments();await inspectMigration();if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
  catch(error){$("connection-state").textContent="Storage unavailable";notice("Could not initialise local storage: "+error.message,true);}
 }
 start();
