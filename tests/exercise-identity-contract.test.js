@@ -455,3 +455,311 @@ test("performed session snapshots pin the exact programme version, slot and labe
   assert.notEqual(performed.programmeVersionId, laterProgrammeEdit.programmeVersionId);
   assert.notEqual(performed.exerciseDefinitionId, laterProgrammeEdit.exerciseDefinitionId);
 });
+
+
+
+// Decision contracts: append-only review history, release retention/snapshots,
+// and a strict boundary between reusable preferences and prescriptions/results.
+// These remain fixtures, not production persistence services.
+
+function appendReviewEvent(events, candidate) {
+  const duplicate = events.find(event =>
+    event.profileId === candidate.profileId &&
+    event.idempotencyKey === candidate.idempotencyKey
+  );
+  if (duplicate) return { event: duplicate, appended: false };
+  const event = Object.freeze({ ...candidate });
+  events.push(event);
+  return { event, appended: true };
+}
+
+function referencedCatalogueReleases({ programmeVersions, sessions, reviewEvents }) {
+  const refs = new Set();
+  for (const version of programmeVersions) {
+    if (version.status === "published" && version.catalogueReleaseId) refs.add(version.catalogueReleaseId);
+  }
+  for (const session of sessions) {
+    if (session.catalogueReleaseId && (session.status === "active" || session.status === "completed")) {
+      refs.add(session.catalogueReleaseId);
+    }
+  }
+  for (const event of reviewEvents) {
+    if (event.catalogueReleaseId) refs.add(event.catalogueReleaseId);
+  }
+  return refs;
+}
+
+const reusableConfigurationFields = Object.freeze([
+  "preferredProgressionFocus",
+  "recordingModeOverride"
+]);
+const progressionFocusValues = ["reps", "weight", "duration", "sets", "balanced", "manual"];
+const recordingModeValues = ["reps", "timed-hold", "timed-reps"];
+
+function validateReusableConfiguration(record, supportedRecordingModes) {
+  if (!record.profileId || !record.exerciseDefinitionId) return false;
+  const keys = Object.keys(record.settings || {});
+  if (keys.some(key => !reusableConfigurationFields.includes(key))) return false;
+  const settings = record.settings || {};
+  if (settings.preferredProgressionFocus &&
+      !progressionFocusValues.includes(settings.preferredProgressionFocus)) return false;
+  if (settings.recordingModeOverride &&
+      (!recordingModeValues.includes(settings.recordingModeOverride) ||
+       !supportedRecordingModes.includes(settings.recordingModeOverride))) return false;
+  return true;
+}
+
+function renderHistoricalDisplay(displaySnapshot, currentDefinition) {
+  return displaySnapshot || { canonicalName: currentDefinition.canonicalName };
+}
+
+test("identity review decisions append events and corrections never rewrite earlier evidence", () => {
+  const events = [];
+  const verified = appendReviewEvent(events, {
+    id: "irev_01J000000000000000001",
+    eventSchemaVersion: 1,
+    profileId: "profile-a",
+    subjectType: "exerciseRecord",
+    subjectId: "session-a-exercise-1",
+    sourceNamespace: "v21.1.exercise-name",
+    sourceExactValue: "  Bench-Press  ",
+    previousMapping: null,
+    proposedMapping: { exerciseDefinitionId: "exd_press", exerciseVariationId: null },
+    outcome: "verified",
+    reviewerId: "profile-a",
+    reviewedAt: "2026-11-17T10:00:00Z",
+    evidence: { type: "explicit-user-confirmation" },
+    catalogueReleaseId: "catalogue-1",
+    idempotencyKey: "review-session-a-exercise-1-v1"
+  });
+  const correction = appendReviewEvent(events, {
+    id: "irev_01J000000000000000002",
+    eventSchemaVersion: 1,
+    profileId: "profile-a",
+    subjectType: "exerciseRecord",
+    subjectId: "session-a-exercise-1",
+    sourceNamespace: "v21.1.exercise-name",
+    sourceExactValue: "  Bench-Press  ",
+    previousMapping: verified.event.proposedMapping,
+    proposedMapping: { exerciseDefinitionId: "exd_incline_press", exerciseVariationId: null },
+    outcome: "reversed",
+    reviewerId: "profile-a",
+    reviewedAt: "2026-11-18T10:00:00Z",
+    evidence: { type: "corrected-explicit-review" },
+    catalogueReleaseId: "catalogue-2",
+    idempotencyKey: "review-session-a-exercise-1-correction-v1",
+    reversesEventId: verified.event.id
+  });
+  assert.equal(verified.appended, true);
+  assert.equal(correction.appended, true);
+  assert.equal(events.length, 2);
+  assert.equal(events[0].proposedMapping.exerciseDefinitionId, "exd_press");
+  assert.equal(events[0].sourceExactValue, "  Bench-Press  ");
+  assert.equal(events[1].reversesEventId, events[0].id);
+  assert.equal(events[1].previousMapping.exerciseDefinitionId, "exd_press");
+  assert.equal(events[1].proposedMapping.exerciseDefinitionId, "exd_incline_press");
+  assert.equal(Object.isFrozen(events[0]), true);
+});
+
+test("review event retries are idempotent within a profile but independent across profiles", () => {
+  const events = [];
+  const first = {
+    id: "irev_profile_a",
+    profileId: "profile-a",
+    idempotencyKey: "review-123",
+    subjectId: "record-a",
+    outcome: "verified"
+  };
+  const original = appendReviewEvent(events, first);
+  const retry = appendReviewEvent(events, { ...first, id: "irev_retry_duplicate" });
+  const otherProfile = appendReviewEvent(events, {
+    ...first,
+    id: "irev_profile_b",
+    profileId: "profile-b"
+  });
+  assert.equal(original.appended, true);
+  assert.equal(retry.appended, false);
+  assert.equal(retry.event.id, "irev_profile_a");
+  assert.equal(otherProfile.appended, true);
+  assert.equal(events.length, 2);
+});
+
+test("review events preserve exact source evidence, mapping transition and release provenance", () => {
+  const event = {
+    id: "irev_evidence",
+    profileId: "profile-a",
+    sourceNamespace: "legacy.exercise-config",
+    sourceExactValue: "gym-comeback-ex-config-v1-2-bench-press",
+    sourceRawValue: "{ \"setCount\": 4, \"focus\": \"weight\" }",
+    previousMapping: null,
+    proposedMapping: null,
+    outcome: "ambiguous",
+    evidence: { candidateIds: ["exd_press", "exd_incline_press"] },
+    catalogueReleaseId: "catalogue-2026.11.1",
+    idempotencyKey: "legacy-config-review-1"
+  };
+  assert.equal(event.sourceExactValue, "gym-comeback-ex-config-v1-2-bench-press");
+  assert.equal(event.sourceRawValue, "{ \"setCount\": 4, \"focus\": \"weight\" }");
+  assert.equal(event.outcome, "ambiguous");
+  assert.equal(event.proposedMapping, null);
+  assert.equal(event.catalogueReleaseId, "catalogue-2026.11.1");
+  assert.deepEqual(event.evidence.candidateIds, ["exd_press", "exd_incline_press"]);
+});
+
+test("catalogue release retention follows published programmes, retained sessions and audit references", () => {
+  const refs = referencedCatalogueReleases({
+    programmeVersions: [
+      { status: "published", catalogueReleaseId: "release-1" },
+      { status: "draft", catalogueReleaseId: "release-draft" }
+    ],
+    sessions: [
+      { status: "completed", catalogueReleaseId: "release-2" },
+      { status: "active", catalogueReleaseId: "release-3" },
+      { status: "cancelled", catalogueReleaseId: "release-4" }
+    ],
+    reviewEvents: [
+      { catalogueReleaseId: "release-5" },
+      { catalogueReleaseId: null }
+    ]
+  });
+  assert.deepEqual([...refs].sort(), ["release-1", "release-2", "release-3", "release-5"]);
+  assert.equal(refs.has("release-draft"), false);
+  assert.equal(refs.has("release-4"), false);
+});
+
+test("historical display uses immutable snapshots after catalogue rename or retirement", () => {
+  const snapshot = Object.freeze({
+    snapshotSchemaVersion: 1,
+    locale: "en-AU",
+    canonicalName: "Dumbbell Romanian Deadlift",
+    variationName: "B-stance",
+    equipmentLabels: ["Dumbbell"],
+    shortCue: "Hinge at the hips"
+  });
+  const currentCatalogueDefinition = {
+    canonicalName: "DB Hip Hinge",
+    status: "retired"
+  };
+  const display = renderHistoricalDisplay(snapshot, currentCatalogueDefinition);
+  assert.equal(display.canonicalName, "Dumbbell Romanian Deadlift");
+  assert.equal(display.variationName, "B-stance");
+  assert.deepEqual(display.equipmentLabels, ["Dumbbell"]);
+  assert.equal(display.shortCue, "Hinge at the hips");
+  assert.equal(currentCatalogueDefinition.canonicalName, "DB Hip Hinge");
+});
+
+test("backup snapshots contain enough historical labels without requiring the old release asset", () => {
+  const backupRecord = {
+    exerciseDefinitionId: "exd_rdl",
+    exerciseVariationId: "exv_bstance",
+    catalogueReleaseId: "catalogue-old",
+    canonicalDisplaySnapshot: {
+      snapshotSchemaVersion: 1,
+      canonicalName: "Dumbbell Romanian Deadlift",
+      variationName: "B-stance",
+      equipmentLabels: ["Dumbbell"],
+      locale: "en-AU"
+    },
+    name: "  RDL (DB)  ",
+    legacyRawValue: "{\"name\":\"  RDL (DB)  \"}"
+  };
+  const unavailableReleaseAssets = new Set(["catalogue-current"]);
+  assert.equal(unavailableReleaseAssets.has(backupRecord.catalogueReleaseId), false);
+  assert.equal(backupRecord.canonicalDisplaySnapshot.canonicalName, "Dumbbell Romanian Deadlift");
+  assert.equal(backupRecord.name, "  RDL (DB)  ");
+  assert.equal(backupRecord.legacyRawValue, "{\"name\":\"  RDL (DB)  \"}");
+});
+
+test("reusable configuration accepts only personal preferences supported by the exercise", () => {
+  const valid = {
+    id: "exc_profile_a_rdl",
+    profileId: "profile-a",
+    exerciseDefinitionId: "exd_rdl",
+    exerciseVariationId: "exv_bstance",
+    equipmentDefinitionId: "eqd_dumbbell",
+    settings: {
+      preferredProgressionFocus: "reps",
+      recordingModeOverride: "reps"
+    }
+  };
+  assert.equal(validateReusableConfiguration(valid, ["reps", "timed-reps"]), true);
+  assert.equal(validateReusableConfiguration({
+    ...valid,
+    settings: { recordingModeOverride: "timed-hold" }
+  }, ["reps", "timed-reps"]), false);
+  assert.equal(validateReusableConfiguration({
+    ...valid,
+    settings: { preferredProgressionFocus: "random" }
+  }, ["reps"]), false);
+});
+
+test("set count, targets, rest, tempo and effort are programme prescriptions, not reusable defaults", () => {
+  const programmePrescription = {
+    programmeSlotId: "psl_v1",
+    setCount: 4,
+    repTarget: "8-10",
+    durationTargetSeconds: null,
+    restSeconds: 90,
+    tempo: "3-1-1",
+    effortTarget: { type: "RIR", value: 2 },
+    progressionFocus: "weight"
+  };
+  const reusable = {
+    profileId: "profile-a",
+    exerciseDefinitionId: "exd_rdl",
+    settings: { preferredProgressionFocus: "reps" }
+  };
+  const performed = {
+    sets: [{ weight: "42.5", reps: "9", duration: "", rir: "2" }],
+    response: "same"
+  };
+  assert.equal(Object.hasOwn(reusable.settings, "setCount"), false);
+  assert.equal(Object.hasOwn(reusable.settings, "restSeconds"), false);
+  assert.equal(Object.hasOwn(reusable.settings, "tempo"), false);
+  assert.equal(programmePrescription.setCount, 4);
+  assert.equal(programmePrescription.restSeconds, 90);
+  assert.equal(performed.sets[0].weight, "42.5");
+  assert.equal(performed.sets[0].reps, "9");
+  assert.equal(performed.sets[0].duration, "");
+  assert.equal(performed.response, "same");
+});
+
+test("configuration identity is isolated by profile, definition, variation and equipment context", () => {
+  const base = {
+    profileId: "profile-a",
+    exerciseDefinitionId: "exd_rdl",
+    exerciseVariationId: null,
+    equipmentDefinitionId: null
+  };
+  const scopes = [
+    base,
+    { ...base, profileId: "profile-b" },
+    { ...base, exerciseDefinitionId: "exd_deadlift" },
+    { ...base, exerciseVariationId: "exv_bstance" },
+    { ...base, equipmentDefinitionId: "eqd_dumbbell" }
+  ];
+  const keys = scopes.map(item => JSON.stringify([
+    item.profileId, item.exerciseDefinitionId,
+    item.exerciseVariationId || null, item.equipmentDefinitionId || null
+  ]));
+  assert.equal(new Set(keys).size, scopes.length);
+});
+
+test("legacy day-scoped name-derived configuration stays unresolved and preserves exact key and raw value", () => {
+  const legacy = {
+    key: "gym-comeback-ex-config-v1-2-bench-press",
+    rawValue: "{\"setCount\":4,\"focus\":\"weight\",\"recordingMode\":\"reps\"}",
+    identityStatus: "unresolved",
+    profileId: null,
+    exerciseDefinitionId: null,
+    programmeSlotId: null
+  };
+  const afterReviewOfExerciseNameAlone = { ...legacy };
+  assert.equal(afterReviewOfExerciseNameAlone.key, legacy.key);
+  assert.equal(afterReviewOfExerciseNameAlone.rawValue, legacy.rawValue);
+  assert.equal(afterReviewOfExerciseNameAlone.identityStatus, "unresolved");
+  assert.equal(afterReviewOfExerciseNameAlone.profileId, null);
+  assert.equal(afterReviewOfExerciseNameAlone.programmeSlotId, null);
+  assert.equal(afterReviewOfExerciseNameAlone.exerciseDefinitionId, null);
+});
+
