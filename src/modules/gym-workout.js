@@ -188,6 +188,11 @@
       if (Object.prototype.hasOwnProperty.call(values, field)) {
         if (typeof values[field] !== "string") throw new Error(field + " must be entered as text.");
         set[field] = values[field];
+        if (field === "duration") {
+          delete set.stopwatchStartedAt;
+          const seconds = Number(values[field]);
+          set.stopwatchElapsedMs = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : 0;
+        }
       }
     }
     await saveChanges(workout, [], [set.id]);
@@ -206,10 +211,58 @@
     return set;
   }
 
+  function stopwatchElapsedMs(set, now) {
+    const saved = Math.max(0, Number(set.stopwatchElapsedMs) || 0);
+    const startedAt = Number(set.stopwatchStartedAt);
+    return saved + (Number.isFinite(startedAt) && startedAt > 0 ? Math.max(0, (now === undefined ? Date.now() : now) - startedAt) : 0);
+  }
+
+  async function startStopwatch(workout, exerciseId, setNumber) {
+    const exercise = getExercise(workout, exerciseId);
+    const set = getSet(workout, exercise, setNumber);
+    if (set.status === "locked") throw new Error("Complete the previous set before timing this set.");
+    if (set.status === "completed") throw new Error("Undo this completed set before timing it again.");
+    if (Number.isFinite(Number(set.stopwatchStartedAt))) return set;
+    set.stopwatchElapsedMs = Math.max(0, Number(set.stopwatchElapsedMs) || 0);
+    set.stopwatchStartedAt = Date.now();
+    set.status = "in-progress";
+    if (!set.startedAt) set.startedAt = new Date().toISOString();
+    updateExerciseStatus(exercise);
+    await saveChanges(workout, [exercise.id], [set.id]);
+    return set;
+  }
+
+  async function stopStopwatch(workout, exerciseId, setNumber) {
+    const exercise = getExercise(workout, exerciseId);
+    const set = getSet(workout, exercise, setNumber);
+    if (set.status === "locked") throw new Error("Complete the previous set before timing this set.");
+    set.stopwatchElapsedMs = stopwatchElapsedMs(set);
+    delete set.stopwatchStartedAt;
+    set.duration = String(Math.round(set.stopwatchElapsedMs / 1000));
+    await saveChanges(workout, [], [set.id]);
+    return set;
+  }
+
+  async function resetStopwatch(workout, exerciseId, setNumber) {
+    const exercise = getExercise(workout, exerciseId);
+    const set = getSet(workout, exercise, setNumber);
+    if (set.status === "locked") throw new Error("Complete the previous set before timing this set.");
+    delete set.stopwatchStartedAt;
+    set.stopwatchElapsedMs = 0;
+    set.duration = "";
+    await saveChanges(workout, [], [set.id]);
+    return set;
+  }
+
   async function completeSet(workout, exerciseId, setNumber) {
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before completing this set.");
+    if (Number.isFinite(Number(set.stopwatchStartedAt))) {
+      set.stopwatchElapsedMs = stopwatchElapsedMs(set);
+      delete set.stopwatchStartedAt;
+      set.duration = String(Math.round(set.stopwatchElapsedMs / 1000));
+    }
     set.status = "completed";
     set.completedAt = new Date().toISOString();
     unlockNext(exercise);
@@ -262,6 +315,9 @@
     updateSetValues,
     startSet,
     completeSet,
+    startStopwatch,
+    stopStopwatch,
+    resetStopwatch,
     undoSet,
     finishSession
   });
