@@ -1,3 +1,18 @@
+# Project Comeback — latest checkpoint (2026-11-17)
+
+- **Active branch:** `V21.2-development`
+- **Latest decision/test commit:** `149ca48f27b77974731cf8a62a879d896273c478`
+- **Browser validation:** [#44053125812 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125812) — exact SHA `149ca48f27b77974731cf8a62a879d896273c478`.
+- **Backup validation:** [#44053125864 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125864) — exact same SHA.
+- **Design proposal:** [Canonical exercise identity design](docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md).
+- **Design contract:** `tests/exercise-identity-contract.test.js` now has 16 tests. Both workflows run the full file.
+- **No application implementation or schema change** was made in this checkpoint. These are design-level fixture contracts.
+- **Protected V21.1:** root `index.html` blob remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
+- **Production main:** remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge/deployment.
+- The handover update below must receive fresh browser and backup validation on its own exact commit SHA before this branch head is called fully validated.
+
+---
+
 # Project Comeback — live handover status
 
 > **Checked against GitHub:** 17 November 2026. This summary is a navigation aid; the live branch, source files and workflow runs remain authoritative.
@@ -540,4 +555,20 @@ During development:
 - Browser validation #44052262475 PASS, exact SHA `86b21f15a89c60a793dbd424f4568296d74f5569`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052262475
 - Backup validation #44052262537 PASS, exact SHA `86b21f15a89c60a793dbd424f4568296d74f5569`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052262537
 - Current handover update must also be checked on its own exact commit SHA before closeout.
+
+
+
+### Canonical identity design decisions — variation taxonomy, catalogue storage and programme lineage (2026-11-17)
+
+- Re-inspected the live branch at `7c1797e02732a602f45ba28c3e4d641e959d54a0` before changes: design document, `src/data/database.js`, `src/programme-manager/programme-manager.js`, `src/data/backup.js`, identity/programme/IndexedDB tests and both Actions workflows.
+- Confirmed DB schema v5; current Programme Manager is a calendar scheduler only. Backup format is v1 and backup store names are an explicit fixed list. Current V21.2 app does not yet have a production catalogue asset/service-worker caching path; the existing offline test uses a scoped fixture service worker only.
+- Decision 1 — variations: use a curated variation catalogue for implement/equipment, grip, stance, laterality and range-of-motion differences where execution or comparability materially changes. Load, sets, reps, rest, tempo and effort remain prescription/performance values. A materially different movement gets a separate exercise definition. Do not auto-generate Cartesian combinations; each supported variation is explicitly curated. Unknown legacy combinations remain unresolved.
+- Decision 2 — catalogue: hybrid. A versioned local bundled release is the authority for system exercise/equipment definitions; IndexedDB materialises a cache for local/offline lookup. User-created definitions, personal aliases and identity-review data remain separate user-owned IndexedDB records. Catalogue refresh is idempotent; missing system entries retire rather than delete; IDs are never reused; refresh must not overwrite custom records, aliases, performed history or programme snapshots. Cache release ID/checksum in metadata. Add real app-shell/service-worker caching and offline catalogue tests during implementation; do not claim they exist now. Custom catalogue/user identity data must be backed up; bundled system catalogue need not be copied into each personal backup.
+- Decision 3 — programme lineage: published versions are immutable snapshots. Day/section and slot records receive new version-scoped IDs; separate `dayLineageId`/`slotLineageId` continue only while the same logical role persists. Reordering does not break lineage; an exercise swap can preserve lineage if the slot's role remains. Split/merge/repurpose creates new lineage IDs with explicit predecessor/successor references. A performed session pins exact version, slot, definition, variation and display/prescription snapshots.
+- Added seven decision-level tests to `tests/exercise-identity-contract.test.js` (16 total): curated variation dimensions vs prescription attributes; separate identity for materially different mechanics; versioned bundled release plus IndexedDB materialisation; catalogue refresh preserves custom records and aliases while retiring removed system entries; version-scoped day/slot IDs with stable lineage under reorder/swap; split/merge predecessor lineage; performed session pinning.
+- Updated `docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md` with recommendations, rationale, constraints and implementation boundaries. No app source, IndexedDB schema, backup format, V21.1 file or historical data was modified.
+- Decision/test commit: `149ca48f27b77974731cf8a62a879d896273c478`.
+- Browser validation #44053125812 PASS on exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125812
+- Backup validation #44053125864 PASS on exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125864
+- Next: review remaining boundaries (identity-review audit record, catalogue release retention/display snapshots and exact configuration fields), then implement only after tests target actual services and IndexedDB upgrades from v5, backup v1 compatibility and production offline asset caching. Keep V21.1 and main untouched.
 
