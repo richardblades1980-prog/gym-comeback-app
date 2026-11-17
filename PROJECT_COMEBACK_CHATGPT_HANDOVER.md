@@ -284,14 +284,15 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Current branch head: `34533cf0df394120d32f8407048f912a487cf688`.
-- The latest browser run for prior commit `9127d21` completed **failure**: run [#44005798011](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44005798011).
-- Failure was at the skip-link first-keyboard-focus assertion. Assessment service/UI tests and contrast checks passed in that run; the run timed out after reporting the assertion failure.
-- Backup validation for `9127d21`: **success**, run [#44005798092](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44005798092).
-- Diagnosis: the skip-link test ran after many application interactions and tried to recover the initial keyboard state by blurring the active control. That did not reliably recreate a fresh document's initial focus state.
-- Fix committed as `34533cf0df394120d32f8407048f912a487cf688`: moved the same skip-link keyboard assertions to immediately after the real app's initial navigation, before assessment and form interactions. Assertions were retained, not weakened.
-- Browser validation for `34533cf`: **in progress**, run [#44007617291](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44007617291).
-- Do not describe the assessment UI as fully validated until browser and backup checks for the current branch head have completed successfully.
+- Latest validated code commit: `94028b825bbe3109342508a9b8fc7d23c0416c64`.
+- Browser validation for that exact SHA: **success**, run [#44008882136](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44008882136).
+- Backup validation for that exact SHA: **success**, run [#44008882122](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44008882122).
+- Browser validation log confirms success for: source/bundle parity; browser migration and reload; offline fixture; keyboard skip navigation; immutable baseline and follow-up history; Before & Now comparisons and missing-value handling; contrast; mobile viewport overflow; navigation state; PWA metadata; migration safety snapshot and manual migration; backup download/restore; offline reload; and cold-start IndexedDB persistence.
+- The skip-link test was moved to the first app load, before later form interactions. It now passes and verifies that Tab focuses the skip link first and Enter moves focus to the main landmark.
+- The navigation test now checks the initial Overview state immediately on first load, then checks the actual Assessments → Hiking → Overview transitions after the assessment UI test has selected Assessments.
+- Browser test cleanup now closes the separately launched persistent context in the `finally` path. This prevents an assertion failure from leaving the test process open until GitHub's timeout.
+- The app's assessment UI is implemented and the end-to-end browser and backup validations are green. Complete a focused UX/code review of assessment empty/error states before considering the assessment workstream fully signed off.
+- No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
 
 ### Recent change log
 
@@ -302,23 +303,17 @@ During development:
 | 2026-11-17 | `00a7253` | Wired original baseline and follow-up assessment forms and comparisons | Browser #136 and backup #228 passed |
 | 2026-11-17 | `5eb83f5` | Added assessment screen styling | Backup #229 passed; browser run later superseded |
 | 2026-11-17 | `c182d60` | Bumped offline shell cache to v8 | Browser #138 and backup #230 passed |
-| 2026-11-17 | `c200531` | Added browser regression test for assessment UI | Browser run #139 still running at last check; backup #231 passed |
-| 2026-11-17 | `ac327d6` | Reloaded seeded assessment records before UI assertions | Browser #140 still running at last check; backup #232 passed |
-| 2026-11-17 | `87f566c` | Added this handover manual to the repository | Browser and backup checks running at last check |
+| 2026-11-17 | `c200531` | Added browser regression test for assessment UI | Later browser checks exposed test sequencing issues; backup #231 passed |
+| 2026-11-17 | `ac327d6` | Reloaded seeded assessment records before UI assertions | Later browser checks continued |
+| 2026-11-17 | `87f566c` | Added this handover manual to the repository | Browser and backup checks were running at the time |
+| 2026-11-17 | `34533cf` | Moved first-keyboard-focus skip-link test to immediately after app load | Backup #44007617283 passed; browser run superseded while still running |
+| 2026-11-17 | `8f86c2d` | Added persistent browser-context cleanup on browser-test failure paths | Backup #44008583130 passed; browser #44008583074 exposed a stale initial-navigation assertion |
+| 2026-11-17 | `94028b8` | Corrected navigation accessibility test sequencing while preserving initial-state and tab-change checks | Browser #44008882136 passed; backup #44008882122 passed |
 
 ### Next actions (resume here)
 
-1. Monitor browser validation [#44007617291](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44007617291) for commit `34533cf0df394120d32f8407048f912a487cf688`.
-2. Check whether backup validation is also triggered for the same commit; verify every run's SHA matches the current branch head.
-3. If browser validation fails, inspect its job logs and fix the precise failing assertion or behavior on `V21.2-development`.
-4. Confirm browser + backup validation are green for the same latest branch head.
-5. Review the assessment UI end-to-end, including mobile layout, form validation, error states, history ordering and comparison values.
-6. Update this manual with final validation links and exact validated commit SHA.
-7. Once assessment UI is signed off, proceed to the next approved Visual Progress Journey increment, using actual recorded data only. Do not deploy or merge without explicit approval.
-1. Poll browser validation #140 and the runs for current branch head `87f566c`.
-2. If browser validation fails, inspect the job logs and fix the precise failing assertion/behavior on `V21.2-development`.
-3. If the failure is only a locale-dependent test selector, change the test to use a stable selector or date value; do not weaken the functional assertions.
-4. Rerun checks and confirm browser + backup validation on the latest branch head.
-5. Review the assessment UI end-to-end, including mobile layout, form validation, error states, history ordering, and comparison values.
-6. Update this manual with final validation links and exact validated commit SHA.
-7. Once assessment UI is signed off, proceed to the next approved Visual Progress Journey increment, keeping scope controlled and using actual recorded data only.
+1. Review the assessment UI's baseline-empty state, follow-up validation/error feedback, history ordering, selector defaults, and comparison empty states. Keep the immutable baseline and missing-value behaviour unchanged.
+2. Verify that a user can create a baseline only once, add multiple dated follow-ups, compare any two historical assessments, and understand when a measure is not comparable.
+3. Once assessment UX review is complete, proceed to the next approved Visual Progress Journey increment. Start with a small, testable slice that uses actual saved records only; do not invent demo metrics or expand launch scope.
+4. Keep all work on `V21.2-development`; confirm current head and Actions after every meaningful code change. Do not merge or deploy without explicit approval.
+5. Keep this manual updated with decisions, implementation commits and exact CI run links/results. If the manual itself is changed, verify the resulting branch head and its CI runs too.
