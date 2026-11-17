@@ -343,7 +343,7 @@ $("restore-apply").addEventListener("click",async event=>{
  try{setBusy(b,true);const result=await ProjectComebackBackup.restoreBackup(restorePayload,{confirmed:true});restorePayload=null;$("restore-preview").hidden=true;$("restore-confirm-wrap").hidden=true;$("restore-file").value="";$("restore-confirm").checked=false;await refresh();await refreshAssessments();notice("Restore completed. A pre-restore safety snapshot was saved in the database.");}catch(error){notice(error.message,true);}finally{setBusy(b,false,"Confirm restore");b.disabled=true;}
 });
 async function start(){
- try{await ProjectComebackDB.open();const result=await ProjectComebackModules.initialise();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");await refresh();await refreshAssessments();await inspectMigration();if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
+ try{await ProjectComebackDB.open();const result=await ProjectComebackModules.initialise();await refresh();await refreshAssessments();await inspectMigration();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
  catch(error){$("connection-state").textContent="Storage unavailable";notice("Could not initialise local storage: "+error.message,true);}
 }
 start();
