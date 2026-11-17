@@ -93,7 +93,10 @@ test("source characterization: browser cold-start test covers identity service, 
 });
 test("source characterization: V2 backup retains release metadata and snapshots, not system asset bytes", () => {
   assert.match(backupSource,/"catalogueReleases"/);
-  assert.match(backupSource,/canonicalDisplaySnapshot/);
+  // Backup copies whole session/programme records, so display snapshots are
+  // preserved as ordinary record fields rather than a special backup field.
+  assert.match(backupSource,/"sessions"/);
+  assert.match(backupSource,/readStores\(db, names\)/);
   assert.match(backupSource,/typeof release\.checksum !== "string" \|\| !release\.checksum/);
   assert.doesNotMatch(backupSource,/catalogueAssetBytes|cataloguePayloadBytes|embeddedCatalogueAsset/);
 });
