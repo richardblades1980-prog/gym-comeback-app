@@ -95,3 +95,21 @@ test("malformed profile and readiness JSON are warned and not projected", () => 
   assert.equal(rawProfile, "{broken-profile");
   assert.equal(rawReadiness, "{broken-readiness");
 });
+
+
+test("retains a colliding legacy exercise configuration key without inventing an exercise identity", () => {
+  const key = "gym-comeback-ex-config-v1-1-bench-press";
+  const raw = JSON.stringify({ sets: 5, focus: "weight" });
+  const result = migration.normaliseSnapshot({ [key]: raw });
+
+  assert.equal(result.preferences.length, 1);
+  assert.equal(result.preferences[0].id, "legacy:" + key);
+  assert.equal(result.preferences[0].legacyKey, key);
+  assert.equal(result.preferences[0].legacyRawValue, raw);
+  assert.equal(result.preferences[0].preferenceKind, "exercise-configuration");
+  assert.deepEqual(JSON.parse(JSON.stringify(result.preferences[0].value)), {
+    sets: 5,
+    focus: "weight"
+  });
+  assert.equal(Object.hasOwn(result.preferences[0], "exerciseName"), false);
+});
