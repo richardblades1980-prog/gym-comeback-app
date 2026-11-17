@@ -512,9 +512,10 @@ function server() {
     const afterColdStart = await reopened.evaluate(() => ({
       gym: document.querySelector("#gym-count").textContent,
       hikes: document.querySelector("#hiking-count").textContent,
-      schedule: document.querySelector("#schedule-count").textContent
+      schedule: document.querySelector("#schedule-count").textContent,
+      assessments: await ProjectComebackDB.count("assessments")
     }));
-    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1") {
+    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" || afterColdStart.assessments !== 2) {
       throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
     }
     console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
