@@ -1,5 +1,5 @@
 const CACHE_PREFIX="project-comeback-v21-2a-shell-";
-const CACHE_NAME=CACHE_PREFIX+"v18";
+const CACHE_NAME=CACHE_PREFIX+"v19";
 const GUIDE_CACHE_PREFIX="project-comeback-v21-2a-guides-";
 const GUIDE_CACHE_NAME=GUIDE_CACHE_PREFIX+"v1";
 const GUIDE_STAGE_CACHE=GUIDE_CACHE_NAME+"-staging";
