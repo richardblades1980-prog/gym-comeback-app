@@ -493,6 +493,37 @@ function server() {
         id: "browser-incomplete-set", moduleId: "gym", sessionId: "browser-incomplete-gym",
         exerciseRecordId: "browser-incomplete-exercise", setNumber: 1, weight: "999", reps: "99"
       });
+      // Load-trend edge cases: same-day consolidation, undated/missing/invalid
+      // values, a single dated point, and explicitly recorded bodyweight resistance.
+      const addLoadRecord = async (suffix, name, dateValue, weights, recordingMode) => {
+        const sessionId = "browser-load-" + suffix;
+        const exerciseId = "browser-load-exercise-" + suffix;
+        await ProjectComebackModules.putOwnedRecord("gym", "sessions", {
+          id: sessionId, moduleId: "gym", date: dateValue,
+          title: "Load edge " + suffix, status: "completed"
+        });
+        await ProjectComebackModules.putOwnedRecord("gym", "exerciseRecords", {
+          id: exerciseId, moduleId: "gym", sessionId, name,
+          setCount: weights.length, recordingMode: recordingMode || "standard"
+        });
+        for (let index = 0; index < weights.length; index++) {
+          await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
+            id: "browser-load-set-" + suffix + "-" + index,
+            moduleId: "gym", sessionId, exerciseRecordId: exerciseId,
+            setNumber: index + 1, weight: weights[index], reps: "5"
+          });
+        }
+      };
+      const sameDay = new Date(date + "T12:00:00");
+      sameDay.setDate(sameDay.getDate() - 3);
+      const sameDayDate = [sameDay.getFullYear(), String(sameDay.getMonth()+1).padStart(2,"0"), String(sameDay.getDate()).padStart(2,"0")].join("-");
+      await addLoadRecord("same-a", "Load same-day check", sameDayDate, ["10"]);
+      await addLoadRecord("same-b", "Load same-day check", sameDayDate, ["15"]);
+      await addLoadRecord("same-later", "Load same-day check", date, ["12"]);
+      await addLoadRecord("single", "Load single-point check", date, ["7.5"]);
+      await addLoadRecord("invalid", "Load invalid-only check", date, ["", "0", "-5", "not-a-number"]);
+      await addLoadRecord("undated", "Load invalid-only check", "", ["30"]);
+      await addLoadRecord("bodyweight", "Load bodyweight check", date, ["5"], "bodyweight");
     }, workloadDate);
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
@@ -512,6 +543,33 @@ function server() {
         !gymHistoryCheck.includes("first 15 kg") || !gymHistoryCheck.includes("latest 20 kg") ||
         !gymHistoryCheck.includes("change +5 kg") || !gymHistoryCheck.includes("not a one-rep maximum")) {
       throw new Error("Gym exercise history did not show dated saved set entries: " + gymHistoryCheck);
+    }
+    const loadEdgeChecks = await app.evaluate(() => {
+      const sections = [...document.querySelectorAll("#gym-journey .gym-exercise-history")];
+      const section = name => sections.find(item => item.querySelector("h4")?.textContent === name)?.textContent || "";
+      return {
+        sameDay: section("Load same-day check"),
+        single: section("Load single-point check"),
+        invalid: section("Load invalid-only check"),
+        bodyweight: section("Load bodyweight check")
+      };
+    });
+    if (!loadEdgeChecks.sameDay.includes("2 dated sessions") ||
+        !loadEdgeChecks.sameDay.includes("first 15 kg") ||
+        !loadEdgeChecks.sameDay.includes("latest 12 kg") ||
+        !loadEdgeChecks.sameDay.includes("change -3 kg")) {
+      throw new Error("Same-day loads were not consolidated to the heaviest value before dated comparison: " + JSON.stringify(loadEdgeChecks));
+    }
+    if (!loadEdgeChecks.single.includes("One dated heaviest recorded load: 7.5 kg") ||
+        loadEdgeChecks.single.includes("change")) {
+      throw new Error("A single dated load was presented as a comparison: " + JSON.stringify(loadEdgeChecks));
+    }
+    if (!loadEdgeChecks.invalid.includes("No dated positive load entries to compare yet.") ||
+        !loadEdgeChecks.invalid.includes("Date not recorded")) {
+      throw new Error("Missing, undated, zero or invalid weights were included in the load trend or hidden from raw history: " + JSON.stringify(loadEdgeChecks));
+    }
+    if (!loadEdgeChecks.bodyweight.includes("One dated heaviest recorded load: 5 kg")) {
+      throw new Error("Explicitly saved bodyweight resistance was not treated as a recorded load: " + JSON.stringify(loadEdgeChecks));
     }
     const hikingJourneyCheck = await app.locator("#hiking-journey").textContent();
     if (!hikingJourneyCheck.includes("2") || !hikingJourneyCheck.includes("4.25 km") ||
@@ -548,6 +606,13 @@ function server() {
       await ProjectComebackDB.remove("hikingRecords", "browser-workload-hike");
       await ProjectComebackDB.remove("sessions", "browser-incomplete-gym");
       await ProjectComebackDB.remove("sessions", "browser-history-gym-older");
+      for (const suffix of ["same-a","same-b","same-later","single","invalid","undated","bodyweight"]) {
+        await ProjectComebackDB.remove("sessions", "browser-load-" + suffix);
+        await ProjectComebackDB.remove("exerciseRecords", "browser-load-exercise-" + suffix);
+        for (let index = 0; index < (suffix === "invalid" ? 4 : 1); index++) {
+          await ProjectComebackDB.remove("setRecords", "browser-load-set-" + suffix + "-" + index);
+        }
+      }
       await ProjectComebackDB.remove("exerciseRecords", "browser-history-exercise-older");
       await ProjectComebackDB.remove("setRecords", "browser-history-set-older");
       await ProjectComebackDB.remove("exerciseRecords", "browser-journey-exercise");
