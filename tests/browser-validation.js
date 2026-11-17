@@ -292,7 +292,7 @@ function server() {
     await firstExercise.locator('[data-gym-field="weight"]').first().dispatchEvent("change");
     await firstExercise.locator('[data-gym-field="reps"]').first().fill("12");
     await firstExercise.locator('[data-gym-field="reps"]').first().dispatchEvent("change");
-    await firstExercise.locator('[data-gym-action="start"]').first().click();
+    // Starting the stopwatch correctly marks this set in progress, so complete it directly.
     await firstExercise.locator('[data-gym-action="complete"]').first().click();
     await firstExercise.locator('[data-gym-action="undo"]').first().waitFor();
     await app.reload();
