@@ -6,6 +6,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = p => fs.readFileSync(path.join(root, p), "utf8");
 const identitySource = read("src/data/exercise-identity.js");
+const deliverySource = read("src/data/catalogue-delivery.js");
 const swSource = read("v21.2/sw.js");
 const backupSource = read("src/data/backup.js");
 const browserSource = read("tests/browser-validation.js");
@@ -86,10 +87,21 @@ test("source characterization: production service worker precaches shell, not ca
   assert.match(swSource,/key\.startsWith\(CACHE_PREFIX\)&&key!==CACHE_NAME/);
   assert.match(swSource,/caches\.open\(CACHE_NAME\)\.then\(cache=>cache\.put\(request,copy\)\)/);
 });
-test("source characterization: browser cold-start test covers identity service, not catalogue lookup", () => {
-  assert.match(browserSource,/identityOfflineAsset/);
-  assert.match(browserSource,/canonical identity service is cached/);
-  assert.doesNotMatch(browserSource,/catalogue release asset|catalogue lookup offline|catalogue cold start/i);
+test("production delivery service verifies immutable assets and exposes offline lookup", () => {
+  assert.match(deliverySource,/crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(deliverySource,/byteLength/);
+  assert.match(deliverySource,/release IDs must increase monotonically/);
+  assert.match(deliverySource,/project-comeback-v21-2a-catalogue-/);
+  assert.match(deliverySource,/async function installRelease/);
+  assert.match(deliverySource,/async function lookup/);
+  assert.match(deliverySource,/catalogueReleases.*exerciseDefinitions.*exerciseVariations.*metadata/s);
+  assert.match(deliverySource,/active-exercise-catalogue-release/);
+  assert.match(deliverySource,/local catalogue materialisation is incomplete or stale/);
+});
+test("real browser validation seeds a verified fixture and checks offline catalogue lookup", () => {
+  assert.match(browserSource,/ProjectComebackCatalogueDelivery\.installRelease/);
+  assert.match(browserSource,/ProjectComebackCatalogueDelivery\.lookup/);
+  assert.match(browserSource,/Verified catalogue lookup or release cache did not survive a real offline app reload/);
 });
 test("source characterization: V2 backup retains release metadata and snapshots, not system asset bytes", () => {
   assert.match(backupSource,/"catalogueReleases"/);
