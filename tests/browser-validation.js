@@ -538,7 +538,7 @@ function server() {
       assessmentCount: await ProjectComebackDB.count("assessments"),
       safetySnapshots: (await ProjectComebackDB.getAll("metadata")).filter(item => item.type === "pre-restore-safety-snapshot").length
     }));
-    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 || restoreVerification.assessmentCount !== 3 ||
+    if (restoreVerification.hikeCount !== 1 || restoreVerification.scheduleCount !== 1 || restoreVerification.assessmentCount !== assessmentCountAfterRapidSubmit ||
         restoreVerification.safetySnapshots < 1) {
       throw new Error("Full backup restore UI did not preserve records or create a pre-restore snapshot: " + JSON.stringify(restoreVerification));
     }
@@ -581,7 +581,7 @@ function server() {
       schedule: document.querySelector("#schedule-count").textContent,
       assessments: await ProjectComebackDB.count("assessments")
     }));
-    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" || afterColdStart.assessments !== 3) {
+    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" || afterColdStart.assessments !== assessmentCountAfterRapidSubmit) {
       throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
     }
     console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
