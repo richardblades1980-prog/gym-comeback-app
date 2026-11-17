@@ -29,6 +29,8 @@ function server() {
   const base = "http://127.0.0.1:" + httpServer.address().port;
   const browser = await chromium.launch({ headless: true });
   browser.on("disconnected", () => console.error("[browser] Chromium disconnected"));
+  let appContext = null;
+  let phoneProfile = null;
   try {
     const context = await browser.newContext();
     context.setDefaultTimeout(STEP_TIMEOUT_MS);
@@ -99,8 +101,8 @@ function server() {
     console.log("PASS offline app shell served from /tests/fixtures/offline/ service-worker scope");
 
     console.log("[browser] Real V21.2 application");
-    const phoneProfile = fs.mkdtempSync(path.join(os.tmpdir(), "project-comeback-phone-profile-"));
-    let appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true, acceptDownloads: true });
+    phoneProfile = fs.mkdtempSync(path.join(os.tmpdir(), "project-comeback-phone-profile-"));
+    appContext = await chromium.launchPersistentContext(phoneProfile, { headless: true, acceptDownloads: true });
     appContext.setDefaultTimeout(STEP_TIMEOUT_MS);
     appContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
     const app = await appContext.newPage();
@@ -531,6 +533,7 @@ function server() {
       throw new Error("Actual V21.2 application did not reload from its own offline cache.");
     }
     await appContext.close();
+    appContext = null;
 
     // A page reload is not a browser restart. Reopen the same persistent profile
     // in a fresh browser process and prove IndexedDB records survive a cold start.
@@ -555,9 +558,17 @@ function server() {
     console.log("PASS V21.2 IndexedDB data survives browser process close and reopen with the same profile");
     console.log("PASS real V21.2 app: no automatic migration, manual Gym migration, hiking/schedule writes, backup, reload and offline shell");
     await appContext.close();
-    fs.rmSync(phoneProfile, { recursive: true, force: true });
+    appContext = null;
   } finally {
-    await browser.close();
+    // The persistent context is launched separately from `browser`; close it on
+    // every failure path as well so assertion failures exit promptly with logs.
+    if (appContext) {
+      try { await appContext.close(); }
+      catch (error) { console.error("[browser] Persistent context cleanup failed:", error.message); }
+    }
+    try { await browser.close(); }
+    catch (error) { console.error("[browser] Browser cleanup failed:", error.message); }
     await new Promise(resolve => httpServer.close(resolve));
+    if (phoneProfile) fs.rmSync(phoneProfile, { recursive: true, force: true });
   }
 })().catch(error => { console.error("[browser] FAILED:", error && error.stack || error); process.exitCode = 1; });
