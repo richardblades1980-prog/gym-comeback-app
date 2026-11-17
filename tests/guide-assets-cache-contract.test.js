@@ -60,4 +60,9 @@ test("browser validation confirms all 41 guide assets and serves guide artwork o
   assert.match(browser, /guideCacheCheck\.shellHasGuideFiles/);
   assert.match(browser, /offlineGuideFetch/);
   assert.match(browser, /project-comeback-v21-2a-guides-v1/);
+  assert.match(browser, /serveGuideWorkerV2/);
+  assert.match(browser, /failGuideAsset/);
+  assert.match(browser, /state !== "redundant"/);
+  assert.match(browser, /preservedGuideCache\.entries !== 42/);
+  assert.match(browser, /preservedOfflineAsset/);
 });

@@ -8,9 +8,27 @@ const root = path.resolve(__dirname, "..");
 const STEP_TIMEOUT_MS = 20000;
 console.log("[browser] Starting Chromium validation");
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif" };
+const testServerState = { serveGuideWorkerV2: false, failGuideAsset: false };
 function server() {
   return http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+    if (pathname === "/v21.2/sw.js" && testServerState.serveGuideWorkerV2) {
+      fs.readFile(path.join(root, "v21.2/sw.js"), "utf8", (err, source) => {
+        if (err) { res.writeHead(500).end("Unable to read service worker"); return; }
+        const updated = source
+          .replace('const GUIDE_CACHE_NAME=GUIDE_CACHE_PREFIX+"v1";', 'const GUIDE_CACHE_NAME=GUIDE_CACHE_PREFIX+"v2";')
+          .replace("// Guide artwork and its manifest are served only from their dedicated verified cache.",
+            "// Forced test update: new immutable guide cache version.");
+        res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" });
+        res.end(updated);
+      });
+      return;
+    }
+    if (testServerState.failGuideAsset &&
+        pathname === "/v21.2/assets/guides/v1/equipment/equipment-bands.svg") {
+      res.writeHead(503, { "content-type": "text/plain", "cache-control": "no-store" }).end("Intentional failed-update fixture");
+      return;
+    }
     const file = path.resolve(root, "." + pathname);
     if (!file.startsWith(root + path.sep) && file !== root) { res.writeHead(403).end(); return; }
     fs.stat(file, (err, stat) => {
@@ -181,6 +199,60 @@ function server() {
       throw new Error("The real V21.2 app could not cold-start its canonical identity service offline: " + JSON.stringify(identityOfflineReload));
     }
     console.log("PASS canonical identity service is cached and the real V21.2 app cold-starts offline");
+
+    console.log("[browser] Failed guide-cache update preserves the active offline version");
+    testServerState.serveGuideWorkerV2 = true;
+    testServerState.failGuideAsset = true;
+    const failedUpdate = await app.evaluate(async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration?.active) throw new Error("No active service worker before failed-update test.");
+      const activeScriptBefore = registration.active.scriptURL;
+      const outcome = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => resolve({ timedOut: true }), 30000);
+        registration.addEventListener("updatefound", () => {
+          const installing = registration.installing;
+          if (!installing) { clearTimeout(timeout); resolve({ missingInstallingWorker: true }); return; }
+          installing.addEventListener("statechange", () => {
+            if (installing.state === "redundant" || installing.state === "activated") {
+              clearTimeout(timeout);
+              resolve({ state: installing.state });
+            }
+          });
+        }, { once: true });
+        registration.update().catch(error => { clearTimeout(timeout); reject(error); });
+      });
+      return { ...outcome, activeScriptBefore, activeScriptAfter: registration.active?.scriptURL,
+        controllerScript: navigator.serviceWorker.controller?.scriptURL };
+    });
+    testServerState.serveGuideWorkerV2 = false;
+    testServerState.failGuideAsset = false;
+    if (failedUpdate.timedOut || failedUpdate.state !== "redundant" ||
+        failedUpdate.activeScriptAfter !== failedUpdate.activeScriptBefore ||
+        failedUpdate.controllerScript !== failedUpdate.activeScriptBefore) {
+      throw new Error("A failed guide-cache update replaced or stalled the active worker: " + JSON.stringify(failedUpdate));
+    }
+    const preservedGuideCache = await app.evaluate(async () => {
+      const cacheName = "project-comeback-v21-2a-guides-v1";
+      const cache = await caches.open(cacheName);
+      const keys = await cache.keys();
+      const manifest = await cache.match(new URL("./assets/guides/manifest.v1.json", location.href).href);
+      const names = await caches.keys();
+      return { entries: keys.length, hasManifest: Boolean(manifest),
+        hasV2: names.includes("project-comeback-v21-2a-guides-v2") };
+    });
+    if (preservedGuideCache.entries !== 42 || !preservedGuideCache.hasManifest || preservedGuideCache.hasV2) {
+      throw new Error("Failed update did not preserve the previous immutable guide cache: " + JSON.stringify(preservedGuideCache));
+    }
+    await appContext.setOffline(true);
+    const preservedOfflineAsset = await app.evaluate(async () => {
+      const response = await fetch("./assets/guides/v1/equipment/equipment-bands.svg");
+      return { ok: response.ok, bytes: (await response.arrayBuffer()).byteLength };
+    });
+    await appContext.setOffline(false);
+    if (!preservedOfflineAsset.ok || preservedOfflineAsset.bytes < 1000) {
+      throw new Error("The previous guide artwork could not be retrieved offline after a failed update: " + JSON.stringify(preservedOfflineAsset));
+    }
+    console.log("PASS failed v2 install leaves v1 cache complete and usable offline");
     const emptyComparisonText = await app.locator("#assessment-comparison").textContent();
     if (!emptyComparisonText.includes("Save your original baseline") ||
         !emptyComparisonText.includes("add a follow-up assessment")) {

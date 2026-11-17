@@ -894,3 +894,6 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Final review tightened the cache immutability assertion to distinguish an unconditional destination-cache deletion from cleanup guarded by proof that the cache was newly created during the failed install. This is a test-only precision correction.
 
 - CI exposed that the previous generated cache-contract test still contained literal escaped newline sequences and therefore failed to parse. Replaced it with a clean source string using real line breaks. This is test-only; service-worker and app source are unchanged. The next exact-SHA workflow is the authority for validation.
+
+
+- Added a real Playwright failed-update scenario: the test server temporarily serves a modified service worker using guide cache v2 and intentionally returns HTTP 503 for one guide asset. The browser must observe the installing worker become redundant, retain the original active worker/controller, retain all 42 entries in guide cache v1, publish no v2 cache, and fetch the previous SVG successfully while offline. This proves that a failed new release does not damage the previous offline guide cache.
