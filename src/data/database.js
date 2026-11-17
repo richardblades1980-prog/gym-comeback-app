@@ -443,9 +443,9 @@
     const session = bundle.session || null;
     const exercises = bundle.exerciseRecords === undefined ? [] : bundle.exerciseRecords;
     const sets = bundle.setRecords === undefined ? [] : bundle.setRecords;
-    if ((!session && !exercises.length && !sets.length) ||
-        !Array.isArray(exercises) || !Array.isArray(sets)) {
-      throw new Error("Gym workout updates must contain records to save.");
+    if (!Array.isArray(exercises) || !Array.isArray(sets) ||
+        (!session && !exercises.length && !sets.length)) {
+      throw new Error("Gym workout updates must contain valid records to save.");
     }
     if (session && (session.id !== bundle.sessionId || session.moduleId !== "gym")) {
       throw new Error("Gym session update has an invalid identity.");
@@ -502,7 +502,6 @@
           });
           tx.objectStore("sessions").put(updated);
         }
-        checkFinished();
       };
       validated.exercises.forEach(record => {
         const request = tx.objectStore("exerciseRecords").get(record.id);
