@@ -142,7 +142,11 @@ function server() {
         !emptyComparisonText.includes("add a follow-up assessment")) {
       throw new Error("Empty assessment comparison state did not explain how to begin: " + emptyComparisonText);
     }
-    console.log("PASS comparison panel explains how to begin when no assessments exist");
+    const emptyJourneyText = await app.locator("#assessment-journey").textContent();
+    if (!emptyJourneyText.includes("Complete your original baseline assessment")) {
+      throw new Error("Progress journey did not explain how to start without assessments: " + emptyJourneyText);
+    }
+    console.log("PASS comparison panel and progress journey explain how to begin when no assessments exist");
     const followUpGateBeforeBaseline = await app.evaluate(() => ({
       status: document.querySelector("#followup-status").textContent,
       controlsDisabled: [...document.querySelectorAll("#followup-form input,#followup-form textarea,#followup-form button")].every(control => control.disabled)
@@ -210,6 +214,13 @@ function server() {
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="assessments"]').click();
+    const baselineJourneyText = await app.locator("#assessment-journey").textContent();
+    if (!baselineJourneyText.includes("ORIGINAL BASELINE") ||
+        !baselineJourneyText.includes("15 Nov 2026") ||
+        !baselineJourneyText.includes("12 minutes") ||
+        !baselineJourneyText.includes("Your starting point is saved")) {
+      throw new Error("Progress journey did not show the one-record baseline state correctly: " + baselineJourneyText);
+    }
     if (!(await app.locator("#baseline-status").textContent()).includes("Saved") ||
         !(await app.locator("#baseline-save").isDisabled()) ||
         !(await app.locator("#assessment-history").textContent()).includes("Original baseline")) {
@@ -235,6 +246,16 @@ function server() {
     const followupOption = await app.locator("#compare-second option").evaluateAll(options => options.find(option => option.textContent.includes("17 Nov"))?.value);
     if (!followupOption) throw new Error("New follow-up assessment was not offered in the comparison selector.");
     await app.locator("#compare-second").selectOption(followupOption);
+    const journeyText = await app.locator("#assessment-journey").textContent();
+    if (!journeyText.includes("ORIGINAL BASELINE") ||
+        !journeyText.includes("FOLLOW-UP ASSESSMENT") ||
+        !journeyText.includes("15 Nov 2026") ||
+        !journeyText.includes("17 Nov 2026") ||
+        !journeyText.includes("Change from baseline: +9 minutes") ||
+        !journeyText.includes("Change from baseline: +6 repetitions") ||
+        !journeyText.includes("Not comparable to baseline")) {
+      throw new Error("Visual progress journey did not show actual assessment milestones and baseline changes: " + journeyText);
+    }
     const comparisonText = await app.locator("#assessment-comparison").textContent();
     if (!comparisonText.includes("+9 minutes") || !comparisonText.includes("+6 repetitions") ||
         !comparisonText.includes("Not comparable")) {
