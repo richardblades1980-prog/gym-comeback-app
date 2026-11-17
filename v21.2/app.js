@@ -25,7 +25,26 @@ async function refreshTrainingOverview(){
  }).join(""):'<div class="empty-state">Nothing planned for the next seven days. Add a Gym or Hiking activity in Schedule.</div>';
  const from=shiftDate(today,-29);
  const summary=await ProjectComebackWorkload.rangeOverview(from,today);
- const moduleCard=(name,data)=>'<article class="module-card"><span class="module-tag">COMPLETED</span><h3>'+name+'</h3><p><strong>'+data.sessionCount+'</strong> records in the last 30 days</p><p>'+renderDuration(data)+'</p><small>'+data.durationMissingCount+' record(s) without a recorded duration</small></article>';
+ const weeklyRows=data=>{
+   const weeks=new Map();
+   Object.entries(data.byDate||{}).forEach(([date,day])=>{
+     const monday=new Date(date+"T12:00:00");
+     monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+     const key=[monday.getFullYear(),String(monday.getMonth()+1).padStart(2,"0"),String(monday.getDate()).padStart(2,"0")].join("-");
+     const row=weeks.get(key)||{sessions:0,durationMinutes:0,durationRecordedCount:0};
+     row.sessions+=day.sessions;
+     row.durationMinutes+=day.durationMinutes;
+     row.durationRecordedCount+=day.durationRecordedCount;
+     weeks.set(key,row);
+   });
+   if(!weeks.size)return '<p class="workload-empty">No completed records in this period.</p>';
+   return '<div class="workload-weeks">'+[...weeks.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([week,row])=>{
+     const missing=row.sessions-row.durationRecordedCount;
+     const duration=row.durationRecordedCount?row.durationMinutes+' min recorded':'Duration not recorded';
+     return '<div class="workload-week"><strong>Week of '+esc(formatDate(week))+'</strong><span>'+row.sessions+' completed · '+duration+'</span>'+(missing?'<small>'+missing+' record(s) without duration</small>':'')+'</div>';
+   }).join("")+'</div>';
+ };
+ const moduleCard=(name,data)=>'<article class="module-card"><span class="module-tag">COMPLETED</span><h3>'+name+'</h3><p><strong>'+data.sessionCount+'</strong> records in the last 30 days</p><p>'+renderDuration(data)+'</p><small>'+data.durationMissingCount+' record(s) without a recorded duration</small>'+weeklyRows(data)+'</article>';
  $("completed-overview").innerHTML=moduleCard("Gym",summary.gym)+moduleCard("Hiking",summary.hiking);
 }
 
