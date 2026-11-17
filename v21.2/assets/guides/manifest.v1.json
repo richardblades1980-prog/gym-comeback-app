@@ -1,0 +1,450 @@
+{
+  "manifestId": "gym-guide-artwork-v1",
+  "schemaVersion": 1,
+  "version": 1,
+  "sourceCommit": "9252ee57a2bed01b3db6f9aa51fb762d78caf2cf",
+  "sourceFileCount": 44,
+  "packagedAssetCount": 41,
+  "totalByteLength": 2984584,
+  "status": "inert-until-service-worker-integration",
+  "excludedSourcePaths": [
+    "assets/equipment-bench.svg",
+    "assets/equipment-squat-rack.svg",
+    "assets/machine-dumbbells.jpg (byte-identical alias of assets/machine-benches.jpg)"
+  ],
+  "assets": [
+    {
+      "assetId": "equipment.bands",
+      "path": "./assets/guides/v1/equipment/equipment-bands.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2345,
+      "sha256": "sha256:5d7d490009ce2d9d7609a0795e51dbc200af36a7a9ef2f98666e9caf37b202ed",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-bands.svg",
+      "sourceGitBlobSha": "8742ceff129441f910cd7d4a8181cdfb554d52e5"
+    },
+    {
+      "assetId": "equipment.bike",
+      "path": "./assets/guides/v1/equipment/equipment-bike.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2120,
+      "sha256": "sha256:98f1cd97981a558d49325ceeff1788d0abc032941f87f53bf6b0d2fd899bbf06",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-bike.svg",
+      "sourceGitBlobSha": "15219c52539ad674f564208ac704a63894e42547"
+    },
+    {
+      "assetId": "equipment.bodyweight",
+      "path": "./assets/guides/v1/equipment/equipment-bodyweight.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2056,
+      "sha256": "sha256:af2f9d8c4b8adca8874ff28dde1e9bac1bc16a50fe0043dc38997393a3637218",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-bodyweight.svg",
+      "sourceGitBlobSha": "4f78d5505b33425e95b4fa94a75da9bb977acb75"
+    },
+    {
+      "assetId": "equipment.cable-row",
+      "path": "./assets/guides/v1/equipment/equipment-cable-row.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2230,
+      "sha256": "sha256:1d35cec811ff966ee1eb202020057a1d7bf7f2a5a21591eeb3787517f3ad902a",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-cable-row.svg",
+      "sourceGitBlobSha": "1333da99ce5698e326bde4e3a04f0f46b1045ecb"
+    },
+    {
+      "assetId": "equipment.chest-press",
+      "path": "./assets/guides/v1/equipment/equipment-chest-press.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2628,
+      "sha256": "sha256:822bd55586db922590773594e977ff9b965ff1179b83ae37ea364511456431ee",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-chest-press.svg",
+      "sourceGitBlobSha": "eccf158ae9569f910182ef6ace8531df4389b789"
+    },
+    {
+      "assetId": "equipment.dumbbells",
+      "path": "./assets/guides/v1/equipment/equipment-dumbbells.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2294,
+      "sha256": "sha256:6e938da37ad1dd673662584a87861b6db399786ad93a6f9f4e63b75512e1681a",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-dumbbells.svg",
+      "sourceGitBlobSha": "03e2da97ee912ca4db0d15ef8f3e9ea565e1ae48"
+    },
+    {
+      "assetId": "equipment.home-gym",
+      "path": "./assets/guides/v1/equipment/equipment-home-gym.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2115,
+      "sha256": "sha256:ee638dc5b995a0d8a357fa987042e769d82f87fb84be41018e9cc23945fd09c2",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-home-gym.svg",
+      "sourceGitBlobSha": "af714b911c844d12dcd45949c2f9305c88deda38"
+    },
+    {
+      "assetId": "equipment.lat-pulldown",
+      "path": "./assets/guides/v1/equipment/equipment-lat-pulldown.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2243,
+      "sha256": "sha256:6e6ee73f5b78edbddc073cbc07d48f6fcff5a141f93a0e610654f859a4806066",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-lat-pulldown.svg",
+      "sourceGitBlobSha": "fd6efc32758107856e734beb8c88f86d38ed19b0"
+    },
+    {
+      "assetId": "equipment.leg-extension",
+      "path": "./assets/guides/v1/equipment/equipment-leg-extension.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2343,
+      "sha256": "sha256:ba24d50ee8e820af9f4dd566baba3c890e967394264e8647fa6598ad885a1048",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-leg-extension.svg",
+      "sourceGitBlobSha": "54713b2c7a494503b346923bcf76a9e15095775f"
+    },
+    {
+      "assetId": "equipment.leg-press",
+      "path": "./assets/guides/v1/equipment/equipment-leg-press.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2225,
+      "sha256": "sha256:2adaad1157546d7926d4f9448e896cb04550d1947ef7f54ea8b6807437ddc0b8",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-leg-press.svg",
+      "sourceGitBlobSha": "7d2dabc6d6bf6f3868c7cd8c3075f4ef390dbdac"
+    },
+    {
+      "assetId": "equipment.rower",
+      "path": "./assets/guides/v1/equipment/equipment-rower.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2142,
+      "sha256": "sha256:8daee2dc9602bc8db01028072d840321407dd754e1a940550273fda9629326c8",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-rower.svg",
+      "sourceGitBlobSha": "83f01b4ee10dc57edb3532db890693b34f5b92fe"
+    },
+    {
+      "assetId": "equipment.shoulder-press",
+      "path": "./assets/guides/v1/equipment/equipment-shoulder-press.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2298,
+      "sha256": "sha256:70adfba3cc152d6e3f24fc2209c4c4a26a20af05ff89739eb5f91e7ed69dd089",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-shoulder-press.svg",
+      "sourceGitBlobSha": "c9aa6fdca7a0013a20e444383cba8260001e9df7"
+    },
+    {
+      "assetId": "equipment.treadmill",
+      "path": "./assets/guides/v1/equipment/equipment-treadmill.svg",
+      "mimeType": "image/svg+xml",
+      "byteLength": 2102,
+      "sha256": "sha256:20ffcbaadce6c1d9a862a3596b5b648c5dcf9a209a0ba9177dcbc92a8fd2227a",
+      "role": "equipment-illustration",
+      "sourcePath": "assets/equipment-treadmill.svg",
+      "sourceGitBlobSha": "b87564c3ba4b1f15cc17b3fe3c6b51a5eaae2416"
+    },
+    {
+      "assetId": "equipment-reference.benches",
+      "path": "./assets/guides/v1/equipment-reference/machine-benches.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 30172,
+      "sha256": "sha256:8b934289aa45172b8b86167c72b03f048fca7b82f687ce76af9bcda2aa1aecd9",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-benches.jpg",
+      "sourceGitBlobSha": "7537d9ade767d8752f06d263598daa5cdac1eb35",
+      "sourceAliases": [
+        {
+          "path": "assets/machine-dumbbells.jpg",
+          "sourceGitBlobSha": "7537d9ade767d8752f06d263598daa5cdac1eb35",
+          "byteLength": 30172
+        }
+      ]
+    },
+    {
+      "assetId": "equipment-reference.cables",
+      "path": "./assets/guides/v1/equipment-reference/machine-cables.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 21528,
+      "sha256": "sha256:c2b764cedd1761487ed3232d0f3d01e5d73359f4a476d1453c82e4ca9637d887",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-cables.jpg",
+      "sourceGitBlobSha": "d2807013fc91c78e8e6e9cb76d2c9af1a91d725b"
+    },
+    {
+      "assetId": "equipment-reference.cardio",
+      "path": "./assets/guides/v1/equipment-reference/machine-cardio.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 29646,
+      "sha256": "sha256:4d0694827f2f04b938f3b5a45fccf9b6ecc2e81cb3c6585df99819f951c88dc6",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-cardio.jpg",
+      "sourceGitBlobSha": "cbd71a43056ba588443c26c86e9581b98beddc0e"
+    },
+    {
+      "assetId": "equipment-reference.core",
+      "path": "./assets/guides/v1/equipment-reference/machine-core.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 23142,
+      "sha256": "sha256:04e772008088066cd420e3ee6e2d0be6097ff39d786f79818a66509717660e5b",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-core.jpg",
+      "sourceGitBlobSha": "f6464ede29945a9b2365a1fe68a861eb01391d5a"
+    },
+    {
+      "assetId": "equipment-reference.hamstrings",
+      "path": "./assets/guides/v1/equipment-reference/machine-hamstrings.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 25633,
+      "sha256": "sha256:6891a30c0a9826a6778b79f24fe26f84fe60dc44a82c2b336033994c0c0b8527",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-hamstrings.jpg",
+      "sourceGitBlobSha": "1f5a03126fba135be5fa417554fb3ac38ee69f33"
+    },
+    {
+      "assetId": "equipment-reference.home-gym",
+      "path": "./assets/guides/v1/equipment-reference/machine-home-gym.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 95194,
+      "sha256": "sha256:f3b3fa9309932dfc2e991748ee43f4ee4ab5d3be0b00a6826995c4258795a66a",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-home-gym.jpg",
+      "sourceGitBlobSha": "ed9f64c5ddd69046f924197161820df2a0ee3203"
+    },
+    {
+      "assetId": "equipment-reference.leg-press",
+      "path": "./assets/guides/v1/equipment-reference/machine-leg-press.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 30639,
+      "sha256": "sha256:64853307ceb63ee25c151270f379d7f72055a4f7a76b0d386126d80cec5eaa99",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-leg-press.jpg",
+      "sourceGitBlobSha": "0678eda9966b9c9a4bcb40b94547477ac9de4f83"
+    },
+    {
+      "assetId": "equipment-reference.selectorised",
+      "path": "./assets/guides/v1/equipment-reference/machine-selectorised.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 29640,
+      "sha256": "sha256:be4e023e3c07c7531615b10b6fbbee55284d6b08a7008b0e6ce99a18d9050115",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-selectorised.jpg",
+      "sourceGitBlobSha": "11540fd0ed7f52438717e10f7dbee984c490b5ec"
+    },
+    {
+      "assetId": "equipment-reference.shoulder-press",
+      "path": "./assets/guides/v1/equipment-reference/machine-shoulder-press.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 32741,
+      "sha256": "sha256:954a773996e5bddfcd0d8e9d9dbb2f551d6963fb966a7160efc31755c18061b9",
+      "role": "equipment-reference",
+      "sourcePath": "assets/machine-shoulder-press.jpg",
+      "sourceGitBlobSha": "2b74054378d26d125946d83452eeb27fd012f8aa"
+    },
+    {
+      "assetId": "muscle.abs",
+      "path": "./assets/guides/v1/muscles/muscle-abs.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 35047,
+      "sha256": "sha256:e64d0214bb55d7d58cbb57ff2c276d1032a96e4df608134afa68904f325527f8",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-abs.jpg",
+      "sourceGitBlobSha": "69eedd44f2abb96fb8e06d75a6f41d3013aa477e",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.back",
+      "path": "./assets/guides/v1/muscles/muscle-back.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 34293,
+      "sha256": "sha256:50bb8198f616ad9407ea3cd62d529fc4c72c7f645bae3dc78ef0af2cb5292839",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-back.jpg",
+      "sourceGitBlobSha": "fd4badbdf7bb4b07a46d86bd08b8528fa9c81fc8",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.biceps",
+      "path": "./assets/guides/v1/muscles/muscle-biceps.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 32737,
+      "sha256": "sha256:85774a5e72e7effae37ff17422643512f94461d88ec27adc52e43a83aac25cf0",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-biceps.jpg",
+      "sourceGitBlobSha": "8e2aec17060f72702ff8cbb3b3fc7176dd14e02b",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.calves",
+      "path": "./assets/guides/v1/muscles/muscle-calves.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 28304,
+      "sha256": "sha256:097457a7e20b7c9fbec935944ee783f42ada064ee33027fed890590cc37a5b01",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-calves.jpg",
+      "sourceGitBlobSha": "22ae2616698bd7cabd0bbf5bebe3a40f73ad3fbf",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.chest",
+      "path": "./assets/guides/v1/muscles/muscle-chest.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 32760,
+      "sha256": "sha256:58a0e6a0206615ca7f5e82e58485ea8a105fdc5b018535201b4b1519a3103d43",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-chest.jpg",
+      "sourceGitBlobSha": "f5f383153959ea358514d491dc5fdcbe3c0dab78",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.forearms",
+      "path": "./assets/guides/v1/muscles/muscle-forearms.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 29988,
+      "sha256": "sha256:7e0841d582a87c3f63b3573c567e0f16869813b2fe48082bb7e64b6176f1d554",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-forearms.jpg",
+      "sourceGitBlobSha": "c59d962af7e81bbdc4d32bf4f1a9fc35a282eb3a",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.glutes",
+      "path": "./assets/guides/v1/muscles/muscle-glutes.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 32528,
+      "sha256": "sha256:3c2a8d2a103c678c41c2e30c61a10c74620624a7084bafef4696db42e79b2ca1",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-glutes.jpg",
+      "sourceGitBlobSha": "c1a6b6500d247a7d17d6d0908fa3e4fafb39a081",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.hamstrings",
+      "path": "./assets/guides/v1/muscles/muscle-hamstrings.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 35539,
+      "sha256": "sha256:859ddaaa85f4de40d0deb3f2751585666f449781b916054a5dd03961dfa47908",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-hamstrings.jpg",
+      "sourceGitBlobSha": "0ac283426e44eedc28452431bb1fbd173f6b154f",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.inner_thighs",
+      "path": "./assets/guides/v1/muscles/muscle-inner_thighs.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 31415,
+      "sha256": "sha256:87e9804b8c6288b6fe60cfe615e503241889562173e3102df0e1673ec413401c",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-inner_thighs.jpg",
+      "sourceGitBlobSha": "ca194b6843816ec95937e2d2ef4d0bc805736e21",
+      "usedByCurrentOptionalLibrary": false
+    },
+    {
+      "assetId": "muscle.lats",
+      "path": "./assets/guides/v1/muscles/muscle-lats.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 28105,
+      "sha256": "sha256:010bea1f357e77c26a9b96ea51e2ef5c60f936f90ff608ff464c55f1dfd7fdee",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-lats.jpg",
+      "sourceGitBlobSha": "dc49706b34bb99a78da2332e5d59c77c61eb4a6c",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.outer_thighs",
+      "path": "./assets/guides/v1/muscles/muscle-outer_thighs.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 31664,
+      "sha256": "sha256:e19522131329df3f464bf8922a050fb37e743c9255c1873e11df0c2abc261f95",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-outer_thighs.jpg",
+      "sourceGitBlobSha": "a2e9eb2f1a54f6115f3db1d8efa37e51c6f145a2",
+      "usedByCurrentOptionalLibrary": false
+    },
+    {
+      "assetId": "muscle.quads",
+      "path": "./assets/guides/v1/muscles/muscle-quads.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 36399,
+      "sha256": "sha256:b618c8e4a2f1faab434b44ed8d898df2fe9db9982cc2e1b8a6a4d45cb1184fc2",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-quads.jpg",
+      "sourceGitBlobSha": "d88a713c18c5f0f2cfdeec0b16e175997479fd8b",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.rear_shoulders",
+      "path": "./assets/guides/v1/muscles/muscle-rear_shoulders.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 33858,
+      "sha256": "sha256:92b396e6e97ccfbdc140806ecdba1af9b16edd5bc9306d99f0ccfa3dea1963c0",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-rear_shoulders.jpg",
+      "sourceGitBlobSha": "b1da768eac3afab0a9fb7e5b0bbad64437c8bb6a",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.shoulders",
+      "path": "./assets/guides/v1/muscles/muscle-shoulders.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 34487,
+      "sha256": "sha256:e0dcf9780d4fd52bdb94cf81f192494287d0344796b7dc5e00c477e2a0b697fe",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-shoulders.jpg",
+      "sourceGitBlobSha": "6643e45a96393a456da1ef88980ce57e33459d5d",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.traps",
+      "path": "./assets/guides/v1/muscles/muscle-traps.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 28659,
+      "sha256": "sha256:8049dc13a32554a702d6ef74a58a318094e0815eb05f5ea3880d210166021510",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-traps.jpg",
+      "sourceGitBlobSha": "c4d298d57f816856b76ff50449c6fefcd269ae87",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "muscle.triceps",
+      "path": "./assets/guides/v1/muscles/muscle-triceps.jpg",
+      "mimeType": "image/jpeg",
+      "byteLength": 32494,
+      "sha256": "sha256:edb91988af102215cf8b7c9c5b46cfb03f73e72d955112511feaecfd9b1f9357",
+      "role": "muscle-illustration",
+      "sourcePath": "assets/muscle-triceps.jpg",
+      "sourceGitBlobSha": "74a4f1cc64681ccd34f16792718f3dc952f062a2",
+      "usedByCurrentOptionalLibrary": true
+    },
+    {
+      "assetId": "celebration.day1",
+      "path": "./assets/celebrations/v1/celebration-day1.gif",
+      "mimeType": "image/gif",
+      "byteLength": 702015,
+      "sha256": "sha256:4377d8dbdfac3c5fca8301d0f053e2ee63d9f35207f7d93032bc269eeb30c236",
+      "role": "celebration",
+      "sourcePath": "celebration-day1.gif",
+      "sourceGitBlobSha": "1d11e0a57a060eba89b336a1a67780326c60615a"
+    },
+    {
+      "assetId": "celebration.day2",
+      "path": "./assets/celebrations/v1/celebration-day2.gif",
+      "mimeType": "image/gif",
+      "byteLength": 710986,
+      "sha256": "sha256:3d23ac42e85272a83bf30205fb092cab9cd6aed3d23046314b16825094fbd54c",
+      "role": "celebration",
+      "sourcePath": "celebration-day2.gif",
+      "sourceGitBlobSha": "edf11eabba8941ccf91f197da8dcfa6260faa036"
+    },
+    {
+      "assetId": "celebration.female",
+      "path": "./assets/celebrations/v1/female-celebration.gif",
+      "mimeType": "image/gif",
+      "byteLength": 705830,
+      "sha256": "sha256:33915e99a5d48934e17b5868ac3154bd28c91db9862d9cb0e32f3c7869511348",
+      "role": "celebration",
+      "sourcePath": "female-celebration.gif",
+      "sourceGitBlobSha": "06e92e415d197404a0a726a2d2ed4413f5fee6fc"
+    }
+  ]
+}
