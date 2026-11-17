@@ -284,15 +284,14 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Last observed branch head before this manual update: `87f566c48dfa049ed6d0be43c1e54fbba67df447` (handover manual added).
-- Assessment UI implementation is present on the development branch.
-- Assessment UI regression test has been added.
-- Assessment source/bundle parity passed on the preceding browser run for commit `ac327d6`; later run has progressed through bundle parity and Chromium installation.
-- Backup validation #232 for `ac327d6`: **success**.
-- Browser validation #140 for `ac327d6`: **in progress** at last check.
-- Browser validation for the later manual commit `87f566c`: **in progress** at last check.
-- Backup validation for `87f566c`: **in progress** at last check.
-- Do not describe the assessment UI as fully validated until browser validation for the latest branch head has completed successfully.
+- Current branch head: `34533cf0df394120d32f8407048f912a487cf688`.
+- The latest browser run for prior commit `9127d21` completed **failure**: run [#44005798011](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44005798011).
+- Failure was at the skip-link first-keyboard-focus assertion. Assessment service/UI tests and contrast checks passed in that run; the run timed out after reporting the assertion failure.
+- Backup validation for `9127d21`: **success**, run [#44005798092](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44005798092).
+- Diagnosis: the skip-link test ran after many application interactions and tried to recover the initial keyboard state by blurring the active control. That did not reliably recreate a fresh document's initial focus state.
+- Fix committed as `34533cf0df394120d32f8407048f912a487cf688`: moved the same skip-link keyboard assertions to immediately after the real app's initial navigation, before assessment and form interactions. Assertions were retained, not weakened.
+- Browser validation for `34533cf`: **in progress**, run [#44007617291](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44007617291).
+- Do not describe the assessment UI as fully validated until browser and backup checks for the current branch head have completed successfully.
 
 ### Recent change log
 
@@ -309,6 +308,13 @@ During development:
 
 ### Next actions (resume here)
 
+1. Monitor browser validation [#44007617291](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44007617291) for commit `34533cf0df394120d32f8407048f912a487cf688`.
+2. Check whether backup validation is also triggered for the same commit; verify every run's SHA matches the current branch head.
+3. If browser validation fails, inspect its job logs and fix the precise failing assertion or behavior on `V21.2-development`.
+4. Confirm browser + backup validation are green for the same latest branch head.
+5. Review the assessment UI end-to-end, including mobile layout, form validation, error states, history ordering and comparison values.
+6. Update this manual with final validation links and exact validated commit SHA.
+7. Once assessment UI is signed off, proceed to the next approved Visual Progress Journey increment, using actual recorded data only. Do not deploy or merge without explicit approval.
 1. Poll browser validation #140 and the runs for current branch head `87f566c`.
 2. If browser validation fails, inspect the job logs and fix the precise failing assertion/behavior on `V21.2-development`.
 3. If the failure is only a locale-dependent test selector, change the test to use a stable selector or date value; do not weaken the functional assertions.
