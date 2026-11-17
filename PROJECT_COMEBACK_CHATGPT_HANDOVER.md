@@ -5,20 +5,20 @@
 ## Current state
 
 - **Active development branch:** `V21.2-development`
-- **Verified branch head at this checkpoint:** `bb3e8237ca1fa45f5f6ace8c8e2394dd31b2e8ff`
-- **Latest handover commit:** [bb3e823](https://github.com/richardblades1980-prog/gym-comeback-app/commit/bb3e8237ca1fa45f5f6ace8c8e2394dd31b2e8ff)
-- **Browser validation:** [run #44048381531 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44048381531)
-- **Backup validation:** [run #44048381632 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44048381632)
-- Both validation runs were checked against the exact handover commit SHA above. This establishes the state at this checkpoint, not the status of any later commit.
+- **Latest validated code/test checkpoint:** `97ea94cb87e8d718f02e57eeb8acd6ec636f7c87`
+- **Browser validation:** [run #44050325690 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44050325690)
+- **Backup validation:** [run #44050325734 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44050325734)
+- Both runs were checked against the exact code/test SHA above. The handover-documentation commit created by this update must receive its own fresh browser and backup validations.
+- **Protected source:** V21.1 root `index.html` remains byte-identical to the inspected baseline blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
 - **Production boundary:** `main` and the V21.1 baseline remain untouched. No merge or deployment is authorised.
 
 ## Immediate work in progress
 
-1. Continue the source-grounded Gym historical exercise-name audit.
-2. Resolve the collision risks in legacy normalised matching and exercise-configuration keys only after focused regression tests establish the intended identity rules.
-3. Check the V21.2 history presentation grouping separately; it currently groups names by lower-cased text, which can combine case-only variants.
-4. Keep original names and raw workout values intact. Do not silently rename historical records or infer aliases.
-5. For every meaningful code/test commit, verify both browser and backup Actions runs against the exact resulting SHA. Revalidate any later handover-only commit too.
+1. Historical exercise-name collision characterization is complete for legacy configuration keys, previous-week prefill and history lookup.
+2. V21.2 history grouping now uses exact stored exercise names; browser regression coverage confirms punctuation and case variants remain separate.
+3. V21.2 migration regression coverage confirms exact names and raw workout JSON survive without normalization or inferred aliases.
+4. V21.2 shared migration retains legacy exercise-configuration keys and raw values as preferences without inventing an exercise identity.
+5. Next audit step: inspect whether the V21.2 exercise library has stable canonical exercise IDs suitable for cross-session identity. Do not assume per-session record IDs are canonical exercise IDs.
 
 ## Verified decision register
 
@@ -33,26 +33,36 @@
 - Ambiguous multiple same-date completion snapshots do not prove which active workout they belong to; migrated session remains incomplete and all evidence keys are retained.
 - Do not infer 1RM, physiological strength gain, technique, effort, bodyweight load, exercise classification or completion from absent data.
 - The V21.2 browser bundles must remain byte-identical to their canonical `src/` sources; the browser workflow checks this parity.
+- V21.2 exercise migration preserves names verbatim and assigns distinct per-session exercise-record IDs. These are record IDs, not proof of a reusable cross-session exercise identity.
+- Legacy exercise-configuration keys are preserved as raw preferences with their original `legacyKey` and `legacyRawValue`; they are not automatically assigned to a guessed exercise.
 
-### Open questions — not approved decisions
+### Recommended identity policy for V21.2 going forward
 
-- Whether exercise identity should use exact names, a verified alias map, or a collision-aware matching policy.
-- Whether punctuation/spacing/case variants in existing records are intended aliases or distinct exercises.
-- Whether the legacy per-day exercise configuration key should be replaced or migrated collision-safely.
-- Whether the V21.2 journey should show case-only name variants separately or under an explicitly verified alias.
+- Use exact stored exercise names as the safe default for matching and history grouping when no stable canonical exercise ID exists.
+- Do not use lower-case/punctuation/diacritic normalization as an identity rule. It may be useful for search suggestions, but not for silently linking records.
+- Permit aliases only through an explicit, reviewed alias-to-canonical-ID mapping. A normalized match that has multiple possible candidates is ambiguous and must not prefill or attribute history.
+- Do not split or duplicate a legacy normalized configuration key across candidate exercises. Preserve it as an unassigned legacy preference.
+- For future reusable exercise settings and cross-session identity, use a stable canonical exercise ID rather than a name-derived key.
+- This policy is for V21.2 and future code. Do not modify the protected V21.1 source or rewrite existing historical names.
+
+### Open questions — not yet implemented
+
+- Whether V21.2 should display preserved legacy exercise-configuration preferences in a migration review screen, or simply retain them in backup/data inspection.
+- Whether the exercise library already provides stable IDs that can safely anchor cross-session history; inspect source before deciding.
 - No actual user legacy dataset has been inspected; do not claim these risks have affected the user's records.
 
 ## Live audit checklist
 
 - [x] Confirm live development branch and exact head before work.
-- [x] Confirm final handover commit browser and backup validations.
+- [x] Confirm previous code checkpoint browser and backup validations.
 - [x] Inspect V21.1 exercise normalisation, previous-week prefill and history matching.
-- [x] Inspect V21.2 journey grouping and canonical migration/test layout.
-- [ ] Add focused, reproducible collision regression coverage.
-- [ ] Decide identity/alias policy from source evidence and compatibility requirements.
-- [ ] Implement only the approved collision-safe change, with canonical/bundle parity.
-- [ ] Run focused tests, full browser validation and backup validation on the exact code commit.
-- [ ] Update this handover and validate the exact final handover commit.
+- [x] Characterize collisions in configuration keys, prefill and history with focused tests.
+- [x] Test migration preservation of distinct exact names and raw workout JSON.
+- [x] Test preservation of ambiguous legacy exercise configuration as an unassigned preference.
+- [x] Confirm V21.2 history grouping separates exact name variants.
+- [x] Run browser and backup validations on code/test commit `97ea94cb87e8d718f02e57eeb8acd6ec636f7c87`.
+- [ ] Validate this handover-documentation commit on its exact resulting SHA with both workflows.
+- [ ] Continue by inspecting stable canonical exercise identity in the V21.2 exercise library.
 
 ---
 
