@@ -191,7 +191,7 @@ test("catalogue release manifests are immutable and references retain used relea
     catalogueReleaseId: release.id, idempotencyKey: "release-review-1"
   });
   const refs = await identity.getCatalogueReleaseReferences(release.id);
-  assert.deepEqual(refs.map(item => item.type).sort(), ["identityReviewEvent", "programmeVersion", "session"]);
+  assert.deepEqual(Array.from(refs, item => item.type).sort(), ["identityReviewEvent", "programmeVersion", "session"]);
   assert.equal(await identity.isCatalogueReleaseRetained(release.id), true);
   assert.equal(await identity.isCatalogueReleaseRetained("draft-release"), false);
   assert.equal(await identity.isCatalogueReleaseRetained("cancelled-release"), false);
