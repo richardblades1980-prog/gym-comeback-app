@@ -856,3 +856,11 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Two unused legacy SVGs (`equipment-bench.svg`, `equipment-squat-rack.svg`) were excluded because protected root `index.html` does not reference them.
 - Package is inert: no script imports the manifest, no guide/celebration assets are added to the service worker, and the current shell/cache behaviour is unchanged. Next task is the build-time manifest/hash/path contract test, then separately implement verified guide-asset caching.
 - Current branch head when this note was drafted: package commit `740af8bd68ed6a1d424fa0ee3097a60c98492531`; design-doc update follows. Verify final branch head and both browser/backup workflows before calling the final documentation checkpoint validated.
+
+
+## Guide asset integrity test — 2026-11-18
+
+- Added `tests/guide-assets-contract.test.js` and wired it into `.github/workflows/v21-2a-browser-validation.yml`.
+- The test verifies the 41-entry manifest, package byte total, local path containment, MIME, exact SHA-256, Git blob SHA-1 provenance, byte-for-byte equality with source assets, 13 SVG mappings, all 14 optional-library muscle keys, the deduplicated machine-reference JPG alias and all three celebration GIFs.
+- This is build-time integrity coverage only. The manifest is not yet loaded by the app, and the new guide/celebration assets are not yet cached by the service worker. Runtime offline cache work and browser guide interaction tests remain separate steps.
+- Test/workflow commit: `89a2c4f221f83bae897d3295a6344df2da6bf4ce`; subsequent documentation commit follows. Recheck branch head and both exact-SHA workflows before calling the current checkpoint validated.
