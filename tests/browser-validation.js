@@ -137,6 +137,12 @@ function server() {
     }
     console.log("PASS skip link is first keyboard target and moves focus to main content");
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    const emptyComparisonText = await app.locator("#assessment-comparison").textContent();
+    if (!emptyComparisonText.includes("Save your original baseline") ||
+        !emptyComparisonText.includes("add a follow-up assessment")) {
+      throw new Error("Empty assessment comparison state did not explain how to begin: " + emptyComparisonText);
+    }
+    console.log("PASS comparison panel explains how to begin when no assessments exist");
     const followUpGateBeforeBaseline = await app.evaluate(() => ({
       status: document.querySelector("#followup-status").textContent,
       controlsDisabled: [...document.querySelectorAll("#followup-form input,#followup-form textarea,#followup-form button")].every(control => control.disabled)
@@ -176,50 +182,31 @@ function server() {
         sameDayAccepted = sameDay.date === baseline.date;
         await ProjectComebackDB.remove("assessments", sameDay.id);
       } catch (_) {}
-      const followUp = await service.addFollowUp({
-        date: "2026-11-16",
-        measures: { comfortableWalkMinutes: 18, stepUpsReps: 11 }
-      });
-      const comparison = service.compare(baseline, followUp);
       let overwriteRejected = false;
       try {
         await service.createBaseline({ date: "2026-11-17", measures: { stepUpsReps: 99 } });
       } catch (error) { overwriteRejected = /cannot be overwritten/.test(error.message); }
-      let followUpDuplicateRejected = false;
-      try {
-        await service.addFollowUp({ id: followUp.id, date: "2026-11-17", measures: { stepUpsReps: 99 } });
-      } catch (error) { followUpDuplicateRejected = true; }
-      const latest = await service.compareBaselineToLatest();
       return {
         baselineId: baseline.id,
-        followUpId: followUp.id,
         historyCount: (await service.listHistory()).length,
-        walkDifference: comparison.measures.comfortableWalkMinutes.difference,
-        missingBalanceDifference: comparison.measures.singleLegBalanceSeconds.difference,
         overwriteRejected,
-        followUpDuplicateRejected,
         followUpWithoutBaselineRejected,
         earlierDateRejected,
         sameDayAccepted,
-        latestDate: latest && latest.second.date,
         storedBaseline: await service.getBaseline()
       };
     });
     if (assessmentCheck.baselineId !== "original-baseline" ||
-        assessmentCheck.historyCount !== 2 ||
-        assessmentCheck.walkDifference !== 6 ||
-        assessmentCheck.missingBalanceDifference !== null ||
+        assessmentCheck.historyCount !== 1 ||
         !assessmentCheck.overwriteRejected ||
-        !assessmentCheck.followUpDuplicateRejected ||
         !assessmentCheck.followUpWithoutBaselineRejected ||
         !assessmentCheck.earlierDateRejected ||
         !assessmentCheck.sameDayAccepted ||
-        assessmentCheck.latestDate !== "2026-11-16" ||
         assessmentCheck.storedBaseline.measures.stepUpsReps !== 8) {
-      throw new Error("Baseline sequencing, date rule or assessment comparison failed: " + JSON.stringify(assessmentCheck));
+      throw new Error("Baseline sequencing/date rule or baseline protection failed: " + JSON.stringify(assessmentCheck));
     }
-    console.log("PASS original baseline protection, baseline-first sequencing, same-day follow-ups and missing-value comparisons");
-    console.log("[browser] Assessment screens and Before & Now UI");
+    console.log("PASS original baseline protection, baseline-first sequencing, same-day follow-ups and date ordering");
+        console.log("[browser] Assessment screens and Before & Now UI");
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="assessments"]').click();
@@ -228,6 +215,12 @@ function server() {
         !(await app.locator("#assessment-history").textContent()).includes("Original baseline")) {
       throw new Error("Assessment UI did not show and protect the existing original baseline.");
     }
+    const oneAssessmentMessage = await app.locator("#assessment-comparison").textContent();
+    if (!oneAssessmentMessage.includes("Your original starting point is saved") ||
+        !oneAssessmentMessage.includes("Add a follow-up assessment")) {
+      throw new Error("Single-assessment comparison state did not explain the next step: " + oneAssessmentMessage);
+    }
+    console.log("PASS comparison panel explains what to do when only the original baseline exists");
     if (!(await app.locator('#followup-form button[type="submit"]').isEnabled()) ||
         await app.locator('#followup-form [name="date"]').getAttribute("min") !== "2026-11-15" ||
         !(await app.locator("#followup-status").textContent()).includes("on or after")) {
@@ -247,7 +240,32 @@ function server() {
         !comparisonText.includes("Not comparable")) {
       throw new Error("Before & Now UI comparison did not show expected changes and missing-value handling: " + comparisonText);
     }
-    console.log("PASS assessment UI: immutable baseline, follow-up entry, history and selectable comparisons");
+    const postFollowUpCheck = await app.evaluate(async () => {
+      const service = ProjectComebackAssessments;
+      const history = await service.listHistory();
+      const baseline = await service.getBaseline();
+      const followUp = history.find(item => item.kind === "follow-up");
+      let duplicateIdRejected = false;
+      try {
+        await service.addFollowUp({ id: followUp.id, date: "2026-11-18", measures: { stepUpsReps: 99 } });
+      } catch (_) { duplicateIdRejected = true; }
+      const comparison = service.compare(baseline, followUp);
+      const latest = await service.compareBaselineToLatest();
+      return {
+        historyCount: history.length,
+        duplicateIdRejected,
+        walkDifference: comparison.measures.comfortableWalkMinutes.difference,
+        missingBalanceDifference: comparison.measures.singleLegBalanceSeconds.difference,
+        latestDate: latest && latest.second.date
+      };
+    });
+    if (postFollowUpCheck.historyCount !== 2 || !postFollowUpCheck.duplicateIdRejected ||
+        postFollowUpCheck.walkDifference !== 9 ||
+        postFollowUpCheck.missingBalanceDifference !== null ||
+        postFollowUpCheck.latestDate !== "2026-11-17") {
+      throw new Error("Follow-up history, duplicate ID or comparison service checks failed: " + JSON.stringify(postFollowUpCheck));
+    }
+    console.log("PASS assessment UI: immutable baseline, follow-up entry, history, selectable comparisons and duplicate ID protection");
 
     const assessmentCountBeforeRapidSubmit = await app.evaluate(async () => (await ProjectComebackAssessments.listHistory()).length);
     await app.locator('#followup-form [name="date"]').fill("2026-11-17");
