@@ -850,6 +850,38 @@ function server() {
         navigator.serviceWorker.addEventListener("controllerchange", () => { clearTimeout(timer); resolve(); }, { once: true });
       }
     }));
+    console.log("[browser] Verified catalogue materialisation and offline lookup");
+    const catalogueOnlineCheck = await app.evaluate(async () => {
+      const payload = {
+        catalogueId: "exercise-catalogue",
+        releaseId: "browser-catalogue-r1",
+        version: 1,
+        schemaVersion: 1,
+        definitions: [{ id: "exd_browser_catalogue_test_0001", kind: "system", canonicalName: "Browser Test Squat" }],
+        variations: []
+      };
+      const bytes = new TextEncoder().encode(JSON.stringify(payload));
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      const checksum = "sha256:" + [...new Uint8Array(digest)].map(value => value.toString(16).padStart(2, "0")).join("");
+      const manifest = {
+        id: payload.releaseId, catalogueId: payload.catalogueId, releaseId: payload.releaseId,
+        version: payload.version, schemaVersion: payload.schemaVersion,
+        assetUrl: "./catalogues/exercise/browser-fixture/browser-catalogue-r1.json",
+        contentType: "application/json", byteLength: bytes.byteLength, checksum,
+        entryCount: payload.definitions.length, variationCount: payload.variations.length
+      };
+      const installed = await ProjectComebackCatalogueDelivery.installRelease(manifest, bytes);
+      const matches = await ProjectComebackCatalogueDelivery.lookup("Browser Test Squat");
+      const cacheNames = await caches.keys();
+      return {
+        installed, matchCount: matches.length, canonicalName: matches[0]?.canonicalName,
+        catalogueCaches: cacheNames.filter(name => name.startsWith(ProjectComebackCatalogueDelivery.cachePrefix))
+      };
+    });
+    if (catalogueOnlineCheck.installed.status !== "active" || catalogueOnlineCheck.matchCount !== 1 ||
+        catalogueOnlineCheck.canonicalName !== "Browser Test Squat" || catalogueOnlineCheck.catalogueCaches.length !== 1) {
+      throw new Error("Verified catalogue release did not materialise or become queryable: " + JSON.stringify(catalogueOnlineCheck));
+    }
     console.log("[browser] Real app offline reload");
     console.log("[browser] V21.2 offline shell reload");
     await appContext.setOffline(true);
