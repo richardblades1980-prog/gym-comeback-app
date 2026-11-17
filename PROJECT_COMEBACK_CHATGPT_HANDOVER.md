@@ -897,3 +897,31 @@ This was a source-grounded design/inventory update only. No production catalogue
 
 
 - Added a real Playwright failed-update scenario: the test server temporarily serves a modified service worker using guide cache v2 and intentionally returns HTTP 503 for one guide asset. The browser must observe the installing worker become redundant, retain the original active worker/controller, retain all 42 entries in guide cache v1, publish no v2 cache, and fetch the previous SVG successfully while offline. This proves that a failed new release does not damage the previous offline guide cache.
+
+
+---
+
+# V21.2 artwork production standard and dimension audit — 2026-11-18
+
+- Added `docs/V21.2-ARTWORK-PRODUCTION-STANDARD.md` with master canvas sizes, aspect ratios, preferred formats, safe margins, responsive display rules, naming conventions, stable asset-ID rules and future manifest validation requirements.
+- Artwork filenames for new releases use lowercase ASCII kebab-case, clear role prefixes, zero-padded sequence numbers and lowercase extensions. File paths are not runtime IDs; the manifest `assetId` remains the stable reference. Existing v1 filenames/IDs remain immutable, including legacy underscores.
+- Standards were reconciled against measured source artwork:
+  - Equipment SVG masters: 3:2, proposed `viewBox="0 0 1200 800"`, matching the existing 13 packaged SVGs and 2 excluded legacy SVGs (all current `480 × 320`).
+  - Equipment reference photos: 1600 × 1200 (4:3) proposed new master.
+  - Muscle illustrations: 1200 × 1600 (3:4) common high-resolution portrait master.
+  - Static hero characters: 1200 × 1600 (3:4), transparent background.
+  - Celebration animations: 720 × 1080 (2:3) new master, preserving the current six-second, six-frame (1,000 ms/frame) timing and existing male/female/day selection logic.
+- Added `docs/V21.2-ARTWORK-INVENTORY-AUDIT.md` by reading actual committed image headers and SVG viewBoxes. It measures all 41 immutable guide/celebration package files plus the two excluded SVGs.
+- Audit findings:
+  - 9 unique equipment reference JPEGs; 8 are only 292–304 px wide. One `machine-home-gym.jpg` is an extreme 1,528 × 176 panorama requiring visual review rather than automatic crop/stretch.
+  - 16 muscle JPEGs are only 248–300 × 324–326 px and have two visibly different portrait width/crop groups. Recreate on a common 3:4 canvas rather than upscaling.
+  - All three celebration GIFs are 420 × 650, 6 frames, 6,000 ms total, six 1,000 ms frame delays, infinite GIF loop metadata.
+  - Three muscle filenames use underscores; equipment-reference names use legacy `machine-` prefix; celebration names do not fully encode profile/day in the new naming form. Preserve all v1 names/paths/IDs.
+  - `machine-dumbbells.jpg` is byte-identical to `machine-benches.jpg` and remains a source alias, not a distinct packaged image.
+- Replacement priority: equipment photos and muscle illustrations first; separately review the panorama; then static hero artwork if needed and celebration remakes. Retain current vector equipment artwork unless visual review finds a style or accuracy issue.
+- Exact-SHA validation on artwork-standard naming revision `6e5db781a35a13fa2f486514c4d50e842dc5e184`: browser #44175788542 PASS and backup #44175788488 PASS.
+- Exact-SHA validation on inventory audit commit `7edf13fe96a5ce3a325d5d42c27ae75027e49c9e`: browser #44176041931 PASS and backup #44176041951 PASS.
+- Browser run evidence: all source/contract checks, migration/IndexedDB tests, offline reload, dedicated 41-asset guide cache, failed v2 install preservation, catalogue materialisation/offline lookup, backup/restore and accessibility contrast checks passed.
+- Scope boundary: documentation only. No binary artwork, v1 manifest, service-worker logic, catalogue data, IndexedDB schema, backup payloads, workout/history records, root `index.html`, or `main` was changed. No merge or deployment.
+- Next artwork step: visual review of the existing image content against the metadata audit, then approve sample direction for replacement equipment photos and muscle illustrations before generating a batch. Do not replace all artwork before visual approval and a new immutable manifest/cache release is ready.
+
