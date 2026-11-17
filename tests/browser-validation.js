@@ -200,6 +200,25 @@ function server() {
     }
     console.log("PASS canonical identity service is cached and the real V21.2 app cold-starts offline");
 
+    const baseProgrammeAsset = await app.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      const assetUrl = new URL("./assets/gym-base-programme.js", location.href).href;
+      const names = await caches.keys();
+      let cached = false;
+      for (const name of names) {
+        const response = await (await caches.open(name)).match(assetUrl);
+        if (response) { cached = true; break; }
+      }
+      const validation = ProjectComebackGymBaseProgramme.validate();
+      return { loaded: typeof ProjectComebackGymBaseProgramme === "object", cached, validation };
+    });
+    if (!baseProgrammeAsset.loaded || !baseProgrammeAsset.cached ||
+        baseProgrammeAsset.validation.slotCount !== 32 ||
+        baseProgrammeAsset.validation.dayCount !== 5) {
+      throw new Error("Source-preserved Gym programme is not loaded and cached: " + JSON.stringify(baseProgrammeAsset));
+    }
+    console.log("PASS five-day Gym programme loads in the app and is available in the offline shell cache");
+
     console.log("[browser] Failed guide-cache update preserves the active offline version");
     testServerState.serveGuideWorkerV2 = true;
     testServerState.failGuideAsset = true;
@@ -943,7 +962,7 @@ function server() {
       const manifest = await manifestResponse.json();
       const assets = await Promise.all(manifest.assets.map(asset =>
         cache.match(new URL(asset.path, location.href).href)));
-      const shellCache = await caches.open("project-comeback-v21-2a-shell-v16");
+      const shellCache = await caches.open("project-comeback-v21-2a-shell-v17");
       const shellKeys = await shellCache.keys();
       const names = await caches.keys();
       return { manifestId: manifest.manifestId, count: assets.filter(Boolean).length,
