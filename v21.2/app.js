@@ -118,6 +118,13 @@ async function refreshAssessments(){
  $("baseline-status").textContent=baseline?"Saved · "+formatDate(baseline.date):"Not recorded";
  $("baseline-form").querySelectorAll("input,textarea,button").forEach(control=>control.disabled=!!baseline);
  $("baseline-form").querySelector("button[type=submit]").textContent=baseline?"Original baseline saved":"Save original baseline";
+ const followUpForm=$("followup-form");
+ $("followup-status").textContent=baseline
+  ?"Original baseline saved. Follow-up dates must be on or after "+formatDate(baseline.date)+"."
+  :"Save your original baseline before adding follow-up assessments.";
+ followUpForm.elements.date.min=baseline?baseline.date:"";
+ if(baseline&&followUpForm.elements.date.value<baseline.date)followUpForm.elements.date.value=baseline.date;
+ followUpForm.querySelectorAll("input,textarea,button").forEach(control=>control.disabled=!baseline);
  const previousFirst=$("compare-first").value,previousSecond=$("compare-second").value;
  const options=history.map(item=>'<option value="'+esc(item.id)+'">'+esc(assessmentLabel(item))+'</option>').join("");
  $("compare-first").innerHTML=options;
@@ -165,7 +172,10 @@ $("followup-form").addEventListener("submit",async event=>{
  button.disabled=true;
  try{
   await ProjectComebackAssessments.addFollowUp({date:form.elements.date.value,measures:assessmentMeasures(form),notes:form.elements.notes.value});
-  form.reset();form.elements.date.value=today;await refreshAssessments();notice("Follow-up assessment saved to your history.");
+  form.reset();
+  const baseline=await ProjectComebackAssessments.getBaseline();
+  form.elements.date.value=baseline&&today<baseline.date?baseline.date:today;
+  await refreshAssessments();notice("Follow-up assessment saved to your history.");
  }catch(error){notice(error.message,true);}
  finally{
   followUpSubmissionPending=false;
