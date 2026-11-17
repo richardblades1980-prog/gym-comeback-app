@@ -1,17 +1,17 @@
 # Project Comeback — catalogue delivery audit checkpoint (2026-11-17)
 
 - **Active branch:** `V21.2-development`
-- **Audited base SHA:** `117cb5d98a0e5c16b6fb000d4ba80a4c28e4435e` (confirmed live before inspection)
-- **Audit:** design-first source-grounded catalogue delivery/offline lookup review.
-- **Design document:** `docs/V21.2-CATALOGUE-DELIVERY-OFFLINE-AUDIT.md`
-- **G2 gate:** `docs/V21.2-G2-CATALOGUE-DELIVERY-GATE.md` — **HOLD pending explicit user decision**.
-- **Regression suite:** `tests/catalogue-delivery-contract.test.js`; included in browser and backup workflows. These are source-characterization/design-contract tests, not production catalogue-loader tests.
-- **Finding:** release registration stores manifest metadata/checksum string but does not verify asset bytes or load a catalogue. The real service worker caches the app shell/identity script only; generic same-origin GETs share the shell cache and old shell caches are deleted on activation. Browser validation proves identity-service offline cold start, not catalogue lookup. V2 backup carries release metadata and display snapshots, not system asset bytes.
-- **Retention gap:** `getCatalogueReleaseReferences()` omits `programmeSlots`, although V2 backup validation accepts slot-level release references.
-- **Recommendation:** immutable versioned JSON + exact-byte SHA-256; separate release CacheStorage namespace; verify/stage before a single IndexedDB materialisation/active-pointer transaction; preserve prior release on failure; use snapshots for historical display and never substitute latest for a missing pinned release.
-- **Implementation boundary:** no catalogue asset, loader, lookup UI, service-worker behaviour, IndexedDB schema or backup-format implementation; no release GC. V21.1/`main` untouched; no merge/deployment.
-- **Validation:** this commit's exact-SHA browser and backup workflows must pass before closeout.
-- **Next:** review the G2 proposal and decide PASS / HOLD / REVISE / REJECT.
+- **Latest validated design/test commit:** `3db53e95fe2641ec76dc5843a56797383a66913b`
+- **Browser validation #44066426367:** **PASS**, exact SHA matches: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44066426367
+- **Backup validation #44066426518:** **PASS**, exact SHA matches: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44066426518
+- **Audited base:** `117cb5d98a0e5c16b6fb000d4ba80a4c28e4435e`
+- **Design audit:** `docs/V21.2-CATALOGUE-DELIVERY-OFFLINE-AUDIT.md`
+- **New G2 gate:** `docs/V21.2-G2-CATALOGUE-DELIVERY-GATE.md` — **HOLD pending explicit user decision**.
+- **Regression suite:** `tests/catalogue-delivery-contract.test.js`; added to both workflows. Tests characterize current source and model the proposed release contract; they do not implement catalogue delivery.
+- **Recommendation:** immutable versioned JSON + exact-byte SHA-256 manifest; isolated release CacheStorage namespace; verify/stage before one IndexedDB materialisation/active-pointer transaction; preserve the prior release on failure; render history from snapshots without substituting a missing pinned release.
+- **Important gaps:** current release registration does not verify asset bytes; generic same-origin GETs share the shell cache that activation later purges; current offline browser test covers the identity service only; release reference scan omits programme-slot pins.
+- **Scope boundary:** no catalogue asset, loader, lookup UI, service-worker implementation, schema or backup-format change; no release GC. V21.1 untouched; `main` remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; main root `index.html` blob remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`. No merge/deployment.
+- **Next:** user decision on G2 gate: PASS / HOLD / REVISE / REJECT.
 
 ---
 
