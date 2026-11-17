@@ -101,7 +101,15 @@ function renderAssessmentComparison(){
  const history=window._assessmentHistory||[];
  const firstId=$("compare-first").value,secondId=$("compare-second").value;
  const first=history.find(item=>item.id===firstId),second=history.find(item=>item.id===secondId);
- if(!first||!second){$("assessment-comparison").innerHTML='<p class="empty-state">Save two assessments to compare your progress.</p>';return;}
+ if(history.length===0){
+  $("assessment-comparison").innerHTML='<p class="empty-state">Save your original baseline, then add a follow-up assessment to start comparing your progress.</p>';
+  return;
+ }
+ if(history.length===1){
+  $("assessment-comparison").innerHTML='<p class="empty-state">Your original starting point is saved. Add a follow-up assessment to see how your progress is changing.</p>';
+  return;
+ }
+ if(!first||!second){$("assessment-comparison").innerHTML='<p class="empty-state">Choose two saved assessments to compare your progress.</p>';return;}
  if(first.id===second.id){$("assessment-comparison").innerHTML='<p class="empty-state">Choose two different assessments to see a comparison.</p>';return;}
  const result=ProjectComebackAssessments.compare(first,second);
  $("assessment-comparison").innerHTML='<div class="comparison-heading"><strong>'+esc(assessmentLabel(first))+'</strong><span>→</span><strong>'+esc(assessmentLabel(second))+'</strong></div>'+
