@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymStopwatchRenderInterval=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -19,6 +19,21 @@ async function refreshGymWorkout(){
  if(workout){renderGymWorkout();$("gym-workout-status").textContent="An in-progress session for this day and date is ready to resume.";}
  else{$("gym-workout-active").hidden=true;$("gym-workout-status").textContent="No in-progress session for this day and date. Start a new workout when ready.";}
 }
+function formatStopwatchElapsed(set){
+ const base=Math.max(0,Number(set.stopwatchElapsedMs)||0);
+ const started=Number(set.stopwatchStartedAt);
+ const ms=base+(Number.isFinite(started)&&started>0?Math.max(0,Date.now()-started):0);
+ const total=Math.floor(ms/1000),minutes=Math.floor(total/60),seconds=total%60;
+ return String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
+}
+function updateGymStopwatchDisplays(){
+ document.querySelectorAll("[data-stopwatch-display]").forEach(display=>{
+  const base=Number(display.dataset.stopwatchElapsedMs)||0,started=Number(display.dataset.stopwatchStartedAt);
+  const ms=base+(Number.isFinite(started)&&started>0?Math.max(0,Date.now()-started):0);
+  const total=Math.floor(ms/1000),minutes=Math.floor(total/60),seconds=total%60;
+  display.textContent=String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
+ });
+}
 function renderGymWorkout(){
  const workout=activeGymWorkout;
  if(!workout){$("gym-workout-active").hidden=true;return;}
@@ -33,8 +48,9 @@ function renderGymWorkout(){
    const locked=set.status==="locked",done=set.status==="completed";
    const repField=exercise.recordingMode==="reps"||exercise.recordingMode==="timed-reps"
     ?'<label>Reps<input type="number" min="0" step="1" value="'+esc(set.reps)+'" data-gym-field="reps" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' repetitions" '+(locked?'disabled':'')+'></label>':"";
-   const durationField=exercise.recordingMode==="timed-hold"||exercise.recordingMode==="timed-reps"
-    ?'<label>Seconds<input type="number" min="0" step="1" value="'+esc(set.duration)+'" data-gym-field="duration" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' duration in seconds" '+(locked?'disabled':'')+'></label>':"";
+   const timed=exercise.recordingMode==="timed-hold"||exercise.recordingMode==="timed-reps";
+   const durationField=timed
+    ?'<label>Actual seconds<input type="number" min="0" step="1" value="'+esc(set.duration)+'" data-gym-field="duration" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' actual duration in seconds" '+(locked||Number.isFinite(Number(set.stopwatchStartedAt))?'disabled':'')+'></label><label>Target seconds<input type="number" min="0" step="1" value="'+esc(set.targetDuration)+'" data-gym-field="targetDuration" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' target duration in seconds" '+(locked?'disabled':'')+'></label><div class="gym-stopwatch"><strong data-stopwatch-display data-stopwatch-started-at="'+(Number.isFinite(Number(set.stopwatchStartedAt))?Number(set.stopwatchStartedAt):'')+'" data-stopwatch-elapsed-ms="'+(Math.max(0,Number(set.stopwatchElapsedMs)||0))+'">'+formatStopwatchElapsed(set)+'</strong><div class="gym-stopwatch-actions">'+(Number.isFinite(Number(set.stopwatchStartedAt))?'<button class="secondary" type="button" data-gym-action="timer-stop" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Stop</button>':'<button class="secondary" type="button" data-gym-action="timer-start" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" '+(locked||done?'disabled':'')+'>Start timer</button>')+'<button class="secondary" type="button" data-gym-action="timer-reset" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" '+(locked?'disabled':'')+'>Reset</button></div></div>':"";
    const weightField='<label>Weight (kg)<input type="number" min="0" step="0.1" value="'+esc(set.weight)+'" data-gym-field="weight" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' weight in kilograms" '+(locked?'disabled':'')+'></label>';
    const action=locked?'<span class="gym-set-state">Locked — complete the previous set</span>':
     done?'<button class="secondary" type="button" data-gym-action="undo" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Undo completion</button>':
@@ -44,6 +60,12 @@ function renderGymWorkout(){
   }).join("");
   return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div>'+sets+'</article>';
  }).join("");
+ if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
+ gymStopwatchRenderInterval=null;
+ if(workout.exerciseRecords.some(exercise=>(exercise.sets||[]).some(set=>Number.isFinite(Number(set.stopwatchStartedAt))&&Number(set.stopwatchStartedAt)>0))){
+  gymStopwatchRenderInterval=setInterval(updateGymStopwatchDisplays,250);
+ }
+ updateGymStopwatchDisplays();
 }
 async function startGymWorkout(){
  const button=$("gym-workout-start"),day=Number($("gym-workout-day").value),date=$("gym-workout-date").value;
@@ -66,6 +88,9 @@ async function handleGymWorkoutAction(event){
   if(action==="start")await ProjectComebackGymWorkout.startSet(activeGymWorkout,exerciseId,setNumber);
   else if(action==="complete")await ProjectComebackGymWorkout.completeSet(activeGymWorkout,exerciseId,setNumber);
   else if(action==="undo")await ProjectComebackGymWorkout.undoSet(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="timer-start")await ProjectComebackGymWorkout.startStopwatch(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="timer-stop")await ProjectComebackGymWorkout.stopStopwatch(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="timer-reset")await ProjectComebackGymWorkout.resetStopwatch(activeGymWorkout,exerciseId,setNumber);
   renderGymWorkout();
  }catch(error){notice(error.message,true);renderGymWorkout();}
 }
