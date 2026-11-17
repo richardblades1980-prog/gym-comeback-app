@@ -23,6 +23,8 @@ jobs:
         run: npm install --no-package-lock
       - name: Verify V21.2 browser bundle matches canonical services
         run: node tests/check-v21-2-bundle.js
+      - name: Run canonical exercise identity design contract
+        run: node --test tests/exercise-identity-contract.test.js
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run browser migration and offline tests
