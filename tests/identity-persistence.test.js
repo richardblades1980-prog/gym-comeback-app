@@ -180,7 +180,7 @@ test("catalogue release manifests are immutable and references retain used relea
   await assert.rejects(() => db.put("catalogueReleases", release), /append-only/);
   await assert.rejects(() => db.remove("catalogueReleases", release.id), /append-only/);
 
-  await db.put("programmeVersions", { id: "programme-v1", status: "published", catalogueReleaseId: release.id });
+  await db.put("programmeVersions", { id: "programme-v1", programmeId: "programme-a", status: "published", catalogueReleaseId: release.id });
   await db.put("programmeVersions", { id: "programme-draft", status: "draft", catalogueReleaseId: "draft-release" });
   await db.put("sessions", { id: "session-active", status: "active", catalogueReleaseId: release.id });
   await db.put("sessions", { id: "session-cancelled", status: "cancelled", catalogueReleaseId: "cancelled-release" });
@@ -208,7 +208,8 @@ test("exercise definition and variation IDs are retained and retired by status, 
 });
 
 test("published programme versions, days and slots are immutable after publication", async () => {
-  const { db } = await prepareV6();
+  const { window, db } = await prepareV6();
+  await window.ProjectComebackIdentity.storeCatalogueRelease({ id: "catalogue-1", version: 1, checksum: "sha256:catalogue-1" });
   await db.put("programmeVersions", { id: "programme-version-editable", programmeId: "programme-a", status: "draft", catalogueReleaseId: "catalogue-1" });
   await db.put("programmeDays", { id: "programme-day-editable", programmeVersionId: "programme-version-editable", dayLineageId: "day-lineage-1" });
   await db.put("programmeSlots", { id: "programme-slot-editable", programmeVersionId: "programme-version-editable", programmeDayId: "programme-day-editable", slotLineageId: "slot-lineage-1" });
