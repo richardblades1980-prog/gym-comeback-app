@@ -57,6 +57,20 @@ test("normalises Gym session, exercises and sets while preserving original value
   assert.equal(result.counts.completedSessions, 1);
 });
 
+test("does not infer completion from multiple same-date session snapshots", () => {
+  const raw = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "complete", "Plank::1": "complete" });
+  raw["gym-comeback-set-status-v1-2-3-2026-11-12-session-b"] = JSON.stringify({
+    "Goblet squat::1": "complete",
+    "Goblet squat::2": "started",
+    "Plank::1": "complete"
+  });
+  const result = migration.normaliseSnapshot(raw);
+  assert.equal(result.sessions[0].status, "incomplete");
+  assert.equal(result.sessions[0].completionEvidenceKeys.length, 2);
+  assert.ok(result.warnings.some(item => item.key === "gym-comeback-w2-d3" && item.reason.includes("Multiple same-date completion snapshots")));
+  assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
+});
+
 test("does not mark a workout complete without complete set-status evidence", () => {
   const raw = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "started", "Plank::1": "complete" });
   const result = migration.normaliseSnapshot(raw);
