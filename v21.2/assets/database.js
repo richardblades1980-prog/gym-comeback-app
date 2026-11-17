@@ -82,8 +82,8 @@
       const tx = db.transaction(name, mode);
       const done = transactionDone(tx);
       const store = tx.objectStore(name);
-      const result = await work(store, tx);
-      await done;
+      const workResult = Promise.resolve().then(() => work(store, tx));
+      const [result] = await Promise.all([workResult, done]);
       return result;
     } finally {
       db.close();
