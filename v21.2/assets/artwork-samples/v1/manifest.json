@@ -1,0 +1,25 @@
+{
+  "sampleManifestId": "gym-artwork-sample-set-v1",
+  "schemaVersion": 1,
+  "status": "review-only-not-for-production",
+  "samples": [
+    {
+      "sampleId": "sample.equipment.chest-press",
+      "role": "equipment-illustration",
+      "path": "./equipment/equipment-chest-press.svg",
+      "mimeType": "image/svg+xml",
+      "viewBox": "0 0 1200 800",
+      "aspectRatio": "3:2",
+      "reviewStatus": "pending"
+    },
+    {
+      "sampleId": "sample.muscle.chest",
+      "role": "muscle-illustration",
+      "path": "./muscles/muscle-chest.svg",
+      "mimeType": "image/svg+xml",
+      "viewBox": "0 0 1200 1600",
+      "aspectRatio": "3:4",
+      "reviewStatus": "pending"
+    }
+  ]
+}
