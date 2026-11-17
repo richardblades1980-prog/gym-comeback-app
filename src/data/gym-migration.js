@@ -93,7 +93,10 @@
         };
       });
       const snapshots = collectStatusSnapshots(snapshot, week, day, date);
-      const status = inferCompletion(exerciseData, snapshots);
+      if (snapshots.length > 1) {
+        warnings.push({ key, reason: "Multiple same-date completion snapshots exist; their session tokens cannot be matched to this workout log, so completion is ambiguous and the session remains incomplete." });
+      }
+      const status = snapshots.length > 1 ? "incomplete" : inferCompletion(exerciseData, snapshots);
       const durationRaw = log.sessionTime;
       const durationMinutes = numericOrNull(durationRaw);
       const session = {
