@@ -6,11 +6,14 @@
 
 - **Active development branch:** `V21.2-development`
 - **Latest design/test checkpoint:** `e6bd0fd969bd2127e4d71bad9174933c5d0ed09d`
-- **Browser validation:** [run #44052088969 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088969)
-- **Backup validation:** [run #44052088959 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088959)
-- Both workflows completed successfully on the exact design/test SHA above. This handover-documentation commit must receive its own fresh browser and backup validations.
+- **Design checkpoint browser validation:** [run #44052088969 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088969)
+- **Design checkpoint backup validation:** [run #44052088959 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088959)
+- **Previous handover checkpoint:** `86b21f15a89c60a793dbd424f4568296d74f5569`
+- **Previous handover browser validation:** [run #44052262475 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052262475)
+- **Previous handover backup validation:** [run #44052262537 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052262537)
 - **Design proposal:** [V21.2 canonical exercise identity model](docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md)
 - **Design acceptance tests:** `tests/exercise-identity-contract.test.js` (9 tests; included in both workflows).
+- Every new code or documentation commit must receive fresh browser and backup validation on its exact SHA before closeout.
 - **Protected V21.1 source:** root `index.html` remains at inspected baseline blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
 - **Production boundary:** `main` remains at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge or deployment is authorised.
 
@@ -19,7 +22,7 @@
 1. Source inspection confirmed V21.2 has session-scoped exercise records, but no canonical exercise catalogue or reusable exercise IDs.
 2. Added a design-only model separating exercise definitions, variations, performed records, equipment definitions, programme versions, version-scoped slots, aliases and reusable configuration.
 3. Added nine design acceptance tests covering opaque IDs, variations, equipment references, programme-version/slot lineage, exact verified aliases, unresolved collisions, historical preservation, configuration scope and performed-record identity.
-4. Both workflows now run the design acceptance tests. Browser workflow also retains bundle-parity and Chromium migration/offline tests; backup workflow retains the existing backup/migration/programme test suite.
+4. Both workflows run the design acceptance tests. Browser workflow also retains bundle-parity and Chromium migration/offline tests; backup workflow retains the existing backup/migration/programme test suite.
 5. **No application implementation, IndexedDB schema, V21.1 source, or historical user data was changed in this checkpoint.**
 6. Next: review open model decisions, then implement the catalogue/service and schema incrementally with tests first. Do not treat the design fixtures as evidence that the application already supports these entities.
 
@@ -42,7 +45,8 @@
 - [x] Add nine design-level acceptance tests before application implementation.
 - [x] Add the acceptance tests to both browser and backup workflows.
 - [x] Browser and backup workflows passed on design/test commit `e6bd0fd969bd2127e4d71bad9174933c5d0ed09d`.
-- [ ] Update this manual and validate the exact resulting handover commit with both workflows.
+- [x] Previous handover commit `86b21f15a89c60a793dbd424f4568296d74f5569` passed both workflows on its exact SHA.
+- [ ] Validate the current handover-documentation commit on its exact SHA before closeout.
 - [ ] Review open decisions (variation taxonomy, catalogue delivery, programme day/slot lineage, config boundaries).
 - [ ] Only then implement the data model and services on `V21.2-development`.
 
@@ -527,4 +531,13 @@ During development:
 - No application source, IndexedDB schema, V21.1 source, or historical user data changed in this checkpoint.
 - Open design decisions: variation taxonomy; controlled movement/equipment vocabularies; static vs persisted system catalogue; programme day/slot lineage; identity-review audit event storage; reusable configuration vs programme prescription boundaries.
 - Next: review these decisions with the user, then implement incrementally with real service-level tests before schema/UI changes. Keep `main` and V21.1 untouched.
+
+
+
+### Exact-SHA validation of previous handover checkpoint (2026-11-17)
+
+- Handover commit `86b21f15a89c60a793dbd424f4568296d74f5569` was checked against its own branch head.
+- Browser validation #44052262475 PASS, exact SHA `86b21f15a89c60a793dbd424f4568296d74f5569`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052262475
+- Backup validation #44052262537 PASS, exact SHA `86b21f15a89c60a793dbd424f4568296d74f5569`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052262537
+- Current handover update must also be checked on its own exact commit SHA before closeout.
 
