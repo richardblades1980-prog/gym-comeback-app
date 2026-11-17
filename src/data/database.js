@@ -117,6 +117,18 @@
     }
   }
 
+  async function add(name, record) {
+    if (!record || record.id === undefined || record.id === null || record.id === "") {
+      throw new Error("Records must have a stable, non-empty id.");
+    }
+    const now = new Date().toISOString();
+    const saved = Object.assign({}, record, {
+      createdAt: record.createdAt || now,
+      updatedAt: now
+    });
+    return withStore(name, "readwrite", store => requestResult(store.add(saved)));
+  }
+
   async function put(name, record) {
     if (!record || record.id === undefined || record.id === null || record.id === "") {
       throw new Error("Records must have a stable, non-empty id.");
@@ -311,6 +323,7 @@
     getAll,
     getAllByIndex,
     put,
+    add,
     remove,
     count,
     getMeta,
