@@ -28,7 +28,7 @@ test("manifest identity, version and package inventory are stable", () => {
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(manifest.version, 1);
   assert.match(manifest.sourceCommit, /^[0-9a-f]{40}$/);
-  assert.equal(manifest.status, "inert-until-service-worker-integration");
+  assert.equal(manifest.status, "verified-offline-cache-v1");
   assert.equal(manifest.assets.length, 41);
   assert.equal(manifest.totalByteLength, 2984584);
   const counts = manifest.assets.reduce((out, asset) => {

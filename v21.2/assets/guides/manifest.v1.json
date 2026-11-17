@@ -6,7 +6,7 @@
   "sourceFileCount": 44,
   "packagedAssetCount": 41,
   "totalByteLength": 2984584,
-  "status": "inert-until-service-worker-integration",
+  "status": "verified-offline-cache-v1",
   "excludedSourcePaths": [
     "assets/equipment-bench.svg",
     "assets/equipment-squat-rack.svg",

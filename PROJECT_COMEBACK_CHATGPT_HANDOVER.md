@@ -866,3 +866,15 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Test/workflow commit: `89a2c4f221f83bae897d3295a6344df2da6bf4ce`; subsequent documentation commit follows. Recheck branch head and both exact-SHA workflows before calling the current checkpoint validated.
 
 - CI first caught a test-only regex that rejected underscores in source-derived muscle asset IDs such as `muscle.inner_thighs`; widened the allowed ID characters in `7d3c6b2ca56318f05f3ee7b559380f11504809bb`. The manifest and binary assets were unchanged. Corrected final-SHA browser validation is pending.
+
+
+---
+
+# V21.2 guide artwork offline cache implementation — 2026-11-18
+
+- Added dedicated versioned service-worker cache `project-comeback-v21-2a-guides-v1`, isolated from shell cache v16 and verified catalogue release caches.
+- Service-worker installation validates manifest identity/schema/version, 41 unique entries, local paths and allowed roots, MIME, exact byte length, SHA-256 and total 2,984,584 bytes. It fetches/verifies every asset before staging, reads staged bytes back, then publishes and re-verifies the dedicated cache. Install fails closed on any error; the staging cache is cleaned and the prior active worker is not replaced.
+- Guide and celebration requests bypass generic shell caching and use the dedicated guide cache; catalogue routing remains unchanged. Activation cleans old shell/guide versions only after successful installation and leaves catalogue cache namespace alone.
+- Browser validation checks all 41 assets plus the manifest are cached separately and confirms the shell cache contains no guide/celebration paths. It also fetches representative SVG and GIF assets after going offline. Added a dedicated service-worker cache contract test to the browser workflow.
+- Manifest status updated to `verified-offline-cache-v1`. The cache is infrastructure only: no guide modal/content is connected to the current history-only UI. No DB, backup, historical data, protected root source, production `main`, merge or deployment changes.
+- Previous exact-SHA baseline browser validation #44169076076 PASS and backup validation #44169076160 PASS on `5374d75d633c669018f4f74aa92aea90082711e3`. The new cache implementation commit requires both workflows to pass on its own exact SHA.

@@ -8,7 +8,7 @@ const sw = fs.readFileSync(path.join(root, "v21.2/sw.js"), "utf8");
 const browser = fs.readFileSync(path.join(root, "tests/browser-validation.js"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "v21.2/assets/guides/manifest.v1.json"), "utf8"));
 
-test("guide cache is separately versioned and does not share shell or catalogue namespaces", () => {
+test("guide cache is separately versioned and isolated from shell and catalogue namespaces", () => {
   assert.match(sw, /project-comeback-v21-2a-guides-v1/);
   assert.match(sw, /project-comeback-v21-2a-shell-/);
   assert.match(sw, /project-comeback-v21-2a-catalogue-/);
@@ -17,7 +17,7 @@ test("guide cache is separately versioned and does not share shell or catalogue 
   assert.match(sw, /assets\/celebrations\//);
 });
 
-test("manifest is validated before publication and every exact asset byte is verified", () => {
+test("manifest is validated and exact asset bytes, MIME and checksums are verified before publication", () => {
   assert.equal(manifest.status, "verified-offline-cache-v1");
   assert.equal(manifest.assets.length, 41);
   assert.match(sw, /validateGuideManifest\(manifest\)/);
@@ -29,22 +29,22 @@ test("manifest is validated before publication and every exact asset byte is ver
   assert.match(sw, /await installGuideAssets\(\)/);
 });
 
-test("failed guide installation rejects service-worker install and cleans staging cache", () => {
+test("failed guide installation cleans staging and prevents the new worker from activating", () => {
   assert.match(sw, /await caches\.delete\(GUIDE_STAGE_CACHE\)/);
-  assert.match(sw, /catch\(error\)=>\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*throw error;/);
-  assert.match(sw, /await self\.skipWaiting\(\)/);
+  assert.match(sw, /\}catch\(error\)\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*throw error;/);
   assert.ok(sw.indexOf("await installGuideAssets()") < sw.indexOf("await self.skipWaiting()"));
 });
 
 test("guide artwork requests bypass generic shell caching", () => {
-  assert.match(sw, /assets\/guides\/\")\|\|url\.pathname\.includes\("\/assets\/celebrations\//);
+  assert.match(sw, /url\.pathname\.includes\("\/assets\/guides\/"\)\|\|url\.pathname\.includes\("\/assets\/celebrations\/"\)/);
   assert.match(sw, /caches\.open\(GUIDE_CACHE_NAME\).*?cache\.match\(request\).*?fetch\(request\)/s);
   assert.match(browser, /Verified dedicated guide artwork cache/);
   assert.match(browser, /shellHasGuideFiles/);
 });
 
-test("browser validation confirms all 41 guide assets exist in dedicated cache before offline reload", () => {
+test("browser validation confirms all 41 guide assets and serves guide artwork offline", () => {
   assert.match(browser, /guideCacheCheck\.count !== 41/);
   assert.match(browser, /guideCacheCheck\.shellHasGuideFiles/);
+  assert.match(browser, /offlineGuideFetch/);
   assert.match(browser, /project-comeback-v21-2a-guides-v1/);
 });

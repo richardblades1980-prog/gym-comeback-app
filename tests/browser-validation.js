@@ -158,6 +158,18 @@ function server() {
       throw new Error("The real V21.2 app was not controlled by its service worker before offline validation.");
     }
     await appContext.setOffline(true);
+    const offlineGuideFetch = await app.evaluate(async () => {
+      const urls = ["./assets/guides/v1/equipment/equipment-bands.svg","./assets/celebrations/v1/celebration-day1.gif"];
+      const results = [];
+      for (const url of urls) {
+        const response = await fetch(url);
+        results.push({ ok: response.ok, bytes: (await response.arrayBuffer()).byteLength });
+      }
+      return results;
+    });
+    if (offlineGuideFetch.length !== 2 || offlineGuideFetch.some(item => !item.ok || item.bytes < 1000)) {
+      throw new Error("Guide artwork was not served from the dedicated cache while offline: " + JSON.stringify(offlineGuideFetch));
+    }
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     const identityOfflineReload = await app.evaluate(() => ({
@@ -850,6 +862,30 @@ function server() {
         navigator.serviceWorker.addEventListener("controllerchange", () => { clearTimeout(timer); resolve(); }, { once: true });
       }
     }));
+    console.log("[browser] Verified dedicated guide artwork cache");
+    const guideCacheCheck = await app.evaluate(async () => {
+      const cacheName = "project-comeback-v21-2a-guides-v1";
+      const cache = await caches.open(cacheName);
+      const manifestResponse = await cache.match(new URL("./assets/guides/manifest.v1.json", location.href).href);
+      if (!manifestResponse) throw new Error("Guide manifest is missing from its dedicated cache.");
+      const manifest = await manifestResponse.json();
+      const assets = await Promise.all(manifest.assets.map(asset =>
+        cache.match(new URL(asset.path, location.href).href)));
+      const shellCache = await caches.open("project-comeback-v21-2a-shell-v16");
+      const shellKeys = await shellCache.keys();
+      const names = await caches.keys();
+      return { manifestId: manifest.manifestId, count: assets.filter(Boolean).length,
+        expected: manifest.assets.length,
+        shellHasGuideFiles: shellKeys.some(request => request.url.includes("/assets/guides/") || request.url.includes("/assets/celebrations/")),
+        guideCaches: names.filter(name => name.startsWith("project-comeback-v21-2a-guides-")) };
+    });
+    if (guideCacheCheck.manifestId !== "gym-guide-artwork-v1" || guideCacheCheck.count !== 41 ||
+        guideCacheCheck.expected !== 41 || guideCacheCheck.shellHasGuideFiles ||
+        guideCacheCheck.guideCaches.length !== 1 || guideCacheCheck.guideCaches[0] !== "project-comeback-v21-2a-guides-v1") {
+      throw new Error("Guide assets were not installed into an isolated, complete cache: " + JSON.stringify(guideCacheCheck));
+    }
+    console.log("PASS 41 guide/celebration assets verified and cached separately from shell and catalogue");
+
     console.log("[browser] Verified catalogue materialisation and offline lookup");
     const catalogueOnlineCheck = await app.evaluate(async () => {
       const beforeSeed = await ProjectComebackCatalogueDelivery.getStatus();
