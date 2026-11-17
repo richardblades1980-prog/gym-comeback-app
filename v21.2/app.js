@@ -137,19 +137,40 @@ async function refreshAssessments(){
 }
 $("baseline-form").elements.date.value=today;
 $("followup-form").elements.date.value=today;
+let baselineSubmissionPending=false;
+let followUpSubmissionPending=false;
 $("baseline-form").addEventListener("submit",async event=>{
  event.preventDefault();const form=event.currentTarget;
+ if(baselineSubmissionPending)return;
+ baselineSubmissionPending=true;
+ const button=form.querySelector("button[type=submit]");
+ button.disabled=true;
  try{
   await ProjectComebackAssessments.createBaseline({date:form.elements.date.value,measures:assessmentMeasures(form),notes:form.elements.notes.value});
   form.reset();await refreshAssessments();notice("Original baseline saved. It is now protected from being overwritten.");
  }catch(error){notice(error.message,true);}
+ finally{
+  baselineSubmissionPending=false;
+  try{
+   const saved=!!(await ProjectComebackAssessments.getBaseline());
+   form.querySelectorAll("input,textarea,button").forEach(control=>control.disabled=saved);
+  }catch(_){form.querySelectorAll("input,textarea,button").forEach(control=>control.disabled=true);}
+ }
 });
 $("followup-form").addEventListener("submit",async event=>{
  event.preventDefault();const form=event.currentTarget;
+ if(followUpSubmissionPending)return;
+ followUpSubmissionPending=true;
+ const button=form.querySelector("button[type=submit]");
+ button.disabled=true;
  try{
   await ProjectComebackAssessments.addFollowUp({date:form.elements.date.value,measures:assessmentMeasures(form),notes:form.elements.notes.value});
   form.reset();form.elements.date.value=today;await refreshAssessments();notice("Follow-up assessment saved to your history.");
  }catch(error){notice(error.message,true);}
+ finally{
+  followUpSubmissionPending=false;
+  button.disabled=false;
+ }
 });
 $("compare-first").addEventListener("change",renderAssessmentComparison);
 $("compare-second").addEventListener("change",renderAssessmentComparison);
