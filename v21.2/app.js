@@ -101,12 +101,37 @@ function renderGymJourney(sessions,exercises,sets){
  const totalReps=numericRepSets.reduce((sum,record)=>sum+Number(record.reps),0);
  const metric=(label,value,detail)=>'<div class="gym-journey-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>';
  if(!completed.length){target.innerHTML='<p class="empty-state">Your completed Gym sessions will appear here as you save training. Only completed sessions and their linked set records are included.</p>';return;}
+ const sessionById=new Map(completed.map(record=>[record.id,record]));
+ const groups=new Map();
+ exerciseRows.forEach(exercise=>{
+  const name=String(exercise.name||"Unnamed exercise").trim()||"Unnamed exercise";
+  const key=name.toLocaleLowerCase();
+  if(!groups.has(key))groups.set(key,{name,entries:[]});
+  const session=sessionById.get(exercise.sessionId);
+  const exerciseSets=setRows.filter(set=>set.exerciseRecordId===exercise.id).sort((a,b)=>Number(a.setNumber)-Number(b.setNumber));
+  groups.get(key).entries.push({date:session.date||"",sets:exerciseSets});
+ });
+ const history=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(group=>{
+  const entries=group.entries.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const rows=entries.map(entry=>{
+   const date=entry.date?new Date(entry.date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"Date not recorded";
+   const setText=entry.sets.length?entry.sets.map(set=>{
+    const fields=[];
+    fields.push(String(set.weight??"").trim()!==""?"Weight entry "+String(set.weight):"Weight not recorded");
+    fields.push(String(set.reps??"").trim()!==""?String(set.reps)+" reps":"Reps not recorded");
+    if(String(set.duration??"").trim()!=="")fields.push(String(set.duration)+" duration");
+    return "Set "+String(set.setNumber)+": "+fields.join(" · ");
+   }).join("</li><li>"):"No set details recorded";
+   return '<li><strong>'+esc(date)+'</strong><ul><li>'+esc(setText)+'</li></ul></li>';
+  }).join("");
+  return '<section class="gym-exercise-history"><h4>'+esc(group.name)+'</h4><p>'+entries.length+' completed session'+(entries.length===1?"":"s")+' recorded</p><ol>'+rows+'</ol></section>';
+ }).join("");
  target.innerHTML='<div class="gym-journey-grid">'+[
   metric("Completed sessions",String(completed.length),"Saved completed Gym sessions"),
   metric("Exercises recorded",String(exerciseRows.length),"Exercises linked to completed sessions"),
   metric("Sets recorded",String(setRows.length),"Sets linked to completed sessions"),
   metric("Recorded repetitions",String(totalReps),numericRepSets.length+" of "+setRows.length+" sets include a numeric repetition count")
- ].join("")+'</div><p class="journey-data-note">Repetitions are added only where a positive whole-number count was explicitly saved. Weight is not totalled because the stored records do not establish a consistent unit.</p>';
+ ].join("")+'</div><p class="journey-data-note">Repetitions are added only where a positive whole-number count was explicitly saved. Weight entries below are shown exactly as saved; no unit or improvement is inferred.</p><div class="gym-exercise-history-list"><h4>Recorded exercise history</h4>'+(history||'<p class="empty-state">No completed exercise records yet.</p>')+'</div>';
 }
 function renderHikingJourney(records){
  const target=$("hiking-journey");
