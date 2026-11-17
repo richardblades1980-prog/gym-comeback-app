@@ -509,7 +509,7 @@ function server() {
     reopened.on("pageerror", error => console.error("V21.2 REOPEN PAGE ERROR:", error.message));
     await reopened.goto(base + "/v21.2/");
     await reopened.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
-    const afterColdStart = await reopened.evaluate(() => ({
+    const afterColdStart = await reopened.evaluate(async () => ({
       gym: document.querySelector("#gym-count").textContent,
       hikes: document.querySelector("#hiking-count").textContent,
       schedule: document.querySelector("#schedule-count").textContent,
