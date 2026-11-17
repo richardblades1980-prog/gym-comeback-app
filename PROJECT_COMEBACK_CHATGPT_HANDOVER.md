@@ -814,3 +814,16 @@ This was a source-grounded design/inventory update only. No production catalogue
 - The gym-wide mixture does not establish which specific loading system or geometry applies to any particular machine. Chest Press Machine, Leg Press and Shoulder Press Machine remain broad candidates on HOLD. Seated Leg Extension ↔ Leg Extension Machine remains conditional on confirming the optional-library row means a seated machine.
 - Updated curation review: `docs/V21.2-EXERCISE-IDENTITY-CURATION-REVIEW.md`.
 - No aliases, variations, canonical IDs, production catalogue records or UI changes were approved or created. Protected legacy root, database, backup/history contracts and production `main` remain unchanged.
+
+
+---
+
+# Exercise guide content drafting — 2026-11-18
+
+- Added `docs/V21.2-EXERCISE-GUIDE-CONTENT-DRAFT.md` with proposed setup, movement, coaching cues and review notes for all 27 optional-library exercises currently using generic fallback.
+- This is review copy only; no production guide content or `machineDescriptions` changes were made. Generic fallback remains incomplete and must not be presented as exercise-specific instruction.
+- The draft includes a separate review pass for the 25 existing source descriptions; all 52 entries require qualified human review before production.
+- HOLD decisions: Hip / Ankle Mobility is not a single defined drill; Superman / Back Extension combines related patterns; machine press/leg press setup needs configuration-aware instructions; Leg Curl Machine needs seated and prone/lying variations; Abdominal Crunch Machine must not be assigned to the unqualified programme Abdominal Crunch without identity approval; Dumbbell Shoulder Press posture remains unspecified.
+- Machine loading system (pin-selected/weight stack versus plate-loaded) is separate from movement geometry and exercise identity. Leg press orientation and press handle path/independent-arm mechanics remain separate attributes.
+- No canonical IDs, aliases, variations, production catalogue records, workout UI, service-worker asset list, database/backup/history contract, protected root source, production `main`, merge or deployment changes.
+- The curation review, source register and guide draft remain documentation/review artifacts. Exact-SHA browser and backup validation is required for the final handover commit before treating this checkpoint as validated.
