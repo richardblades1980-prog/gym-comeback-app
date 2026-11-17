@@ -224,11 +224,9 @@
     set.status = "in-progress";
     delete set.completedAt;
     exercise.sets.filter(item => item.setNumber > setNumber).forEach(item => {
-      if (item.status === "completed" || item.status === "in-progress") {
-        item.status = "locked";
-        delete item.startedAt;
-        delete item.completedAt;
-      }
+      item.status = "locked";
+      delete item.startedAt;
+      delete item.completedAt;
     });
     updateExerciseStatus(exercise);
     await saveChanges(workout, [exercise.id], exercise.sets.filter(item => item.setNumber >= setNumber).map(item => item.id));
