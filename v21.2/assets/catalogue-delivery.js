@@ -16,6 +16,7 @@
     if (!input || typeof input !== "object" || Array.isArray(input)) fail("release manifest is invalid.");
     const manifest = Object.assign({}, input);
     manifest.catalogueId = requiredString(manifest.catalogueId, "catalogueId");
+    if (manifest.catalogueId !== CATALOGUE_ID) fail("unsupported catalogue ID.");
     manifest.releaseId = requiredString(manifest.releaseId, "releaseId");
     manifest.id = manifest.releaseId;
     if (!Number.isInteger(manifest.version) || manifest.version < 1) fail("version must be a positive integer.");
@@ -26,8 +27,10 @@
     if (manifest.variationCount !== undefined && (!Number.isInteger(manifest.variationCount) || manifest.variationCount < 0)) fail("variationCount is invalid.");
     if (!/^sha256:[a-f0-9]{64}$/.test(manifest.checksum || "")) fail("checksum must be sha256 followed by 64 lowercase hexadecimal characters.");
     requiredString(manifest.assetUrl, "assetUrl");
-    if (manifest.assetUrl.startsWith("http:") || manifest.assetUrl.startsWith("//")) fail("assetUrl must be a same-origin relative path.");
+    if ((!manifest.assetUrl.startsWith("./") && !manifest.assetUrl.startsWith("/")) || manifest.assetUrl.startsWith("//")) fail("assetUrl must be a same-origin relative path.");
     if (manifest.assetUrl.indexOf("..") !== -1) fail("assetUrl cannot traverse parent paths.");
+    const expectedAssetSuffix = "/catalogues/exercise/" + encodeURIComponent(manifest.releaseId) + "/" + manifest.checksum.slice(7) + ".json";
+    if (!manifest.assetUrl.endsWith(expectedAssetSuffix)) fail("assetUrl must be an immutable release-and-digest path.");
     return manifest;
   }
   async function sha256(bytes) {
