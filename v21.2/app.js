@@ -3,14 +3,97 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
 function hideNotice(){$("notice").hidden=true;}
 function setBusy(button,busy,label){button.disabled=busy;if(busy)button.dataset.label=button.textContent;button.textContent=busy?"Working…":(label||button.dataset.label||button.textContent);}
-function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="view-"+name);document.querySelectorAll(".tab").forEach(b=>{const active=b.dataset.view===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});hideNotice();}
+function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="view-"+name);document.querySelectorAll(".tab").forEach(b=>{const active=b.dataset.view===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});hideNotice();if(name==="gym")refreshGymWorkout().catch(error=>notice(error.message,true));}
 function item(title,meta,tag){return '<div class="record-item"><div><strong>'+esc(title)+'</strong><small>'+esc(meta)+'</small></div><small>'+esc(tag||"")+'</small></div>';}
+
+async function refreshGymWorkout(){
+ const day=Number($("gym-workout-day").value),date=$("gym-workout-date").value||today;
+ const workout=await ProjectComebackGymWorkout.findInProgress(day,date);
+ activeGymWorkout=workout;
+ if(workout){renderGymWorkout();$("gym-workout-status").textContent="An in-progress session for this day and date is ready to resume.";}
+ else{$("gym-workout-active").hidden=true;$("gym-workout-status").textContent="No in-progress session for this day and date. Start a new workout when ready.";}
+}
+function renderGymWorkout(){
+ const workout=activeGymWorkout;
+ if(!workout){$("gym-workout-active").hidden=true;return;}
+ $("gym-workout-active").hidden=false;
+ $("gym-workout-title").textContent=workout.session.title;
+ const allSets=workout.exerciseRecords.flatMap(exercise=>exercise.sets||[]);
+ const completed=allSets.filter(set=>set.status==="completed").length;
+ $("gym-workout-progress").textContent=completed+" of "+allSets.length+" sets completed · Changes save automatically on each field edit.";
+ $("gym-workout-finish").disabled=!allSets.length||completed!==allSets.length;
+ $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
+  const sets=exercise.sets.map(set=>{
+   const locked=set.status==="locked",done=set.status==="completed";
+   const repField=exercise.recordingMode==="reps"||exercise.recordingMode==="timed-reps"
+    ?'<label>Reps<input type="number" min="0" step="1" value="'+esc(set.reps)+'" data-gym-field="reps" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' repetitions" '+(locked?'disabled':'')+'></label>':"";
+   const durationField=exercise.recordingMode==="timed-hold"||exercise.recordingMode==="timed-reps"
+    ?'<label>Seconds<input type="number" min="0" step="1" value="'+esc(set.duration)+'" data-gym-field="duration" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' duration in seconds" '+(locked?'disabled':'')+'></label>':"";
+   const weightField='<label>Weight (kg)<input type="number" min="0" step="0.1" value="'+esc(set.weight)+'" data-gym-field="weight" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exercise.name)+' set '+set.setNumber+' weight in kilograms" '+(locked?'disabled':'')+'></label>';
+   const action=locked?'<span class="gym-set-state">Locked — complete the previous set</span>':
+    done?'<button class="secondary" type="button" data-gym-action="undo" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Undo completion</button>':
+    set.status==="in-progress"?'<button class="primary" type="button" data-gym-action="complete" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Set completed</button>':
+    '<button class="secondary" type="button" data-gym-action="start" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Start set</button>';
+   return '<div class="gym-set-row"><div class="gym-set-heading"><strong>Set '+set.setNumber+'</strong><span class="gym-set-state">'+esc(set.status.replace("-"," "))+'</span></div><div class="gym-set-fields">'+weightField+repField+durationField+'</div><div class="gym-set-action">'+action+'</div></div>';
+  }).join("");
+  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div>'+sets+'</article>';
+ }).join("");
+}
+async function startGymWorkout(){
+ const button=$("gym-workout-start"),day=Number($("gym-workout-day").value),date=$("gym-workout-date").value;
+ try{
+  setBusy(button,true);
+  const result=await ProjectComebackGymWorkout.startSession(day,date);
+  activeGymWorkout=result.workout;
+  renderGymWorkout();
+  $("gym-workout-status").textContent=result.resumed?"Resumed your saved in-progress workout.":"New workout started. Your session and sets are saved.";
+  await refresh();
+ }catch(error){notice(error.message,true);}
+ finally{setBusy(button,false,"Start / resume workout");}
+}
+async function handleGymWorkoutAction(event){
+ const button=event.target.closest("[data-gym-action]");
+ if(!button||!activeGymWorkout)return;
+ const action=button.dataset.gymAction,exerciseId=button.dataset.exerciseId,setNumber=Number(button.dataset.setNumber);
+ try{
+  button.disabled=true;
+  if(action==="start")await ProjectComebackGymWorkout.startSet(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="complete")await ProjectComebackGymWorkout.completeSet(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="undo")await ProjectComebackGymWorkout.undoSet(activeGymWorkout,exerciseId,setNumber);
+  renderGymWorkout();
+ }catch(error){notice(error.message,true);renderGymWorkout();}
+}
+async function handleGymWorkoutField(event){
+ const input=event.target.closest("[data-gym-field]");
+ if(!input||!activeGymWorkout)return;
+ try{
+  input.disabled=true;
+  await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,input.dataset.exerciseId,Number(input.dataset.setNumber),{[input.dataset.gymField]:input.value});
+  $("gym-workout-status").textContent="Saved locally.";
+ }catch(error){notice(error.message,true);}
+ finally{input.disabled=false;}
+}
+async function finishGymWorkout(){
+ const button=$("gym-workout-finish");
+ if(!activeGymWorkout)return;
+ try{
+  setBusy(button,true);
+  await ProjectComebackGymWorkout.finishSession(activeGymWorkout);
+  activeGymWorkout=null;
+  $("gym-workout-active").hidden=true;
+  $("gym-workout-status").textContent="Workout completed and saved.";
+  await refresh();
+  notice("Workout completed and saved to your Gym history.");
+ }catch(error){notice(error.message,true);}
+ finally{setBusy(button,false,"Finish workout");}
+}
+
 function shiftDate(date,days){const value=new Date(date+"T12:00:00");value.setDate(value.getDate()+days);return [value.getFullYear(),String(value.getMonth()+1).padStart(2,"0"),String(value.getDate()).padStart(2,"0")].join("-");}
 function formatDate(date){return new Date(date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});}
 function renderDuration(summary){return summary.durationRecordedCount?summary.durationMinutes+" min recorded":"Duration not recorded";}
@@ -333,9 +416,15 @@ async function inspectMigration(){
  $("migration-status").textContent=info.legacyKeyCount+" legacy Gym data keys found. Migration status: "+info.status+". Original browser storage will not be deleted.";
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
+$("gym-workout-start").addEventListener("click",startGymWorkout);
+$("gym-workout-exercises").addEventListener("click",handleGymWorkoutAction);
+$("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
+$("gym-workout-finish").addEventListener("click",finishGymWorkout);
+$("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
+$("gym-workout-date").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
  $("module-cards").addEventListener("click",async event=>{const button=event.target.closest("[data-module-id]");if(!button)return;const id=button.dataset.moduleId;try{button.disabled=true;const current=await ProjectComebackModules.get(id);await ProjectComebackModules.setEnabled(id,!current.enabled);await refresh();notice(current.enabled?"Module paused. Existing records have been kept.":"Module enabled. You can add and schedule activities again.");}catch(error){notice(error.message,true);}finally{button.disabled=false;}});
 $("today-date").textContent=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
-$("hiking-form").elements.date.value=today;$("schedule-form").elements.date.value=today;
+$("hiking-form").elements.date.value=today;$("schedule-form").elements.date.value=today;$("gym-workout-date").value=today;
 $("hiking-form").addEventListener("submit",async event=>{
  event.preventDefault();const form=event.currentTarget,fd=new FormData(form),title=String(fd.get("title")||"").trim(),date=String(fd.get("date")||"");
  if(!title||!/^\d{4}-\d{2}-\d{2}$/.test(date)||new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date){notice("Enter a valid hike name and date.",true);return;}
