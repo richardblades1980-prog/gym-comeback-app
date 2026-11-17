@@ -113,18 +113,34 @@ function renderGymJourney(sessions,exercises,sets){
  });
  const history=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(group=>{
   const entries=group.entries.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const datedLoads=new Map();
+  entries.forEach(entry=>{
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(entry.date))return;
+   const loads=entry.sets.map(set=>Number(set.weight)).filter(value=>Number.isFinite(value)&&value>0);
+   if(!loads.length)return;
+   const heaviest=Math.max(...loads);
+   datedLoads.set(entry.date,Math.max(datedLoads.get(entry.date)||0,heaviest));
+  });
+  const loadPoints=[...datedLoads.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const fmtLoad=value=>Number.isInteger(value)?String(value):String(Number(value.toFixed(2)));
+  let loadSummary="No dated positive load entries to compare yet.";
+  if(loadPoints.length===1)loadSummary="One dated heaviest recorded load: "+fmtLoad(loadPoints[0][1])+" kg. Add another dated session to compare.";
+  if(loadPoints.length>1){
+   const first=loadPoints[0],last=loadPoints[loadPoints.length-1],change=Number((last[1]-first[1]).toFixed(2));
+   loadSummary=loadPoints.length+" dated sessions with recorded loads · first "+fmtLoad(first[1])+" kg · latest "+fmtLoad(last[1])+" kg · change "+(change>0?"+":"")+fmtLoad(change)+" kg. These are recorded loads, not a one-rep maximum.";
+  }
   const rows=entries.map(entry=>{
    const date=entry.date?new Date(entry.date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"Date not recorded";
    const setText=entry.sets.length?entry.sets.map(set=>{
     const fields=[];
-    fields.push(String(set.weight??"").trim()!==""?"Weight entry "+String(set.weight):"Weight not recorded");
+    fields.push(String(set.weight??"").trim()!==""?"Weight entry "+String(set.weight)+" kg":"Weight not recorded");
     fields.push(String(set.reps??"").trim()!==""?String(set.reps)+" reps":"Reps not recorded");
     if(String(set.duration??"").trim()!=="")fields.push(String(set.duration)+" duration");
     return '<li>'+esc("Set "+String(set.setNumber)+": "+fields.join(" · "))+'</li>';
    }).join(""):'<li>No set details recorded</li>';
    return '<li><strong>'+esc(date)+'</strong><ul>'+setText+'</ul></li>';
   }).join("");
-  return '<section class="gym-exercise-history"><h4>'+esc(group.name)+'</h4><p>'+entries.length+' completed session'+(entries.length===1?"":"s")+' recorded</p><ol>'+rows+'</ol></section>';
+  return '<section class="gym-exercise-history"><h4>'+esc(group.name)+'</h4><p>'+entries.length+' completed session'+(entries.length===1?"":"s")+' recorded</p><p class="gym-load-trend">'+esc(loadSummary)+'</p><ol>'+rows+'</ol></section>';
  }).join("");
  target.innerHTML='<div class="gym-journey-grid">'+[
   metric("Completed sessions",String(completed.length),"Saved completed Gym sessions"),
