@@ -414,3 +414,19 @@ During development:
 - Browser validation #44047763627 completed with conclusion success on exact code/test SHA 3a37114bf115bcdb433b1895f1bde97498a50efa: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44047763627
 - Backup validation #44047763668 completed with conclusion success on the same exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44047763668
 - The handover update is now being finalized; validate the resulting handover commit separately before describing the branch head as fully validated.
+
+
+
+### Gym historical data audit — same-date completion validation confirmed (2026-11-17)
+- Browser validation run #44047273553 completed with conclusion `success` on the exact code/test commit `c233d1c848f9930686aa075dd579dbcdffe82ba6`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44047273553
+- Its `chromium-validation` job passed every step, including canonical-source/browser-bundle parity and Chromium migration/offline tests.
+- Backup validation run #44047273605 also completed with conclusion `success` on that exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44047273605
+- Both runs were push-triggered and their `head_sha` exactly matches the tested commit. The multiple-same-date-snapshot ambiguity safeguard is therefore validated by both browser and backup workflows.
+- The later optional-resistance test commit `3a37114bf115bcdb433b1895f1bde97498a50efa` also has browser #44047763627 and backup #44047763668 passing on its exact SHA (links recorded above).
+- Before this handover update, branch head was `f8662a644fcbd6386579efec73b6988b197617aa`; browser #44048053467 and backup #44048053544 both completed successfully on that exact SHA:
+  - https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44048053467
+  - https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44048053544
+- This section supersedes the earlier pending instruction to confirm browser run #44047763627 and the earlier statement that the same-date browser result was not yet confirmed.
+- Next audit action: inspect the V21.1 normalized-name prefill/history code paths and their exact normalization rules for collisions between punctuation/spacing variants. Keep migration names verbatim and do not change historical records without a focused source-backed regression and explicit evidence.
+- Current branch remains `V21.2-development`. Production `main` and the protected V21.1 baseline remain untouched; no merge or deployment has been performed.
+- The handover documentation commit created by this update must receive fresh browser and backup validation. Do not call the final branch head validated until both runs match that exact handover commit SHA and complete successfully.
