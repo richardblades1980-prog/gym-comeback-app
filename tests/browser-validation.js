@@ -466,6 +466,21 @@ function server() {
         id: "browser-journey-set-3", moduleId: "gym", sessionId: "browser-workload-gym",
         exerciseRecordId: "browser-journey-exercise", setNumber: 3, weight: "20", reps: ""
       });
+      const previous = new Date(date + "T12:00:00");
+      previous.setDate(previous.getDate() - 7);
+      const previousDate = [previous.getFullYear(), String(previous.getMonth()+1).padStart(2,"0"), String(previous.getDate()).padStart(2,"0")].join("-");
+      await ProjectComebackModules.putOwnedRecord("gym", "sessions", {
+        id: "browser-history-gym-older", moduleId: "gym", date: previousDate,
+        title: "Earlier squat session", status: "completed"
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "exerciseRecords", {
+        id: "browser-history-exercise-older", moduleId: "gym", sessionId: "browser-history-gym-older",
+        name: "Test squat", setCount: 1
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
+        id: "browser-history-set-older", moduleId: "gym", sessionId: "browser-history-gym-older",
+        exerciseRecordId: "browser-history-exercise-older", setNumber: 1, weight: "15", reps: "6"
+      });
       await ProjectComebackModules.putOwnedRecord("gym", "sessions", {
         id: "browser-incomplete-gym", moduleId: "gym", date,
         title: "Incomplete Gym record", status: "incomplete"
@@ -488,6 +503,13 @@ function server() {
         !gymJourneyCheck.includes("2 of 3 sets include a numeric repetition count") ||
         !gymJourneyCheck.includes("Weight is not totalled")) {
       throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
+    }
+    const gymHistoryCheck = await app.locator("#gym-journey").textContent();
+    if (!gymHistoryCheck.includes("Recorded exercise history") || !gymHistoryCheck.includes("Test squat") ||
+        !gymHistoryCheck.includes("15") || !gymHistoryCheck.includes("6 reps") ||
+        !gymHistoryCheck.includes("20") || !gymHistoryCheck.includes("10 reps") ||
+        !gymHistoryCheck.includes("2 completed sessions recorded")) {
+      throw new Error("Gym exercise history did not show dated saved set entries: " + gymHistoryCheck);
     }
     const hikingJourneyCheck = await app.locator("#hiking-journey").textContent();
     if (!hikingJourneyCheck.includes("2") || !hikingJourneyCheck.includes("4.25 km") ||
@@ -523,6 +545,9 @@ function server() {
       await ProjectComebackDB.remove("sessions", "browser-workload-gym");
       await ProjectComebackDB.remove("hikingRecords", "browser-workload-hike");
       await ProjectComebackDB.remove("sessions", "browser-incomplete-gym");
+      await ProjectComebackDB.remove("sessions", "browser-history-gym-older");
+      await ProjectComebackDB.remove("exerciseRecords", "browser-history-exercise-older");
+      await ProjectComebackDB.remove("setRecords", "browser-history-set-older");
       await ProjectComebackDB.remove("exerciseRecords", "browser-journey-exercise");
       await ProjectComebackDB.remove("exerciseRecords", "browser-incomplete-exercise");
       for (const id of ["browser-journey-set-1","browser-journey-set-2","browser-journey-set-3","browser-incomplete-set"]) {
