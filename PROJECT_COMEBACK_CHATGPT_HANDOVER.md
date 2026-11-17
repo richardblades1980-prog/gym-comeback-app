@@ -1,3 +1,22 @@
+# Project Comeback — latest verified checkpoint (2026-11-17)
+
+- **Active branch:** `V21.2-development`
+- **Final handover commit:** `464cf0b096879fa749abf923bea858679ecad272`
+- **Browser validation #44063585782:** **PASS**, completed; exact `head_sha` matches final handover commit: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44063585782
+- **Backup validation #44063585905:** **PASS**, completed; exact `head_sha` matches final handover commit: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44063585905
+- **Chromium validation job:** completed successfully.
+- **Latest implementation commit:** `505656805288d00a631eff8b1012a3503d8519f5`; browser #44061074418 and backup #44061074385 both passed on that exact SHA.
+- **G2 gate:** PASS — bounded canonical identity persistence implementation and final handover validation complete.
+- **Protected production `main`:** `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; unchanged.
+- **V21.1:** unchanged. No merge or deployment.
+- **Data-safety boundary:** no automatic fuzzy legacy identity mapping or promotion of day-scoped settings; no catalogue release garbage collection; no bundled catalogue asset/offline catalogue lookup or catalogue editor is claimed.
+
+## Next source-grounded task
+
+Perform a design-first audit of **exercise catalogue delivery and offline lookup** on the live `V21.2-development` branch. Inspect the actual identity service, app shell, service-worker cache, backup/restore behavior, release-manifest references and tests. Establish how immutable catalogue release assets are packaged, checksummed, selected, retained and made available after offline cold start; distinguish bundled system catalogue data from profile-owned review/configuration data. Identify missing failure/recovery cases (missing or corrupt asset, stale cache, interrupted catalogue update, referenced historical release unavailable, restore on a device without the old asset). Add focused design/contract tests and recommend a bounded delivery model. **Do not implement catalogue assets, lookup UI, schema changes or release garbage collection in this audit.** Prepare a G2 gate before any consequential implementation. Preserve V21.1 and `main`; validate every resulting commit SHA with both browser and backup workflows.
+
+---
+
 # Project Comeback — latest checkpoint (2026-11-17)
 
 - **Active branch:** `V21.2-development`
