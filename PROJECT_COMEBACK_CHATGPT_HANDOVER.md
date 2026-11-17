@@ -1,3 +1,24 @@
+# Project Comeback — catalogue delivery implementation checkpoint (2026-11-17)
+
+- **Active branch:** V21.2-development
+- **Implementation decision:** G2 PASS explicitly given by the user on 17 November 2026.
+- **Implementation base:** ad4e72d054a009d6500c7cd01f384440068fc4d9 (the exact live branch head inspected before implementation).
+- **Latest implementation/documentation commit before this handover update:** a783a4799f162a8afce961bfa22ded676a0a5c50.
+- **Delivery service:** src/data/catalogue-delivery.js; identical app bundle: v21.2/assets/catalogue-delivery.js.
+- **App wiring:** v21.2/index.html loads the service; v21.2/sw.js shell cache is v16 and precaches the service. Catalogue asset requests bypass generic shell caching; verified release bytes use a dedicated CacheStorage namespace.
+- **Atomic activation:** existing V6 IndexedDB stores only: catalogueReleases, exerciseDefinitions, exerciseVariations and metadata. Manifest, system definitions/variations and active pointer commit in one transaction. No database version/index change.
+- **Integrity:** exact UTF-8 byte length and SHA-256 before parse; manifest/payload identity, schema, counts, unique IDs and variation parent checks; cache read-back verification.
+- **Offline lookup:** ProjectComebackCatalogueDelivery.getStatus() and lookup() require a matching active manifest and complete local materialisation. Unseeded devices report unavailable, not an empty valid catalogue.
+- **Browser regression:** tests/browser-validation.js seeds a clearly test-only synthetic release, verifies materialisation and lookup, reloads the app offline, then verifies lookup and release cache persistence.
+- **Release references:** src/data/exercise-identity.js now includes direct programmeSlots pins alongside published programme versions, non-terminal sessions and identity-review events. No garbage collection.
+- **Data boundary:** backup format and historical display snapshots unchanged. No automatic history rebinding or legacy migration.
+- **Production dataset limitation:** no approved production exercise catalogue dataset was present in the inspected repository. No production asset/manifest was invented or committed. The app remains unseeded until a real catalogue is curated, reviewed and packaged.
+- **Out of scope:** lookup UI, remote/CDN distribution, signing/authenticity architecture, schema/index changes, backup-format changes, release GC, merge and deployment.
+- **Validation limitation:** GitHub combined-status lookups for the implementation commits returned no status checks, and the available GitHub actions connector does not expose workflow dispatch or listing for push-triggered runs. Do not claim browser/backup workflows passed. Both workflows still need to be run against the final exact handover SHA; if unavailable, report that limitation rather than infer success.
+- **Protected baseline:** main must remain 0d0527a6463c3cfd0fbb54d69123316c9a384b42; V21.1 unchanged. No merge/deployment.
+- **Next:** validate both V21.2 browser and backup workflows on the exact final SHA, then curate/approve the real catalogue release asset before exposing lookup to users.
+
+---
 # Project Comeback — catalogue delivery audit checkpoint (2026-11-17)
 
 - **Active branch:** `V21.2-development`
