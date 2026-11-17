@@ -1,15 +1,17 @@
 # Project Comeback — latest checkpoint (2026-11-17)
 
 - **Active branch:** `V21.2-development`
-- **Latest decision/test commit:** `149ca48f27b77974731cf8a62a879d896273c478`
-- **Browser validation:** [#44053125812 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125812) — exact SHA `149ca48f27b77974731cf8a62a879d896273c478`.
-- **Backup validation:** [#44053125864 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125864) — exact same SHA.
-- **Design proposal:** [Canonical exercise identity design](docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md).
-- **Design contract:** `tests/exercise-identity-contract.test.js` now has 16 tests. Both workflows run the full file.
-- **No application implementation or schema change** was made in this checkpoint. These are design-level fixture contracts.
+- **Latest validated implementation commit:** `16ba51225dc255961b7e18718fdb71a041431a9c`.
+- **G2 decision:** PASS — user authorised the bounded canonical identity persistence implementation on 17 November 2026.
+- **Browser validation:** [#44060658483 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44060658483) — exact SHA `16ba51225dc255961b7e18718fdb71a041431a9c`.
+- **Backup validation:** [#44060658543 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44060658543) — exact same SHA.
+- **Persistence implementation:** IndexedDB schema v6 is additive and explicit; V1 safety backup is required before upgrade; V2 backup/restore round trip verifies before the safety snapshot is marked complete.
+- **Tests:** 26 design-contract tests plus 11 new real IndexedDB persistence/backup tests. Both workflows include the new persistence suite.
+- **Offline scope:** the identity service is included in the V21.2 service-worker shell and cold-starts offline. No bundled exercise catalogue asset or offline catalogue lookup is claimed.
+- **Historical data:** no automatic identity mapping or legacy preference promotion; exact V21.1 names, keys and raw values remain preserved/unresolved.
 - **Protected V21.1:** root `index.html` blob remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
-- **Production main:** remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge/deployment.
-- The handover update below must receive fresh browser and backup validation on its own exact commit SHA before this branch head is called fully validated.
+- **Production `main`:** remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge or deployment.
+- This handover update must itself receive fresh browser and backup validation on its exact commit SHA before the branch head is called fully validated.
 
 ---
 
@@ -602,3 +604,37 @@ During development:
 - These are fixture-level design contracts. They do not prove append-only IndexedDB enforcement, v5-to-next-schema migration, v1-to-v2 backup compatibility or production offline catalogue behavior.
 - **G2 decision required before implementation:** PASS / HOLD / REVISE / REJECT. If passed, implementation must include additive/restart-safe schema upgrade, backup v2 writer with v1 reader adapter, populated-v5 preservation, event append-only enforcement, snapshot/release retention tests, profile isolation, backup/restore round trips and production-path offline tests.
 - Protected V21.1 and production `main` remain untouched; no app source, schema, backup format, historical user data, merge or deployment changed.
+
+
+---
+
+# G2 PASS — canonical identity persistence implementation checkpoint
+
+**Implementation commit:** `16ba51225dc255961b7e18718fdb71a041431a9c`
+
+**Exact-SHA validation:**
+- Browser workflow #44060658483 PASS: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44060658483
+- Backup workflow #44060658543 PASS: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44060658543
+
+## Implemented
+
+- Database v5 remains the normal startup schema. The V21.2 UI now offers an explicit v5→v6 additive upgrade only after a validated V1 full safety backup has been downloaded and the user confirms it is saved.
+- The v6 transaction adds nine identity/programme stores and indexes without rewriting existing v5 records. A pre-upgrade V1 snapshot is retained in metadata until a V2 backup/restore round trip verifies.
+- New stores: `exerciseDefinitions`, `exerciseVariations`, `exerciseAliases`, `identityReviewEvents`, `catalogueReleases`, `exerciseConfigurations`, `programmeVersions`, `programmeDays`, `programmeSlots`.
+- Review events require actor/evidence provenance, preserve exact source values, use a unique profile-scoped idempotency index and append corrections/reversals rather than overwriting prior decisions.
+- Catalogue releases are immutable, versioned monotonically per catalogue and retained while referenced by published programme versions, non-cancelled sessions or review events. No release garbage collection is enabled.
+- Exercise definition/variation IDs cannot be deleted; retire them by status. Published programme versions and their days/slots are protected from edits.
+- Historical display snapshots are self-contained. V2 backup validation checks catalogue references, release versions, configuration scope/provenance and programme lineage.
+- Reusable configuration is limited to `preferredProgressionFocus` and a supported `recordingModeOverride`, scoped by profile, exercise definition, variation and equipment. Prescription/performance fields are rejected.
+- V2 restore merges review/release history, retained definition/variation IDs and programme lineage. V1 restore on v6 preserves all newer identity stores; V1 restore is blocked while the pre-upgrade safety snapshot is still pending verification.
+- The V21.2 identity service is mirrored from `src/data/exercise-identity.js` to `v21.2/assets/exercise-identity.js`, included in the app shell and service-worker cache, and verified by a real offline cold start.
+- No production catalogue asset, catalogue editor, catalogue refresh flow or offline catalogue lookup has been implemented. Those remain a later stage.
+
+## Data and release boundaries
+
+- No existing legacy exercise name or day-scoped setting is automatically mapped or promoted.
+- No V21.1 source, production `main`, production data, merge or deployment was changed.
+- The implementation tests cover populated v5 preservation, failed-upgrade rollback/retry, append-only/idempotent review events, release retention/versioning, historical snapshots, typed configuration, profile/scope isolation, programme lineage immutability and V1/V2 backup compatibility.
+- The browser workflow also validates the V21.2 service-worker cache, offline cold start, explicit safety backup download, v5→v6 upgrade and V2 restore verification.
+
+**Next checkpoint:** validate this handover commit on both workflows against its exact resulting SHA, recheck protected production references, then continue the source-grounded V21.2 audit within the approved G2 scope.
