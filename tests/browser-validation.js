@@ -412,6 +412,8 @@ function server() {
     }
     await app.locator('#hiking-form [name="distanceKm"]').fill("4.25");
     await app.locator('#hiking-form [name="routeName"]').fill("East-West Walk");
+    await app.locator('#hiking-form [name="durationMinutes"]').fill("95");
+    await app.locator('#hiking-form [name="elevationGainM"]').fill("320");
     await app.locator('#hiking-form button[type="submit"]').click();
     await app.waitForFunction(() => document.querySelector("#hiking-count").textContent === "1");
     const hikeRecord = await app.evaluate(async () => (await ProjectComebackDB.getAllByIndex("hikingRecords", "by_module", "hiking"))[0]);
@@ -453,6 +455,12 @@ function server() {
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="overview"]').click();
     await app.waitForFunction(() => document.querySelector("#upcoming-overview").textContent.includes("Browser test gym session"));
+    const hikingJourneyCheck = await app.locator("#hiking-journey").textContent();
+    if (!hikingJourneyCheck.includes("2") || !hikingJourneyCheck.includes("4.25 km") ||
+        !hikingJourneyCheck.includes("320 m") || !hikingJourneyCheck.includes("95 min") ||
+        !hikingJourneyCheck.includes("1 of 2 hikes include distance")) {
+      throw new Error("Hiking journey did not summarize saved values or identify missing measurements: " + hikingJourneyCheck);
+    }
     const overviewCheck = await app.evaluate(() => ({
       upcoming: document.querySelector("#upcoming-overview").textContent,
       completed: document.querySelector("#completed-overview").textContent
