@@ -510,28 +510,28 @@ function server() {
           await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
             id: "browser-load-set-" + suffix + "-" + index,
             moduleId: "gym", sessionId, exerciseRecordId: exerciseId,
-            setNumber: index + 1, weight: weights[index], reps: "5"
+            setNumber: index + 1, weight: weights[index], reps: ""
           });
         }
       };
       const sameDay = new Date(date + "T12:00:00");
-      sameDay.setDate(sameDay.getDate() - 3);
+      sameDay.setFullYear(2026, 5, 12);
       const sameDayDate = [sameDay.getFullYear(), String(sameDay.getMonth()+1).padStart(2,"0"), String(sameDay.getDate()).padStart(2,"0")].join("-");
       await addLoadRecord("same-a", "Load same-day check", sameDayDate, ["10"]);
       await addLoadRecord("same-b", "Load same-day check", sameDayDate, ["15"]);
-      await addLoadRecord("same-later", "Load same-day check", date, ["12"]);
-      await addLoadRecord("single", "Load single-point check", date, ["7.5"]);
-      await addLoadRecord("invalid", "Load invalid-only check", date, ["", "0", "-5", "not-a-number"]);
+      await addLoadRecord("same-later", "Load same-day check", "2026-06-15", ["12"]);
+      await addLoadRecord("single", "Load single-point check", "2026-06-15", ["7.5"]);
+      await addLoadRecord("invalid", "Load invalid-only check", "2026-06-15", ["", "0", "-5", "not-a-number"]);
       await addLoadRecord("undated", "Load invalid-only check", "", ["30"]);
-      await addLoadRecord("bodyweight", "Load bodyweight check", date, ["5"], "bodyweight");
+      await addLoadRecord("bodyweight", "Load bodyweight check", "2026-06-15", ["5"], "bodyweight");
     }, workloadDate);
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="overview"]').click();
     await app.waitForFunction(() => document.querySelector("#upcoming-overview").textContent.includes("Browser test gym session"));
     const gymJourneyCheck = await app.locator("#gym-journey").textContent();
-    if (!gymJourneyCheck.includes("Completed sessions2") || !gymJourneyCheck.includes("24") ||
-        !gymJourneyCheck.includes("3 of 4 sets include a numeric repetition count") ||
+    if (!gymJourneyCheck.includes("Completed sessions9") || !gymJourneyCheck.includes("24") ||
+        !gymJourneyCheck.includes("3 of 14 sets include a numeric repetition count") ||
         !gymJourneyCheck.includes("Weight entries below are shown exactly as saved")) {
       throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
     }
