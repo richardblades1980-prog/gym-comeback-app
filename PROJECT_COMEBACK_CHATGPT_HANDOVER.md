@@ -323,10 +323,12 @@ During development:
 | 2026-11-17 | `9b50c20` | Added per-exercise dated heaviest recorded-load comparison in kg, based on completed sessions; raw history remains visible | Browser and backup checks completed on subsequent cache/style head |
 | 2026-11-17 | `ef951f5` | Finalized Gym load-trend styling and bumped offline shell cache to v14 | Browser #44036619049 and backup #44036619300 passed |
 
+| 2026-11-17 | `f3b2863` | Added browser regression coverage for same-day load consolidation, single-point trends, missing/undated/invalid loads and explicitly saved bodyweight resistance | Backup #44037390136 passed; browser #44037389938 was running when this handover update was prepared |
+
 ### Next actions (resume here)
 
-1. Inspect the migrated Gym data semantics for historical exercise-name consistency, date completeness and optional bodyweight-load records; preserve exact names and do not fuzzy-match different movements.
-2. Add regression coverage for missing/undated loads, zero/invalid weights, multiple same-day entries, and exercises with only one dated load. Keep those cases non-comparable rather than manufacturing a trend.
+1. Confirm browser validation #44037389938 for commit `f3b2863b3a8a39ba22bd846b5f5ca7425347a111`; inspect its job logs if it fails and correct the regression fixture or assertions before proceeding.
+2. Once the edge-case tests pass, inspect migrated Gym data semantics for historical exercise-name consistency, date completeness and optional bodyweight-load records; preserve exact names and do not fuzzy-match different movements.
 3. Consider additional Gym progress measures only where source fields and units are explicit. Keep Hiking separate and do not infer personal bests, one-rep maximums, technique or physiological strength gains.
 4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
 5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
