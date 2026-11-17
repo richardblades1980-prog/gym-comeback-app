@@ -94,7 +94,7 @@ test("source characterization: production service worker precaches shell, not ca
 test("production delivery service verifies immutable assets and exposes offline lookup", () => {
   assert.match(deliverySource,/crypto\.subtle\.digest\("SHA-256"/);
   assert.match(deliverySource,/byteLength/);
-  assert.match(deliverySource,/release IDs must increase monotonically/);
+  assert.match(deliverySource,/release versions must increase monotonically/);
   assert.match(deliverySource,/project-comeback-v21-2a-catalogue-/);
   assert.match(deliverySource,/async function installRelease/);
   assert.match(deliverySource,/async function lookup/);
