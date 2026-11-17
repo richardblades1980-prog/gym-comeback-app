@@ -271,26 +271,20 @@ function server() {
       throw new Error("Running stopwatch did not recover after app reload: " + JSON.stringify({ runningBeforeReload, recovered }));
     }
     await app.locator('[data-gym-action="timer-stop"]').first().click();
+    await app.waitForFunction(() => Number(document.querySelector('[data-gym-field="duration"]')?.value) >= 1);
     const stoppedDuration = await app.locator('[data-gym-field="duration"]').first().inputValue();
-    if (Number(stoppedDuration) < 1) {
-      const stopwatchDebug = await app.evaluate(async () => {
-        const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"]);
-        const session = sessions.find(item => item.status === "in-progress" && item.day === 1);
-        const exercises = session ? await ProjectComebackDB.getAllByIndex("exerciseRecords", "by_session", session.id) : [];
-        const sets = session ? await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id) : [];
-        return {
-          input: document.querySelector('[data-gym-field="duration"]')?.value,
-          stopButton: !!document.querySelector('[data-gym-action="timer-stop"]'),
-          timerDisplay: document.querySelector("[data-stopwatch-display]")?.outerHTML,
-          set: sets.find(item => item.exerciseRecordId === exercises[0]?.id && item.setNumber === 1)
-        };
-      });
-      throw new Error("Stopping the stopwatch did not save elapsed seconds: " + JSON.stringify({ stoppedDuration, stopwatchDebug }));
-    }
+    if (Number(stoppedDuration) < 1) throw new Error("Stopping the stopwatch did not save elapsed seconds.");
     await app.locator('[data-gym-field="duration"]').first().fill("7");
     await app.locator('[data-gym-field="duration"]').first().dispatchEvent("change");
     await app.waitForFunction(() => document.querySelector('[data-gym-field="duration"]').value === "7");
+    await app.waitForFunction(async () => {
+      const exerciseId = document.querySelector('[data-gym-field="duration"]').dataset.exerciseId;
+      const exercise = await ProjectComebackDB.get("exerciseRecords", exerciseId);
+      const sets = await ProjectComebackDB.getAllByIndex("setRecords", "by_session", exercise.sessionId);
+      return sets.some(set => set.exerciseRecordId === exerciseId && set.setNumber === 1 && set.duration === "7");
+    });
     await app.locator('[data-gym-action="timer-reset"]').first().click();
+    await app.waitForFunction(() => document.querySelector('[data-gym-field="duration"]').value === "");
     if (await app.locator('[data-gym-field="duration"]').first().inputValue() !== "") {
       throw new Error("Reset did not clear the stopwatch result.");
     }
