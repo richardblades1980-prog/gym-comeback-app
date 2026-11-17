@@ -267,16 +267,15 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Latest feature/test commit: `4769bc6776cc1eccccea4e782e8cedd86d52ffb2`.
-- Backup validation for this exact commit: **success**, run [#44035745360](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035745360).
-- Browser validation for this exact commit: **in progress**, run [#44035745340](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035745340). Bundle-parity check passed; Chromium installation/browser tests remain pending at this update.
-- Gym Overview journey now includes:
-  - Completed session, exercise, set and explicitly recorded repetition summaries.
-  - A dated Recorded exercise history grouped by exercise name, showing completed session dates and each saved set's weight entry, reps and duration where present.
-  - Raw weight entries are displayed as saved; no unit or improvement is inferred.
-  - Missing set values are explicitly shown; incomplete sessions are excluded.
-- Browser regression adds two completed dated sessions for the same exercise and checks both sets of recorded values appear in date order. It also seeds an incomplete session and verifies it is excluded. All test records are removed during cleanup.
-- Browser run #44035610941 failed because the previous Gym summary assertion expected one completed session; the new history fixture correctly adds a second completed session. The test expectation was updated to the new expected total (24 reps across 3 of 4 sets). Do not mark this slice validated until #44035745340 succeeds.
+- Latest feature/test commit: `50bb56ea691e7ca13383f7f09193c8f55cb08032`.
+- Browser validation for this exact commit: **success**, run [#44035968465](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035968465).
+- Backup validation for this exact commit: **success**, run [#44035968444](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035968444).
+- Gym Overview journey includes completed session/exercise/set/repetition summaries and a dated Recorded exercise history grouped by exercise name.
+- The history displays completed session dates and saved set weight entries, reps and duration where present. Weight entries are shown exactly as saved; no unit or improvement is inferred.
+- Missing set values remain explicit; incomplete sessions and their linked exercises/sets are excluded.
+- Browser regression creates two completed dated sessions for the same exercise, checks both saved set entries appear, creates an incomplete session to verify exclusion, and cleans up all test records.
+- Browser regression also checks the completed-workload summary after the second Gym session is added. The first updated run exposed that this fixture changed the existing workload count expectation; the test was updated to expect two records, and the final browser run passed.
+- Service-worker shell cache is v13 for the updated Overview/app assets.
 - Hiking milestones remain implemented and validated: completed hikes, recorded distance/elevation totals with contributor counts, longest recorded walk and duration.
 - Assessment baseline/follow-up protections and assessment timeline remain implemented.
 - No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
@@ -320,7 +319,8 @@ During development:
 | 2026-11-17 | `8e203be` | Corrected numeric repetition validation in the Gym journey | Backup #44035130664 passed; browser run #44035130679 superseded by final cache-bumped head |
 | 2026-11-17 | `1e64cd9` | Bumped offline shell cache to v12 after the Gym repetition fix | Browser #44035146696 and backup #44035146473 passed |
 | 2026-11-17 | `a77c279` | Added dated Gym exercise history grouped by exercise, with saved set values and explicit no-unit/no-improvement wording; bumped shell cache to v13 | Backup #44035610739 passed; browser #44035610941 failed on an outdated summary test expectation |
-| 2026-11-17 | `4769bc6` | Updated browser regression expectations for two completed sessions and four sets in the Gym history fixture | Backup #44035745360 passed; browser #44035745340 pending at handover update |
+| 2026-11-17 | `4769bc6` | Updated browser regression expectations for two completed sessions and four sets in the Gym history fixture | Backup #44035745360 passed; browser #44035745340 exposed a downstream workload count assertion that also needed updating |
+| 2026-11-17 | `50bb56e` | Updated the existing workload test to expect two completed Gym records after adding the dated history fixture | Browser #44035968465 and backup #44035968444 passed |
 
 ### Next actions (resume here)
 
