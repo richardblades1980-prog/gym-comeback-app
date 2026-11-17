@@ -498,3 +498,15 @@ During development:
 - Next audit action: inspect the V21.1 normalized-name prefill/history code paths and their exact normalization rules for collisions between punctuation/spacing variants. Keep migration names verbatim and do not change historical records without a focused source-backed regression and explicit evidence.
 - Current branch remains `V21.2-development`. Production `main` and the protected V21.1 baseline remain untouched; no merge or deployment has been performed.
 - The handover documentation commit created by this update must receive fresh browser and backup validation. Do not call the final branch head validated until both runs match that exact handover commit SHA and complete successfully.
+
+
+### Gym historical exercise-name audit — validation chronology (2026-11-17)
+
+- The focused legacy characterization tests were added on `V21.2-development` only. They execute extracted V21.1 function bodies from the branch's unchanged root `index.html`; they do not modify the protected source.
+- Intermediate backup runs on `a7dcfd11f71a6dec20f2c83ea5c8d956b43c2d18`, `bbbf21e56db73e308bcf2fd6165492e8d7dc919b`, `5ab52ee745a621403191055e999b437250be33ea` and `bf3aa3007784fc4464cec4436b9aaeb483c40167` failed in the newly added migration test. The failing assertion compared arrays created inside a VM context directly with host-realm arrays; the repeated test append also briefly duplicated that test. These were test-harness defects, not evidence of a migration data-loss or name-rewrite defect.
+- Corrected the assertions by materialising VM arrays with host `Array.from`, removed the duplicate test, and added the legacy collision test file to the backup workflow's explicit test command.
+- Corrected code/test commit `0757d7b498afe32516c959d0919ade9ff1b3ed5b`: browser #44050251512 and backup #44050251570 both passed on the exact SHA.
+- Latest code/test commit `97ea94cb87e8d718f02e57eeb8acd6ec636f7c87`: browser #44050325690 and backup #44050325734 both passed on the exact SHA. This includes the additional test that an ambiguous legacy configuration key is retained as one raw preference without an invented exercise assignment.
+- Handover commit `89372035eb5e81e6d23d233920d66760b65a31c6`: browser #44050552740 and backup #44050552753 both passed on that exact SHA.
+- The branch head and current Actions runs must still be checked live at the start of the next session. Production `main` remains untouched; the root `index.html` blob on `main` remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
+
