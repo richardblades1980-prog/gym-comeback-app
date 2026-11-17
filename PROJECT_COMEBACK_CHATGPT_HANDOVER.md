@@ -638,3 +638,16 @@ During development:
 - The browser workflow also validates the V21.2 service-worker cache, offline cold start, explicit safety backup download, v5→v6 upgrade and V2 restore verification.
 
 **Next checkpoint:** validate this handover commit on both workflows against its exact resulting SHA, recheck protected production references, then continue the source-grounded V21.2 audit within the approved G2 scope.
+
+
+---
+
+# G2 implementation validation — latest exact SHA
+
+**Latest implementation/test commit:** `505656805288d00a631eff8b1012a3503d8519f5`
+
+The initial implementation CI runs identified fixture defects; these were corrected in follow-up commits. The current implementation head has both workflows passing against the exact same SHA:
+- Browser validation #44061074418 PASS: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44061074418
+- Backup validation #44061074385 PASS: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44061074385
+
+The first failed runs were superseded by the corrected, passing exact-SHA runs above. The final handover commit still requires both workflows to pass against its own exact SHA.
