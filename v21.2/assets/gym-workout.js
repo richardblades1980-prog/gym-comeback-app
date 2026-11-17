@@ -233,6 +233,26 @@
     return set;
   }
 
+
+  async function finishSession(workout) {
+    if (!workout || !workout.session || workout.session.moduleId !== "gym") {
+      throw new Error("A Gym workout is required.");
+    }
+    if (workout.session.status !== "in-progress") throw new Error("This Gym workout is not in progress.");
+    const allSets = workout.exerciseRecords.flatMap(exercise => exercise.sets || []);
+    if (!allSets.length || allSets.some(set => set.status !== "completed")) {
+      throw new Error("Complete every set before finishing this workout.");
+    }
+    const now = new Date();
+    const started = Date.parse(workout.session.startedAt || "");
+    const durationMinutes = Number.isFinite(started) ? Math.max(0, Math.round((now.getTime() - started) / 60000)) : 0;
+    workout.session.status = "completed";
+    workout.session.completedAt = now.toISOString();
+    workout.session.durationMinutes = durationMinutes;
+    await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session });
+    return workout.session;
+  }
+
   global.ProjectComebackGymWorkout = Object.freeze({
     programmeSourceId: PROGRAMME_ID,
     setStatuses: SET_STATUSES,
@@ -242,6 +262,7 @@
     updateSetValues,
     startSet,
     completeSet,
-    undoSet
+    undoSet,
+    finishSession
   });
 })(window);
