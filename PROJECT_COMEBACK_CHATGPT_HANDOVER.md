@@ -372,3 +372,23 @@ During development:
 - `V21.2-development` latest verified feature/test commit: `7467f5e514e7e674f12e0f92334c4eaa425e4d97`.
 - Production `main` remains untouched. No merge or deployment has been performed.
 - Next actions: (1) harden Gym migration date/name edge cases with focused tests if confirmed appropriate; (2) verify the branch head and both Actions checks for every resulting commit; (3) continue only source-grounded Gym progress semantics; (4) update this handover after each meaningful increment.
+
+
+### Gym migration date/name hardening implemented (2026-11-17)
+- Updated `src/data/gym-migration.js` and the byte-identical `v21.2/assets/gym-migration.js` browser bundle.
+- Added strict calendar-date validation: value must be a `YYYY-MM-DD` string and round-trip as the same UTC calendar date. Impossible dates (e.g. `2026-02-30`) now become `null`/undated and emit a warning. Truly absent dates remain undated without a warning. Valid leap days remain accepted.
+- Removed fabricated `Exercise N` fallback labels. Missing, whitespace-only, non-string or malformed exercise entries now produce an empty name plus a warning; exact supplied names, including whitespace and punctuation, are retained verbatim.
+- Completion inference remains `incomplete` whenever any exercise has no usable name, because there is no reliable exact legacy set-status key to verify for that exercise.
+- The original workout JSON remains in `session.legacyRawValue`; individual exercise source objects remain in exercise `legacyRawValue`.
+- Added four focused regression tests covering impossible dates and raw preservation, valid leap day and absent date, exact exercise-name preservation plus missing name, and malformed exercise entry.
+- One initial regression fixture failed because its status-snapshot key still contained the old date after the fixture changed to leap day. This was a test-fixture mismatch, not a migration defect; the fixture now moves the status key to the new date. Final checks below are on the corrected test commit.
+- Final code/test commit: `30ad98f2e1deeb982f3a8ab0e42a088b777f3338`.
+- Browser validation #44045271489 PASS on exact SHA `30ad98f2e1deeb982f3a8ab0e42a088b777f3338`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44045271489
+- Backup validation #44045271410 PASS on exact SHA `30ad98f2e1deeb982f3a8ab0e42a088b777f3338`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44045271410
+- Bundle parity step passed on the browser run.
+
+### Current next actions
+- Continue the source-grounded Gym progress data audit; do not infer 1RM, physiological strength gain, technique, effort or bodyweight load from missing fields.
+- Preserve Hiking as a separate activity. Use only explicit recorded hiking fields.
+- Keep all work on `V21.2-development`; production `main` remains untouched and no merge/deployment is authorised.
+- Read the live branch head and current file blob SHA before edits; verify both Actions checks against the exact final SHA after each meaningful increment.
