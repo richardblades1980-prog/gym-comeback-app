@@ -947,3 +947,28 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Repository boundary remains unchanged: production `main` still `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; protected root `index.html` blob remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`. No merge, deployment, production artwork replacement, catalogue or DB/backup/history changes.
 - Next action: review the two SVG sample images for visual style and anatomy/geometry quality. Only after sample direction is accepted should full equipment-photo and muscle-illustration batches be commissioned. Preserve current unresolved machine-style decisions until the equipment configuration is known.
 
+
+
+---
+
+# Shift to functional-first Gym development — 2026-11-18
+
+The user has explicitly decided that the existing artwork is good enough to get the app working. Defer new artwork concepts, aesthetic revisions and broad image replacement until the core application workflow works end to end. The user has visual ideas to explore later. Treat current artwork as temporary functional artwork; replace only if an asset is broken, misleading or blocks a required interaction.
+
+- Added `docs/V21.2-GYM-WORKOUT-FUNCTIONAL-ROADMAP.md` to prioritise the real Gym workout experience over visual polish.
+- Source audit reconfirmed that V21.2 currently has a Gym history view but no way to start or run a workout. The existing programme manager is a shared calendar scheduler, not a workout runner.
+- Added source-preserved five-day programme data:
+  - `src/data/gym-base-programme.js`
+  - `v21.2/assets/gym-base-programme.js`
+  - `tests/gym-base-programme.test.js`
+- The programme data preserves the exact 5-day / 32-slot plan: 7, 7, 6, 6 and 6 slots, using the exact source exercise labels, descriptions, group keys, muscle keys and legacy slot order.
+- Slot IDs are source programme-position identifiers only. All are marked `identityLinkStatus: unreviewed`. No canonical exercise definition IDs, variation IDs or inferred aliases are assigned. Repeated exercise names on different days remain separate programme slots.
+- Legacy defaults captured in the source data: three sets; Plank defaults to timed-hold/duration focus; remaining base slots default to reps. Per-user changes will be configurable in the runtime rather than altering the source programme.
+- Loaded the programme module in `v21.2/index.html`, added exact source/bundle parity coverage, added a browser check for availability from the shell cache, and advanced the app-shell cache from v16 to v17 so the new data module is available offline. The dedicated immutable artwork cache v1 and catalogue cache remain separate and unchanged.
+- Next functional milestone: implement the persisted workout session engine and minimal Gym UI using existing stores `sessions`, `exerciseRecords`, `setRecords` and `progression`. Session/exercise/set creation must be atomic; inputs autosave and survive reload; no DB schema addition is planned unless a test-supported gap is found.
+- Restore the legacy set sequence, completion/undo, configurable set count and recording mode, timed-set stopwatch/manual correction, smart rest (+15/skip/cancel and end-time persistence), session save-before-celebration, skip/dismiss, and day/week progression.
+- Do not block the first working workout on canonical identity curation. Preserve source labels and slot IDs without inventing links; unresolved equipment/movement mappings remain unresolved. Do not publish the 27 guide drafts or generic guide fallback as approved instruction.
+- Equipment adaptation/swaps and progression summaries follow once the unadapted five-day workflow works end to end. Exercise guide interaction follows with an honest incomplete/unavailable state until copy is reviewed.
+- Artwork sample assets remain isolated under `v21.2/assets/artwork-samples/` and are not connected to the runtime guide or production cache. No more aesthetic sample batches are planned for the immediate development path.
+- This is a functional-first scope decision and source-data foundation, not yet a working workout UI. Exact-SHA CI validation on the final commit containing this note is required before the programme module/cache change is considered validated.
+
