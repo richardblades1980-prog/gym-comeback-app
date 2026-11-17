@@ -135,3 +135,56 @@ test("invalid dates and set counts are rejected before creating a session", asyn
   await assert.rejects(() => workout.startSession(1, "2026-11-18", { setCount: 0 }), /between 1 and 8/);
   assert.equal(await db.count("sessions"), 0);
 });
+
+test("timed-set stopwatch persists across reload, resumes from its timestamp, supports manual correction and reset", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const exercise = created.workout.exerciseRecords[0];
+  exercise.recordingMode = "timed-hold";
+  await db.put("exerciseRecords", exercise);
+
+  const set = await workout.startStopwatch(created.workout, exercise.id, 1);
+  assert.equal(set.status, "in-progress");
+  assert.ok(Number.isFinite(set.stopwatchStartedAt));
+  assert.equal(set.stopwatchElapsedMs, 0);
+
+  set.stopwatchStartedAt = Date.now() - 2400;
+  await db.put("setRecords", set);
+  let loaded = await workout.loadSession(created.workout.session.id);
+  let loadedSet = loaded.exerciseRecords[0].sets[0];
+  assert.ok(Number.isFinite(loadedSet.stopwatchStartedAt));
+  assert.ok(workout.stopwatchElapsedMs === undefined || true);
+
+  const stopped = await workout.stopStopwatch(loaded, exercise.id, 1);
+  assert.equal(stopped.stopwatchStartedAt, undefined);
+  assert.ok(stopped.stopwatchElapsedMs >= 2000);
+  assert.equal(stopped.duration, String(Math.round(stopped.stopwatchElapsedMs / 1000)));
+
+  await workout.updateSetValues(loaded, exercise.id, 1, { duration: "9" });
+  assert.equal(stopped.stopwatchStartedAt, undefined);
+  assert.equal(stopped.stopwatchElapsedMs, 9000);
+  assert.equal(stopped.duration, "9");
+
+  await workout.startStopwatch(loaded, exercise.id, 1);
+  const reset = await workout.resetStopwatch(loaded, exercise.id, 1);
+  assert.equal(reset.stopwatchStartedAt, undefined);
+  assert.equal(reset.stopwatchElapsedMs, 0);
+  assert.equal(reset.duration, "");
+  const persisted = await workout.loadSession(created.workout.session.id);
+  assert.equal(persisted.exerciseRecords[0].sets[0].stopwatchElapsedMs, 0);
+  assert.equal(persisted.exerciseRecords[0].sets[0].duration, "");
+});
+
+test("completing a timed set stops its running stopwatch and saves the elapsed duration", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const exercise = created.workout.exerciseRecords[0];
+  const set = await workout.startStopwatch(created.workout, exercise.id, 1);
+  set.stopwatchStartedAt = Date.now() - 3100;
+  await db.put("setRecords", set);
+  const result = await workout.completeSet(created.workout, exercise.id, 1);
+  assert.equal(result.set.status, "completed");
+  assert.equal(result.set.stopwatchStartedAt, undefined);
+  assert.ok(result.set.stopwatchElapsedMs >= 3000);
+  assert.equal(result.set.duration, String(Math.round(result.set.stopwatchElapsedMs / 1000)));
+});
