@@ -18,21 +18,26 @@ test("guide cache is separately versioned and isolated from shell and catalogue 
   assert.match(sw, /assets\/celebrations\//);
 });
 
-test("manifest is validated and exact asset bytes, MIME and checksums are verified before publication", () => {
+test("manifest and every exact asset byte, MIME and checksum are verified before publication", () => {
   assert.equal(manifest.status, "verified-offline-cache-v1");
   assert.equal(manifest.assets.length, 41);
   assert.match(sw, /validateGuideManifest\(manifest\)/);
   assert.match(sw, /asset\.byteLength/);
   assert.match(sw, /asset\.mimeType!==guideMime\(asset\.path\)/);
   assert.match(sw, /guideDigest\(bytes\)/);
-  assert.match(sw, /verifyGuideResponse\(cached,item\.asset\)/);\n  assert.match(sw, /publishedCacheExisted=cacheNames\.includes\(GUIDE_CACHE_NAME\)/);\n  assert.match(sw, /if\(createdPublishedCache&&!publishedCacheExisted\)await caches\.delete\(GUIDE_CACHE_NAME\)/);\n  assert.match(sw, /Existing guide cache is incomplete; publish a new guide cache version/);\n  assert.match(sw, /GUIDE_ASSET_COUNT\+1/);
+  assert.match(sw, /verifyGuideResponse\(cached,item\.asset\)/);
   assert.match(sw, /GUIDE_TOTAL_BYTES=2984584/);
   assert.match(sw, /await installGuideAssets\(\)/);
+  assert.match(sw, /GUIDE_ASSET_COUNT\+1/);
 });
 
-test("failed guide installation cleans staging, preserves an existing published cache and prevents activation", () => {
-  assert.match(sw, /await caches\.delete\(GUIDE_STAGE_CACHE\)/);
-  assert.match(sw, /\}catch\(error\)\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*throw error;/);
+test("published cache versions are immutable and failed installs preserve caches used by older workers", () => {
+  assert.match(sw, /publishedCacheExisted=cacheNames\.includes\(GUIDE_CACHE_NAME\)/);
+  assert.match(sw, /if\(createdPublishedCache&&!publishedCacheExisted\)await caches\.delete\(GUIDE_CACHE_NAME\)/);
+  assert.match(sw, /Existing guide cache is incomplete; publish a new guide cache version/);
+  assert.match(sw, /Never touch a cache an active worker could be using/);
+  assert.doesNotMatch(sw, /await caches\.delete\(GUIDE_CACHE_NAME\)/);
+  assert.match(sw, /finally\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*\}/);
   assert.ok(sw.indexOf("await installGuideAssets()") < sw.indexOf("await self.skipWaiting()"));
 });
 
@@ -43,7 +48,14 @@ test("guide artwork requests bypass generic shell caching", () => {
   assert.match(browser, /shellHasGuideFiles/);
 });
 
-test("browser test server supplies exact MIME types for guide artwork", () => {\n  assert.match(browser, /"\\.svg": "image\\/svg\\+xml"/);\n  assert.match(browser, /"\\.jpg": "image\\/jpeg"/);\n  assert.match(browser, /"\\.gif": "image\\/gif"/);\n});\n\ntest("browser validation confirms all 41 guide assets and serves guide artwork offline", () => {
+test("browser test server supplies exact MIME types for guide artwork", () => {
+  assert.match(browser, /"\.svg": "image\/svg\+xml"/);
+  assert.match(browser, /"\.jpg": "image\/jpeg"/);
+  assert.match(browser, /"\.jpeg": "image\/jpeg"/);
+  assert.match(browser, /"\.gif": "image\/gif"/);
+});
+
+test("browser validation confirms all 41 guide assets and serves guide artwork offline", () => {
   assert.match(browser, /guideCacheCheck\.count !== 41/);
   assert.match(browser, /guideCacheCheck\.shellHasGuideFiles/);
   assert.match(browser, /offlineGuideFetch/);
