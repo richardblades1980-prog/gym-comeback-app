@@ -152,10 +152,17 @@
       const variationStore = tx.objectStore("exerciseVariations");
       const metadataStore = tx.objectStore("metadata");
       const existingRelease = await requestResult(releaseStore.get(manifest.releaseId));
-      if (existingRelease && stableJson(existingRelease) !== stableJson(manifest)) {
-        tx.abort();
-        await done.catch(() => {});
-        fail("release ID is immutable and already belongs to different metadata.");
+      if (existingRelease) {
+        const existingCore = Object.assign({}, existingRelease);
+        delete existingCore.assetVerificationStatus;
+        delete existingCore.assetVerifiedAt;
+        delete existingCore.createdAt;
+        delete existingCore.updatedAt;
+        if (stableJson(existingCore) !== stableJson(manifest) || existingRelease.assetVerificationStatus !== "verified") {
+          tx.abort();
+          await done.catch(() => {});
+          fail("release ID is immutable; unverified metadata cannot be promoted into a verified release.");
+        }
       }
       const allReleases = await requestResult(releaseStore.getAll());
       const latestVersion = allReleases.filter(item => item.catalogueId === manifest.catalogueId)
@@ -214,7 +221,9 @@
           sourceCatalogueReleaseId: manifest.releaseId
         }));
       }
-      if (!existingRelease) releaseStore.add(manifest);
+      if (!existingRelease) releaseStore.add(Object.assign({}, manifest, {
+        assetVerificationStatus: "verified", assetVerifiedAt: new Date().toISOString()
+      }));
       metadataStore.put({
         id: ACTIVE_POINTER_ID,
         type: "active-catalogue-release",
@@ -243,7 +252,8 @@
     const pointer = await db.getMeta(ACTIVE_POINTER_ID);
     if (!pointer || !pointer.value) return { status: "unavailable", reason: "not-seeded" };
     const release = await db.get("catalogueReleases", pointer.value.releaseId);
-    if (!release || release.checksum !== pointer.value.checksum || release.version !== pointer.value.version) {
+    if (!release || release.assetVerificationStatus !== "verified" ||
+        release.checksum !== pointer.value.checksum || release.version !== pointer.value.version) {
       return { status: "unavailable", reason: "active-release-manifest-mismatch" };
     }
     return { status: "active", release: pointer.value };
