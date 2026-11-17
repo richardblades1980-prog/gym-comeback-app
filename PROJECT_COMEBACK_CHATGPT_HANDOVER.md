@@ -712,3 +712,52 @@ The initial implementation CI runs identified fixture defects; these were correc
 - Backup validation #44061074385 PASS: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44061074385
 
 The first failed runs were superseded by the corrected, passing exact-SHA runs above. The final handover commit still requires both workflows to pass against its own exact SHA.
+
+---
+
+# Gym exercise catalogue — source inventory and curation design (2026-11-17)
+
+**Audit base:** `V21.2-development` at `409484e9d2089b6e06c1ed931db5a677e2ecf155`  
+**Scope:** read-only source inventory and design; no catalogue data or application implementation added.
+
+## Source inventory
+
+Protected legacy root `index.html` was inspected read-only (blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`). It contains:
+
+- Five base workout days with 32 exercise slots: Day 1 (7), Day 2 (7), Day 3 (6), Day 4 (6), Day 5 (6).
+- An optional exercise library of 42 entries, categorised as 18 bodyweight, 5 free-weight, 3 band, 4 cardio, 2 mobility and 10 machine entries.
+- 25 explicit exercise instruction / muscle-description entries in `machineDescriptions`; other library entries use a generic fallback guide and need review before being presented as fully documented.
+- Equipment mapping, gear matching, exercise substitutions, user-added extras, day-scoped swaps and configurable exercise/set behaviour.
+- Exercise guide uses equipment illustration and muscle tiles; 17 muscle-group JPGs are present in root `assets/`.
+- Root asset inventory contains 15 equipment SVGs, 10 machine-reference JPGs and 17 muscle-group JPGs. The three legacy celebration GIFs (`celebration-day1.gif`, `celebration-day2.gif`, `female-celebration.gif`) are present at repository root.
+- The legacy guide uses a 450 ms press-and-hold gesture, with keyboard activation support. The guide includes equipment, instructions, highlighted muscle panels and safety text.
+- SAVE SESSION saves before opening the six-second celebration; male artwork varies by day, female artwork uses its own GIF, and the celebration can be skipped/dismissed.
+- Set completion drives the smart rest timer and sequence lock; rest controls include +15 seconds, skip and dismiss. Exercise completion is derived from set states and applies the subtle green card/label treatment.
+
+Relevant historical behaviour notes: `docs/archive/README-V6-GUIDES.txt` and `docs/archive/README-V19-EXERCISE-COMPLETION.txt`. The source itself remains the stronger reference where archived notes are older or narrower.
+
+## Important integration finding
+
+The current V21.2 app shell is not yet the complete legacy workout UI. Its `v21.2/sw.js` shell cache v16 does not currently precache the legacy equipment/muscle guide artwork or celebration GIFs. When the workout experience is ported, these assets must be copied into a versioned V21.2 asset location, referenced locally, and included in the shell/offline test. Do not rely on root legacy paths or network-only images.
+
+## Catalogue curation rules proposed
+
+1. Do not assign one permanent definition ID to every one of the 42 library rows. First distinguish canonical movements, equipment-specific implementations, variations, aliases and optional activity types.
+2. Preserve exact source names and provenance. Keep original programme slot labels separately from canonical definition labels so old records and published plans remain interpretable.
+3. Model exercise definition, variation, equipment requirement, primary/secondary muscle groups, instructions, cautions, illustration references and aliases as separate, validated fields/references. Do not infer missing instructions or muscle targets.
+4. Separate strength exercises from cardio and mobility entries; retain their original category and programme role.
+5. Keep the five-day programme slots and gear/adaptation/swap behaviour as programme data, not as exercise identity. Never let an adaptive substitution silently rewrite the base programme or historical session.
+6. Review the 17 muscle illustration keys against the catalogue's allowed muscle vocabulary; missing or ambiguous mapping is a curation issue, not a reason to invent artwork.
+7. Mark incomplete guides explicitly. A generic fallback must not be represented as an exercise-specific instruction.
+8. The catalogue release remains immutable/checksummed and must pass the existing verified delivery path. Production data must be reviewed and approved before a release is packaged.
+
+## Next bounded work
+
+- Build a row-by-row source register for all 42 library entries and 32 base programme slots, including source label, category, equipment/art reference, muscle keys, instruction coverage, possible alias/variation relationship and review status.
+- Verify every referenced artwork file and create a V21.2-local offline asset manifest.
+- Design acceptance tests for the exercise guide, 450 ms hold/keyboard interaction, set-state sequence, smart-rest controls/persistence, exercise completion, SAVE SESSION and celebration skip/dismiss.
+- Only after review, assign stable IDs and prepare a real catalogue release. No synthetic test fixture may be described as production content.
+
+## Scope and safety
+
+This was a source-grounded design/inventory update only. No production catalogue payload, permanent exercise IDs, V21.2 workout UI, asset copy, database change, backup change, legacy root edit, historical data rewrite, merge or deployment was made. The 409484e9 checkpoint's browser and backup validations were previously confirmed PASS; this handover update itself still requires both workflows to pass on its exact resulting commit SHA.
