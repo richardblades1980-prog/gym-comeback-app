@@ -457,6 +457,18 @@ function server() {
         id: "browser-journey-exercise", moduleId: "gym", sessionId: "browser-workload-gym",
         name: "Test squat", setCount: 3, progressionFocus: "repetitions"
       });
+      // Historical names that differ only by case, punctuation or spacing
+      // must remain separate until an explicit alias map is approved.
+      for (const [id, name] of [
+        ["browser-name-case-a", "Bench Press"],
+        ["browser-name-case-b", "bench press"],
+        ["browser-name-punctuation-a", "RDL (DB)"],
+        ["browser-name-punctuation-b", "RDL DB"]
+      ]) {
+        await ProjectComebackModules.putOwnedRecord("gym", "exerciseRecords", {
+          id, moduleId: "gym", sessionId: "browser-workload-gym", name, setCount: 1
+        });
+      }
       await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
         id: "browser-journey-set-1", moduleId: "gym", sessionId: "browser-workload-gym",
         exerciseRecordId: "browser-journey-exercise", setNumber: 1, weight: "20", reps: "8"
@@ -539,6 +551,12 @@ function server() {
       throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
     }
     const gymHistoryCheck = await app.locator("#gym-journey").textContent();
+    const exerciseHistoryNames = await app.locator("#gym-journey .gym-exercise-history h4").allTextContents();
+    for (const expectedName of ["Bench Press", "bench press", "RDL (DB)", "RDL DB"]) {
+      if (!exerciseHistoryNames.includes(expectedName)) {
+        throw new Error("Gym history merged or lost an exact exercise-name variant: " + expectedName + " / " + JSON.stringify(exerciseHistoryNames));
+      }
+    }
     if (!gymHistoryCheck.includes("Recorded exercise history") || !gymHistoryCheck.includes("Test squat") ||
         !gymHistoryCheck.includes("15") || !gymHistoryCheck.includes("6 reps") ||
         !gymHistoryCheck.includes("20") || !gymHistoryCheck.includes("10 reps") ||
