@@ -890,6 +890,23 @@ function server() {
     if (!(await app.locator("h1").textContent()).includes("Build your comeback")) {
       throw new Error("Actual V21.2 application did not reload from its own offline cache.");
     }
+    const offlineCatalogueCheck = await app.evaluate(async () => {
+      const status = await ProjectComebackCatalogueDelivery.getStatus();
+      const matches = await ProjectComebackCatalogueDelivery.lookup("Browser Test Squat");
+      const names = await caches.keys();
+      return {
+        status: status.status, releaseId: status.release?.releaseId,
+        matchCount: matches.length, canonicalName: matches[0]?.canonicalName,
+        releaseCacheSurvived: names.some(name => name.startsWith(ProjectComebackCatalogueDelivery.cachePrefix))
+      };
+    });
+    if (offlineCatalogueCheck.status !== "active" || offlineCatalogueCheck.releaseId !== "browser-catalogue-r1" ||
+        offlineCatalogueCheck.matchCount !== 1 || offlineCatalogueCheck.canonicalName !== "Browser Test Squat" ||
+        !offlineCatalogueCheck.releaseCacheSurvived) {
+      throw new Error("Verified catalogue lookup or release cache did not survive a real offline app reload: " + JSON.stringify(offlineCatalogueCheck));
+    }
+    console.log("PASS verified catalogue materialisation, lookup and separate release cache survive offline reload");
+
     await appContext.close();
     appContext = null;
 
