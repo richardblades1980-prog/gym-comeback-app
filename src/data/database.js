@@ -321,13 +321,8 @@
     const exercises = bundle.exerciseRecords;
     const sets = bundle.setRecords;
     if (!session || typeof session !== "object" || session.moduleId !== "gym" ||
-        typeof session.id !== "string" || !session.id || !/^gym-\d{4}-\d{2}-\d{2}$/.test(session.status || "")) {
-      // The status is checked below; the date-shaped expression here intentionally
-      // only rejects absent core session identity. Session status is not an ID field.
-      if (!session || typeof session !== "object" || session.moduleId !== "gym" ||
-          typeof session.id !== "string" || !session.id) {
-        throw new Error("Gym session requires a stable ID and moduleId gym.");
-      }
+        typeof session.id !== "string" || !session.id) {
+      throw new Error("Gym session requires a stable ID and moduleId gym.");
     }
     if (!Array.isArray(exercises) || !exercises.length || !Array.isArray(sets) || !sets.length) {
       throw new Error("A new Gym workout must contain exercise and set records.");
@@ -480,15 +475,11 @@
       const tx = db.transaction(requiredStores, "readwrite");
       const done = transactionDone(tx);
       let failure = null;
-      let pendingChecks = 2 + validated.exercises.length + validated.sets.length;
       const now = new Date().toISOString();
       const fail = message => {
         if (failure) return;
         failure = message instanceof Error ? message : new Error(message);
         try { tx.abort(); } catch (error) {}
-      };
-      const checkFinished = () => {
-        pendingChecks--;
       };
       const moduleRequest = tx.objectStore("modules").get("gym");
       moduleRequest.onsuccess = () => {
@@ -496,7 +487,6 @@
           fail("Gym module is disabled; workout changes were not saved.");
           return;
         }
-        checkFinished();
       };
       const sessionRequest = tx.objectStore("sessions").get(bundle.sessionId);
       sessionRequest.onsuccess = () => {
@@ -527,7 +517,6 @@
             createdAt: existing.createdAt || record.createdAt || now,
             updatedAt: now
           }));
-          checkFinished();
         };
       });
       validated.sets.forEach(record => {
@@ -543,7 +532,6 @@
             createdAt: existing.createdAt || record.createdAt || now,
             updatedAt: now
           }));
-          checkFinished();
         };
       });
       try {
