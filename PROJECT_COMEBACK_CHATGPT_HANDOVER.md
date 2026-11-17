@@ -284,18 +284,15 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Current branch head at this checkpoint: `f460e4bea9600495cf26b4a8c525076a09777367` (handover-manual update after the validated code commit).
-- Latest validated code commit: `94028b825bbe3109342508a9b8fc7d23c0416c64`.
-- Browser validation for code commit `94028b8`: **success**, run [#44008882136](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44008882136).
-- Backup validation for code commit `94028b8`: **success**, run [#44008882122](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44008882122).
-- Browser validation for the handover-only branch head `f460e4b`: **success**, run [#44009164820](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44009164820).
-- Backup validation for the handover-only branch head `f460e4b`: **success**, run [#44009164776](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44009164776).
-- The successful browser run confirms source/bundle parity; migration and reload; offline fixture; first keyboard focus and skip navigation; baseline protection; follow-up history; Before & Now comparisons and missing-value handling; contrast; initial and changed navigation states; mobile-width overflow; PWA metadata; migration safety snapshot and manual migration; backup/restore; offline app reload; and cold-start IndexedDB persistence.
-- Browser test cleanup now closes the separately launched persistent context on failure, so an assertion failure is reported promptly instead of holding the job until timeout.
-- Assessment UI implementation is in place and both validation workflows pass. A focused UX/code review found two follow-up policy/quality items that have **not** yet been changed:
-  1. The follow-up form and service currently allow a follow-up even if no original baseline exists, or if its assessment date predates the baseline. Recommendation: require a saved baseline before follow-ups and decide whether follow-up dates must be on/after the baseline date.
-  2. The follow-up submit button is not disabled while an asynchronous save is in progress; a rapid repeat submission could create two separate records. Recommendation: add a pending-submit guard and a regression test.
-- Empty states and missing-measure comparisons are handled; comparison selectors disable when fewer than two records exist, although the single-record prompt could be more helpful.
+- Current validated code branch head: `a68cd1662887ef11d95f15fbf126e503c9f2d32c`.
+- Browser validation for this exact SHA: **success**, run [#44010251181](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44010251181).
+- Backup validation for this exact SHA: **success**, run [#44010251174](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44010251174).
+- The successful browser run confirms: source/bundle parity; browser migration and reload; offline fixture; first-keyboard-focus skip link; immutable baseline and follow-up history; Before & Now comparisons and missing-value handling; rapid duplicate follow-up submission prevention; contrast; initial and changed navigation states; mobile width; PWA metadata; migration safety snapshot and manual migration; backup/restore; offline app reload; and cold-start IndexedDB persistence.
+- Assessment form saving now has an in-flight lock. The submit control is disabled during save and restored afterward. The browser regression test dispatches two submit events rapidly and verifies that exactly one new assessment is stored.
+- Restore and cold-start assertions use the expected assessment count established by the test setup, so additional assessment coverage does not invalidate persistence assertions.
+- UX review confirms the original baseline is write-once; missing values remain missing and display as not recorded/not comparable; selectors preserve valid choices; and history displays newest-first.
+- **Open product rule (not implemented):** the current system still permits follow-up records before a baseline exists and permits a follow-up date earlier than the baseline date. Recommendation is to require a baseline before follow-ups and disallow a date earlier than the baseline; user decision is pending.
+- The comparison panel's one-record empty-state wording could be improved, but there is no current data or test failure.
 - No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
 
 ### Recent change log
@@ -312,14 +309,16 @@ During development:
 | 2026-11-17 | `87f566c` | Added this handover manual to the repository | Browser and backup checks were running at the time |
 | 2026-11-17 | `34533cf` | Moved first-keyboard-focus skip-link test to immediately after app load | Backup #44007617283 passed; browser run superseded |
 | 2026-11-17 | `8f86c2d` | Added persistent browser-context cleanup on browser-test failure paths | Backup #44008583130 passed; browser #44008583074 exposed stale initial-navigation assertion |
-| 2026-11-17 | `94028b8` | Corrected navigation accessibility test sequencing while preserving first-load and tab-change checks | Browser #44008882136 passed; backup #44008882122 passed |
-| 2026-11-17 | `f460e4b` | Recorded green validation for the assessment UI code commit | Browser #44009164820 and backup #44009164776 passed on this handover-only branch head |
+| 2026-11-17 | `94028b8` | Corrected navigation accessibility test sequencing while preserving first-load and tab-change checks | Browser #44008882136 and backup #44008882122 passed |
+| 2026-11-17 | `fc17d64` | Added in-flight guards to prevent duplicate baseline/follow-up submissions | Browser #44010024786 and backup #44010024901 passed |
+| 2026-11-17 | `7e652de` | Added rapid repeated-submit browser regression test | Test passed; later restore count expectation needed updating because the new test adds one record |
+| 2026-11-17 | `a68cd16` | Aligned restore and cold-start assessment count assertions with dynamic test setup | Browser #44010251181 and backup #44010251174 passed |
 
 ### Next actions (resume here)
 
 1. Confirm the follow-up policy: should the app require the original baseline to be saved before follow-up assessments can be added? Recommended: yes.
-2. Confirm the date rule for follow-ups. Recommended: allow the same date as the baseline, but not an earlier date.
-3. Add a pending-submit guard to both assessment forms and improve the single-record comparison prompt; add tests for these cases.
-4. Rerun browser and backup validation on the latest `V21.2-development` head.
-5. Once assessment UX is signed off, proceed to the next approved Visual Progress Journey increment using actual saved records only.
-6. Keep all work on `V21.2-development`; do not merge or deploy without explicit approval. Continue updating this manual with decisions, commits and exact CI links/results.
+2. Confirm the date rule: recommended that follow-up assessments may share the baseline date but cannot be earlier.
+3. Once those rules are settled, implement the chosen behaviour and add service/UI tests; improve the one-record comparison empty-state wording.
+4. Then proceed to the next approved Visual Progress Journey increment, using actual saved records only.
+5. Keep all work on `V21.2-development`; verify current branch head and both Actions workflows after each meaningful change. Do not merge or deploy without explicit approval.
+6. Keep this manual current with product decisions, commits and exact CI links/results.
