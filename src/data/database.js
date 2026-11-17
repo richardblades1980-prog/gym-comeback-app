@@ -6,7 +6,7 @@
   "use strict";
 
   const DB_NAME = "ProjectComebackDB";
-  const DB_VERSION = 4;
+  const DB_VERSION = 5;
   const STORES = {
     profile: { keyPath: "id", indexes: [] },
     objectives: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
