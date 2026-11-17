@@ -111,6 +111,24 @@ test("a disabled Gym module prevents workout creation without partial session or
   assert.equal(await db.count("setRecords"), 0);
 });
 
+
+test("a workout cannot be finished until every set is complete, then saves completed duration", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18", { setCount: 1 });
+  await assert.rejects(() => workout.finishSession(created.workout), /Complete every set/);
+  for (const exercise of created.workout.exerciseRecords) {
+    await workout.startSet(created.workout, exercise.id, 1);
+    await workout.completeSet(created.workout, exercise.id, 1);
+  }
+  const finished = await workout.finishSession(created.workout);
+  assert.equal(finished.status, "completed");
+  assert.ok(finished.completedAt);
+  assert.equal(typeof finished.durationMinutes, "number");
+  const stored = await db.get("sessions", finished.id);
+  assert.equal(stored.status, "completed");
+  assert.equal(stored.durationMinutes, finished.durationMinutes);
+});
+
 test("invalid dates and set counts are rejected before creating a session", async () => {
   const { db, workout } = await setup();
   await assert.rejects(() => workout.startSession(1, "2026-99-99"), /valid YYYY-MM-DD/);
