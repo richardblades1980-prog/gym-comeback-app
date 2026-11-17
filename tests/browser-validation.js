@@ -499,9 +499,9 @@ function server() {
     await app.locator('[data-view="overview"]').click();
     await app.waitForFunction(() => document.querySelector("#upcoming-overview").textContent.includes("Browser test gym session"));
     const gymJourneyCheck = await app.locator("#gym-journey").textContent();
-    if (!gymJourneyCheck.includes("1") || !gymJourneyCheck.includes("18") ||
-        !gymJourneyCheck.includes("2 of 3 sets include a numeric repetition count") ||
-        !gymJourneyCheck.includes("Weight is not totalled")) {
+    if (!gymJourneyCheck.includes("Completed sessions2") || !gymJourneyCheck.includes("24") ||
+        !gymJourneyCheck.includes("3 of 4 sets include a numeric repetition count") ||
+        !gymJourneyCheck.includes("Weight entries below are shown exactly as saved")) {
       throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
     }
     const gymHistoryCheck = await app.locator("#gym-journey").textContent();
