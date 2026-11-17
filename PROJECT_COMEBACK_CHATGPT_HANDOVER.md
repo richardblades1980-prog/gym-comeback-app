@@ -347,3 +347,28 @@ During development:
 3. Consider additional Gym progress measures only where source fields and units are explicit. Keep Hiking separate and do not infer personal bests, one-rep maximums, technique or physiological strength gains.
 4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
 5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
+
+
+### IndexedDB duplicate-key rejection fix (2026-11-17)
+- Root cause confirmed from the browser run: the assessment regression deliberately calls `addFollowUp` with an existing ID. The IndexedDB request rejection was caught by the test, but `withStore` also created a transaction-completion promise that rejected on the same aborted transaction and was left unobserved.
+- Updated `withStore` in `src/data/database.js` and the matching `v21.2/assets/database.js` bundle to await the work promise and transaction-completion promise together via `Promise.all`, ensuring both rejection paths are observed while preserving the original failure.
+- Added a browser assertion that fails if the expected duplicate-ID rejection emits any application `pageerror`.
+- Final code/test head: `7467f5e514e7e674f12e0f92334c4eaa425e4d97`.
+- Browser validation #44043893868 passed on that exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44043893868
+- Backup validation #44043893795 passed on that exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44043893795
+- The browser log explicitly reports: `PASS assessment UI ... duplicate ID protection without unhandled page errors`.
+- An intermediate browser run on the canonical-source-only commit failed the source/bundle parity gate as expected before the matching browser bundle was updated. The final head has parity and both checks pass.
+
+### Migrated Gym data semantics audit (2026-11-17)
+- The V21.1 source stores each workout under one `gym-comeback-w{week}-d{day}` key. A saved workout contains its own date, body weight, session/cardio fields and exercise array; each exercise stores its displayed name, set count, progression/recording preferences, set entries, notes, RIR and response.
+- Legacy set-completion state is stored separately under keys containing week, day, workout date (or `undated`) and an active-session token. Each set-state key is the exact exercise name plus `::` plus set number. The migration's exact-name lookup is therefore correct; do not normalize, fuzzy-match, merge or rename exercise names during migration.
+- The legacy UI permits 1–8 sets. The migration's 1–8 clamp matches the historical UI control, but the original raw workout JSON is retained alongside the typed session and exercise projection.
+- Workout date can be absent; current migration correctly represents an absent/non-regex date as `null`, so it is not eligible for dated progress trends. Follow-up review noted that the current regex accepts impossible calendar dates such as `2026-02-30`; consider tightening validation and adding a regression before treating all non-null migrated dates as calendar-valid.
+- The legacy weight field is labelled `Weight (kg)`, has minimum 0 and step 0.5. It is hidden by default for bodyweight/mobility exercises but can be shown to record added resistance. Set weight is migrated as its original string (or empty string) and raw set data is retained; no extra bodyweight category is inferable from the saved exercise object alone, so do not reinterpret missing values or infer body mass / added load.
+- The migrated exercise record retains the source exercise name verbatim when present. Current fallback text `Exercise N` for a missing/non-string name is a possible invented label; consider retaining an empty/unknown name with a warning instead. No actual user legacy dataset was available in this audit, so no claim is made about the user's personal records, missing dates or exercise-name consistency.
+- Next: decide and test the two migration hardening items (strict calendar-date validation and no fabricated fallback exercise name), then continue the data semantics audit only from actual source evidence. Preserve all raw legacy values and keep the V21.2 development branch isolated.
+
+### Current validated state
+- `V21.2-development` latest verified feature/test commit: `7467f5e514e7e674f12e0f92334c4eaa425e4d97`.
+- Production `main` remains untouched. No merge or deployment has been performed.
+- Next actions: (1) harden Gym migration date/name edge cases with focused tests if confirmed appropriate; (2) verify the branch head and both Actions checks for every resulting commit; (3) continue only source-grounded Gym progress semantics; (4) update this handover after each meaningful increment.
