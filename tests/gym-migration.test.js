@@ -185,30 +185,6 @@ test("does not invent a name for a malformed exercise entry", () => {
 });
 
 
-test("preserves distinct exercise names that collide under legacy normalisation", () => {
-  const raw = fixture({
-    "Bench-Press::1": "complete",
-    "Bench Press::1": "complete",
-    "RDL (DB)::1": "complete",
-    "RDL DB::1": "complete"
-  });
-  const log = JSON.parse(raw["gym-comeback-w2-d3"]);
-  const names = ["Bench-Press", "Bench Press", "RDL (DB)", "RDL DB"];
-  log.exercises = names.map(name => ({
-    name,
-    setCount: 1,
-    sets: [{ weight: "", reps: "8", duration: "" }]
-  }));
-  raw["gym-comeback-w2-d3"] = JSON.stringify(log);
-
-  const result = migration.normaliseSnapshot(raw);
-
-  assert.deepEqual(result.exerciseRecords.map(record => record.name), names);
-  assert.equal(new Set(result.exerciseRecords.map(record => record.id)).size, names.length);
-  assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
-  assert.deepEqual(result.setRecords.map(record => record.reps), ["8", "8", "8", "8"]);
-});
-
 
 test("preserves distinct exercise names that collide under legacy normalisation", () => {
   const raw = fixture({
@@ -228,8 +204,8 @@ test("preserves distinct exercise names that collide under legacy normalisation"
 
   const result = migration.normaliseSnapshot(raw);
 
-  assert.deepEqual(result.exerciseRecords.map(record => record.name), names);
+  assert.deepEqual(Array.from(result.exerciseRecords, record => record.name), names);
   assert.equal(new Set(result.exerciseRecords.map(record => record.id)).size, names.length);
   assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
-  assert.deepEqual(result.setRecords.map(record => record.reps), ["8", "8", "8", "8"]);
+  assert.deepEqual(Array.from(result.setRecords, record => record.reps), ["8", "8", "8", "8"]);
 });
