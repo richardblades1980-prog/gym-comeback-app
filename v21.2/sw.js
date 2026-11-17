@@ -54,20 +54,22 @@ async function verifyGuideResponse(response,asset){
 }
 async function installGuideAssets(){
  await caches.delete(GUIDE_STAGE_CACHE);
- const manifestResponse=await fetch(GUIDE_MANIFEST_URL,{cache:"no-store"});
- if(!manifestResponse.ok||manifestResponse.type==="opaque")throw new Error("Guide asset manifest fetch failed.");
- const manifestBytes=await manifestResponse.clone().arrayBuffer();
- const manifestText=new TextDecoder("utf-8",{fatal:true}).decode(manifestBytes);
- const manifest=JSON.parse(manifestText);
- const assets=validateGuideManifest(manifest);
- const verified=[];
- for(const asset of assets){
-  const response=await fetch(asset.path,{cache:"no-store"});
-  const bytes=await verifyGuideResponse(response,asset);
-  verified.push({asset,bytes});
- }
- const stage=await caches.open(GUIDE_STAGE_CACHE);
+ let createdPublishedCache=false;
+ let publishedCacheExisted=false;
  try{
+  const manifestResponse=await fetch(GUIDE_MANIFEST_URL,{cache:"no-store"});
+  if(!manifestResponse.ok||manifestResponse.type==="opaque")throw new Error("Guide asset manifest fetch failed.");
+  const manifestBytes=await manifestResponse.clone().arrayBuffer();
+  const manifestText=new TextDecoder("utf-8",{fatal:true}).decode(manifestBytes);
+  const manifest=JSON.parse(manifestText);
+  const assets=validateGuideManifest(manifest);
+  const verified=[];
+  for(const asset of assets){
+   const response=await fetch(asset.path,{cache:"no-store"});
+   const bytes=await verifyGuideResponse(response,asset);
+   verified.push({asset,bytes});
+  }
+  const stage=await caches.open(GUIDE_STAGE_CACHE);
   const manifestUrl=new URL(GUIDE_MANIFEST_URL,self.location).href;
   await stage.put(manifestUrl,new Response(manifestBytes,{headers:{"content-type":"application/json"}}));
   for(const item of verified){
@@ -77,16 +79,26 @@ async function installGuideAssets(){
    const cached=await stage.match(new URL(item.asset.path,self.location).href);
    await verifyGuideResponse(cached,item.asset);
   }
-  const existing=await caches.open(GUIDE_CACHE_NAME);
-  let complete=Boolean(await existing.match(manifestUrl));
-  for(const item of verified){
-   const cached=await existing.match(new URL(item.asset.path,self.location).href);
-   if(!cached){complete=false;break;}
-   try{await verifyGuideResponse(cached,item.asset);}catch{complete=false;break;}
-  }
-  if(!complete){
-   await caches.delete(GUIDE_CACHE_NAME);
+  if((await stage.keys()).length!==GUIDE_ASSET_COUNT+1)throw new Error("Guide staging cache inventory is incomplete.");
+  const cacheNames=await caches.keys();
+  publishedCacheExisted=cacheNames.includes(GUIDE_CACHE_NAME);
+  if(publishedCacheExisted){
+   // A published version is immutable. Never repair or overwrite a cache that an older active worker may still use.
+   const existing=await caches.open(GUIDE_CACHE_NAME);
+   const existingManifest=await existing.match(manifestUrl);
+   if(!existingManifest)throw new Error("Existing guide cache is incomplete; publish a new guide cache version.");
+   if(await guideDigest(await existingManifest.arrayBuffer())!==await guideDigest(manifestBytes))
+    throw new Error("Existing guide cache manifest differs; publish a new guide cache version.");
+   for(const item of verified){
+    const cached=await existing.match(new URL(item.asset.path,self.location).href);
+    await verifyGuideResponse(cached,item.asset);
+   }
+   if((await existing.keys()).length!==GUIDE_ASSET_COUNT+1)
+    throw new Error("Existing guide cache inventory is incomplete; publish a new guide cache version.");
+  }else{
+   // The new cache name is not referenced by the currently active worker. Populate it only after all staged bytes pass verification.
    const published=await caches.open(GUIDE_CACHE_NAME);
+   createdPublishedCache=true;
    for(const request of await stage.keys()){
     const response=await stage.match(request);
     await published.put(request,response);
@@ -95,13 +107,19 @@ async function installGuideAssets(){
     const cached=await published.match(new URL(item.asset.path,self.location).href);
     await verifyGuideResponse(cached,item.asset);
    }
-   if(!await published.match(manifestUrl))throw new Error("Guide manifest cache read-back failed.");
+   const publishedManifest=await published.match(manifestUrl);
+   if(!publishedManifest||await guideDigest(await publishedManifest.arrayBuffer())!==await guideDigest(manifestBytes))
+    throw new Error("Guide manifest cache read-back failed.");
+   if((await published.keys()).length!==GUIDE_ASSET_COUNT+1)
+    throw new Error("Published guide cache inventory is incomplete.");
   }
  }catch(error){
-  await caches.delete(GUIDE_STAGE_CACHE);
+  // Delete only a cache newly created by this failed install. Never touch a cache an active worker could be using.
+  if(createdPublishedCache&&!publishedCacheExisted)await caches.delete(GUIDE_CACHE_NAME);
   throw error;
+ }finally{
+  await caches.delete(GUIDE_STAGE_CACHE);
  }
- await caches.delete(GUIDE_STAGE_CACHE);
 }
 
 self.addEventListener("install",event=>{
