@@ -117,6 +117,44 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await app.goto(base + "/v21.2/");
+    console.log("[browser] Baseline and assessment history");
+    const assessmentCheck = await app.evaluate(async () => {
+      const service = ProjectComebackAssessments;
+      const baseline = await service.createBaseline({
+        date: "2026-11-15",
+        measures: { comfortableWalkMinutes: 12, stepUpsReps: 8, singleLegBalanceSeconds: 5 }
+      });
+      const followUp = await service.addFollowUp({
+        date: "2026-11-16",
+        measures: { comfortableWalkMinutes: 18, stepUpsReps: 11 }
+      });
+      const comparison = service.compare(baseline, followUp);
+      let overwriteRejected = false;
+      try {
+        await service.createBaseline({ date: "2026-11-17", measures: { stepUpsReps: 99 } });
+      } catch (error) { overwriteRejected = /cannot be overwritten/.test(error.message); }
+      const latest = await service.compareBaselineToLatest();
+      return {
+        baselineId: baseline.id,
+        followUpId: followUp.id,
+        historyCount: (await service.listHistory()).length,
+        walkDifference: comparison.measures.comfortableWalkMinutes.difference,
+        missingBalanceDifference: comparison.measures.singleLegBalanceSeconds.difference,
+        overwriteRejected,
+        latestDate: latest && latest.second.date,
+        storedBaseline: await service.getBaseline()
+      };
+    });
+    if (assessmentCheck.baselineId !== "original-baseline" ||
+        assessmentCheck.historyCount !== 2 ||
+        assessmentCheck.walkDifference !== 6 ||
+        assessmentCheck.missingBalanceDifference !== null ||
+        !assessmentCheck.overwriteRejected ||
+        assessmentCheck.latestDate !== "2026-11-16" ||
+        assessmentCheck.storedBaseline.measures.stepUpsReps !== 8) {
+      throw new Error("Baseline protection or assessment comparison failed: " + JSON.stringify(assessmentCheck));
+    }
+    console.log("PASS original baseline protection, follow-up history and missing-value comparisons");
     const contrastAudit = await app.evaluate(() => {
       const rgb = value => {
         const hex = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
