@@ -972,3 +972,25 @@ The user has explicitly decided that the existing artwork is good enough to get 
 - Artwork sample assets remain isolated under `v21.2/assets/artwork-samples/` and are not connected to the runtime guide or production cache. No more aesthetic sample batches are planned for the immediate development path.
 - This is a functional-first scope decision and source-data foundation, not yet a working workout UI. Exact-SHA CI validation on the final commit containing this note is required before the programme module/cache change is considered validated.
 
+
+
+---
+
+# Functional-first Gym workout implementation — 2026-11-18
+
+The user explicitly prioritised a working app over visual aesthetics. Keep existing artwork as temporary functional assets; do not spend further development cycles on new artwork concepts, hero styles or decorative polish until the core workout flow works end to end.
+
+Implemented first G3.2 slice:
+- Source-preserved five-day programme already exists in `src/data/gym-base-programme.js` and `v21.2/assets/gym-base-programme.js` (32 slots, 7/7/6/6/6). Each slot remains unreviewed for canonical exercise identity.
+- New persisted workout service: `src/modules/gym-workout.js`, mirrored to `v21.2/assets/gym-workout.js`.
+- New minimal Gym UI in `v21.2/index.html`, `v21.2/app.js`, `v21.2/app.css`: select programme day/date; start/resume; enter weight/reps or timed-hold seconds; start/complete/undo sets; finish only after all sets complete.
+- Session/exercise/set graph writes use existing atomic DB helpers in `src/data/database.js`: `createGymWorkoutBundle` and `updateGymWorkoutBundle`. Existing stores only; no DB schema/version/store/index change. Database source and browser bundle were synchronised.
+- Session start creates three sets per slot; first set is available, later sets locked. Completion unlocks the next set. Undo resets later sets to locked while retaining entered values. Same day/date in-progress session is resumed. Values save on field change. Session completion timestamp and elapsed minutes are saved only after all sets are complete.
+- Shell cache advanced from v17 to v18 and includes workout service. Existing dedicated immutable guide cache v1 and catalogue release cache remain unchanged.
+- Added `tests/gym-workout.test.js`; included in both backup and browser workflows. Chromium test now exercises actual app day-1 start, 7 exercise/21 set graph, value entry, completion, reload and resume, and checks correct next-set unlock / later-set lock.
+- Current code/documentation head at time of this handover note: `80a25b1a652b1caaeb1eaeb9fd0899e3e8b7c42e`. Exact-SHA CI for the final documentation commit is pending; do not declare the milestone fully validated until both browser and backup workflows pass on the final head.
+- Recent test debugging: first browser assertion incorrectly expected set 2 to remain locked after set 1 completion. Correct behaviour is set 2 unlocked and set 3 still locked. The latest browser assertion was corrected accordingly. The browser workflow at `cc6c89f...` had this incorrect assertion; do not treat it as an application defect.
+- Latest known earlier backup run on `ef6950a...` passed; browser run on that SHA was still in progress/failed due the incorrect next-set assertion. Current exact SHA is `80a25b1...`; check latest workflows before proceeding.
+- Still deferred: rest timer (+15/skip/cancel and end-time catch-up), timed-set stopwatch/manual corrections, configurable set count/progression focus/recording mode in UI, save-before-six-second celebration, week progression/unlock rules, swaps/equipment adaptation, accessible 450ms/keyboard exercise guide. Keep these in the roadmap and do not imply they are implemented.
+- Next development step after exact-SHA validation: build timed-set controls and smart rest persistence, then save/celebration flow and day/week progression. Keep functional scope ahead of aesthetics.
+- No merge/deployment. Production `main` remains protected and root legacy `index.html` unchanged. Do not alter either without explicit authorisation.
