@@ -842,3 +842,17 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Proposed acceptance tests cover SHA-256/byte length/MIME, asset paths/provenance, offline cold start, all guide images, touch/keyboard/modal accessibility, no interference with workout buttons, celebration selection and cache isolation.
 - The 27 new guide drafts and 25 existing descriptions remain human-review drafts. No generic fallback may be presented as specific guidance. No IDs, aliases, variations, production guide records, UI, asset copies, service-worker changes, DB/backup/history changes, merge or deployment.
 - Prior guide draft checkpoint `19acfef3b942342551fee34628e703c91f097f55` has browser and backup validation PASS. The new documentation commits will each trigger the same exact-SHA workflows; this handover is not validated until both pass on its final commit.
+
+
+---
+
+# V21.2-local guide artwork package — 2026-11-18
+
+- Added inert asset package commit `740af8bd68ed6a1d424fa0ee3097a60c98492531`.
+- Manifest: `v21.2/assets/guides/manifest.v1.json`.
+- 41 packaged files, 2,984,584 bytes total: 13 equipment SVGs, 9 unique machine-reference JPGs, 16 muscle JPGs and 3 celebration GIFs.
+- Every manifest entry records asset ID, V21.2-relative path, MIME, byte length, SHA-256, source path and source Git blob SHA. The two identical source JPG paths `machine-benches.jpg` and `machine-dumbbells.jpg` are represented by one stored image and an explicit alias.
+- Binary files were copied by reusing their exact original Git blob objects; no re-encoding/recompression. Post-commit verification found 41 listed files, exact aggregate byte count 2,984,584 and zero destination/source blob-SHA or byte-length mismatches.
+- Two unused legacy SVGs (`equipment-bench.svg`, `equipment-squat-rack.svg`) were excluded because protected root `index.html` does not reference them.
+- Package is inert: no script imports the manifest, no guide/celebration assets are added to the service worker, and the current shell/cache behaviour is unchanged. Next task is the build-time manifest/hash/path contract test, then separately implement verified guide-asset caching.
+- Current branch head when this note was drafted: package commit `740af8bd68ed6a1d424fa0ee3097a60c98492531`; design-doc update follows. Verify final branch head and both browser/backup workflows before calling the final documentation checkpoint validated.
