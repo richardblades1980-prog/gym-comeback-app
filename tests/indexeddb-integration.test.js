@@ -117,3 +117,23 @@ test("real IndexedDB repeated completion is idempotent", async () => {
   assert.equal(await db.count("profile"), 1);
   assert.equal(await db.count("sessions"), 1);
 });
+
+
+test("current schema has session-scoped exercise records but no canonical exercise library", async () => {
+  await deleteDatabase();
+  const db = loadDatabase();
+  const connection = await db.open();
+  try {
+    assert.equal(connection.objectStoreNames.contains("exerciseLibrary"), false);
+    assert.equal(connection.objectStoreNames.contains("exerciseRecords"), true);
+    assert.equal(connection.objectStoreNames.contains("programmes"), true);
+
+    const exerciseStore = connection.transaction("exerciseRecords", "readonly").objectStore("exerciseRecords");
+    assert.deepEqual(Array.from(exerciseStore.indexNames).sort(), ["by_module", "by_session"]);
+
+    const programmeStore = connection.transaction("programmes", "readonly").objectStore("programmes");
+    assert.deepEqual(Array.from(programmeStore.indexNames).sort(), ["by_module", "by_status"]);
+  } finally {
+    connection.close();
+  }
+});

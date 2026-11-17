@@ -209,3 +209,33 @@ test("preserves distinct exercise names that collide under legacy normalisation"
   assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
   assert.deepEqual(Array.from(result.setRecords, record => record.reps), ["8", "8", "8", "8"]);
 });
+
+
+test("same exercise name in different sessions receives separate session-scoped record IDs", () => {
+  const firstLog = JSON.stringify({
+    date: "2026-11-10",
+    exercises: [{ name: "Bench Press", setCount: 1, sets: [{ weight: "40", reps: "8" }] }]
+  });
+  const secondLog = JSON.stringify({
+    date: "2026-11-17",
+    exercises: [{ name: "Bench Press", setCount: 1, sets: [{ weight: "42.5", reps: "8" }] }]
+  });
+  const result = migration.normaliseSnapshot({
+    "gym-comeback-w1-d1": firstLog,
+    "gym-comeback-w2-d1": secondLog
+  });
+
+  assert.equal(result.exerciseRecords.length, 2);
+  assert.equal(result.exerciseRecords[0].name, "Bench Press");
+  assert.equal(result.exerciseRecords[1].name, "Bench Press");
+  assert.notEqual(result.exerciseRecords[0].id, result.exerciseRecords[1].id);
+  assert.notEqual(result.exerciseRecords[0].sessionId, result.exerciseRecords[1].sessionId);
+  assert.deepEqual(
+    Array.from(result.exerciseRecords, record => record.legacyRawValue),
+    [
+      JSON.stringify({ name: "Bench Press", setCount: 1, sets: [{ weight: "40", reps: "8" }] }),
+      JSON.stringify({ name: "Bench Press", setCount: 1, sets: [{ weight: "42.5", reps: "8" }] })
+    ]
+  );
+  assert.equal(result.exerciseRecords.every(record => !Object.hasOwn(record, "canonicalExerciseId")), true);
+});
