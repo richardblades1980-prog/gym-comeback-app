@@ -27,6 +27,7 @@
         <button class="tab active" data-view="overview" aria-current="page">Overview</button>
         <button class="tab" data-view="gym">Gym</button>
         <button class="tab" data-view="hiking">Hiking</button>
+        <button class="tab" data-view="assessments">Assessments</button>
         <button class="tab" data-view="schedule">Schedule</button>
         <button class="tab" data-view="data">Data &amp; backup</button>
       </nav>
@@ -69,6 +70,43 @@
           <div class="full form-actions"><button class="primary" type="submit">Save completed hike</button></div>
         </form>
         <div class="panel"><div class="section-heading"><div><p class="eyebrow">HIKING HISTORY</p><h2>Recorded hikes</h2></div></div><div id="hiking-records" class="record-list empty-state">No hikes recorded yet.</div></div>
+      </section>
+      <section id="view-assessments" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">YOUR PROGRESS</p><h2>Assessments</h2><p class="muted">Record a starting point and compare it with later assessments. Only measurements you enter are compared.</p></div></div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">ORIGINAL STARTING POINT</p><h3>Baseline assessment</h3><p class="muted">This is your permanent starting snapshot. It can be created once and is never overwritten.</p></div><span id="baseline-status" class="subtle">Checking…</span></div>
+          <form id="baseline-form" class="form-grid">
+            <label>Assessment date<input name="date" type="date" required></label>
+            <label>Comfortable walking duration (minutes)<input name="comfortableWalkMinutes" type="number" min="0" step="0.1" placeholder="Optional"></label>
+            <label>Step-ups (repetitions)<input name="stepUpsReps" type="number" min="0" step="1" placeholder="Optional"></label>
+            <label>Single-leg balance (seconds)<input name="singleLegBalanceSeconds" type="number" min="0" step="0.1" placeholder="Optional"></label>
+            <label class="full">Notes<textarea name="notes" rows="2" maxlength="1000" placeholder="Optional notes about how this assessment felt"></textarea></label>
+            <div class="full form-actions"><button id="baseline-save" class="primary" type="submit">Save original baseline</button></div>
+          </form>
+        </div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">KEEP BUILDING</p><h3>Follow-up assessment</h3><p class="muted">Each follow-up is saved as a separate dated record. You can leave measures blank if you did not test them.</p></div></div>
+          <form id="followup-form" class="form-grid">
+            <label>Assessment date<input name="date" type="date" required></label>
+            <label>Comfortable walking duration (minutes)<input name="comfortableWalkMinutes" type="number" min="0" step="0.1" placeholder="Optional"></label>
+            <label>Step-ups (repetitions)<input name="stepUpsReps" type="number" min="0" step="1" placeholder="Optional"></label>
+            <label>Single-leg balance (seconds)<input name="singleLegBalanceSeconds" type="number" min="0" step="0.1" placeholder="Optional"></label>
+            <label class="full">Notes<textarea name="notes" rows="2" maxlength="1000" placeholder="Optional notes"></textarea></label>
+            <div class="full form-actions"><button class="primary" type="submit">Save follow-up assessment</button></div>
+          </form>
+        </div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">BEFORE &amp; NOW</p><h3>Compare assessments</h3><p class="muted">Choose any two saved dates, including your original baseline.</p></div></div>
+          <div class="form-grid comparison-controls">
+            <label>Before<select id="compare-first"></select></label>
+            <label>Now<select id="compare-second"></select></label>
+          </div>
+          <div id="assessment-comparison" class="comparison-results" aria-live="polite"><p class="empty-state">Save two assessments to compare your progress.</p></div>
+        </div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">YOUR RECORD</p><h3>Assessment history</h3></div></div>
+          <div id="assessment-history" class="record-list empty-state">No assessments recorded yet.</div>
+        </div>
       </section>
       <section id="view-schedule" class="view" hidden>
         <div class="section-heading"><div><p class="eyebrow">SHARED PLANNER</p><h2>Plan an activity</h2><p class="muted">Gym and Hiking stay distinct; this is a shared calendar only.</p></div></div>
