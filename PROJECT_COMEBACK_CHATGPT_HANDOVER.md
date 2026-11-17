@@ -267,18 +267,16 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Latest code commit: `1e64cd9c94c26d149dee6e4714232a8860b7d854`.
-- Backup validation for this exact code commit: **success**, run [#44035146473](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035146473).
-- Browser validation for this exact code commit: **running**, run [#44035146696](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035146696). Bundle-parity step passed; Chromium/browser test stage is still running.
-- Gym progress milestones are now included in the Overview, based only on saved Gym session, exercise and set records:
-  - Completed Gym session count.
-  - Exercises and sets linked to completed sessions.
-  - Sum of explicitly recorded positive whole-number repetitions, with the number of sets contributing.
-  - Incomplete sessions and their sets are excluded.
-  - Missing/invalid repetition values are excluded and identified by the contributor count.
-  - Weight is deliberately not totalled because the saved values do not establish a consistent unit.
-- Browser regression creates isolated completed and incomplete Gym records, verifies the completed-only filtering and repetition total, verifies missing repetitions are not counted, and removes all test records afterwards.
-- First browser attempt failed because the numeric repetition regular expression was over-escaped. The expression was corrected in `8e203be`; the offline shell cache was then bumped to v12 in `1e64cd9`. The corrected final-head browser run is linked above; do not mark validated until it completes successfully.
+- Latest feature/test commit: `4769bc6776cc1eccccea4e782e8cedd86d52ffb2`.
+- Backup validation for this exact commit: **success**, run [#44035745360](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035745360).
+- Browser validation for this exact commit: **in progress**, run [#44035745340](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44035745340). Bundle-parity check passed; Chromium installation/browser tests remain pending at this update.
+- Gym Overview journey now includes:
+  - Completed session, exercise, set and explicitly recorded repetition summaries.
+  - A dated Recorded exercise history grouped by exercise name, showing completed session dates and each saved set's weight entry, reps and duration where present.
+  - Raw weight entries are displayed as saved; no unit or improvement is inferred.
+  - Missing set values are explicitly shown; incomplete sessions are excluded.
+- Browser regression adds two completed dated sessions for the same exercise and checks both sets of recorded values appear in date order. It also seeds an incomplete session and verifies it is excluded. All test records are removed during cleanup.
+- Browser run #44035610941 failed because the previous Gym summary assertion expected one completed session; the new history fixture correctly adds a second completed session. The test expectation was updated to the new expected total (24 reps across 3 of 4 sets). Do not mark this slice validated until #44035745340 succeeds.
 - Hiking milestones remain implemented and validated: completed hikes, recorded distance/elevation totals with contributor counts, longest recorded walk and duration.
 - Assessment baseline/follow-up protections and assessment timeline remain implemented.
 - No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
@@ -320,13 +318,15 @@ During development:
 | 2026-11-17 | `13d8787` | Added Hiking progress milestones to Overview; updated browser regression and offline shell cache to v10 | Browser #44034519659 and backup #44034519611 passed |
 | 2026-11-17 | `7a7a6b5` | Added Gym journey milestones and regression coverage for completed sessions, exercises, sets, recorded repetitions and missing reps; bumped cache to v11 | Backup #44035006110 passed; browser #44035005995 failed on an over-escaped digit regex |
 | 2026-11-17 | `8e203be` | Corrected numeric repetition validation in the Gym journey | Backup #44035130664 passed; browser run #44035130679 superseded by final cache-bumped head |
-| 2026-11-17 | `1e64cd9` | Bumped offline shell cache to v12 after the Gym repetition fix | Backup #44035146473 passed; browser #44035146696 running at handover update |
+| 2026-11-17 | `1e64cd9` | Bumped offline shell cache to v12 after the Gym repetition fix | Browser #44035146696 and backup #44035146473 passed |
+| 2026-11-17 | `a77c279` | Added dated Gym exercise history grouped by exercise, with saved set values and explicit no-unit/no-improvement wording; bumped shell cache to v13 | Backup #44035610739 passed; browser #44035610941 failed on an outdated summary test expectation |
+| 2026-11-17 | `4769bc6` | Updated browser regression expectations for two completed sessions and four sets in the Gym history fixture | Backup #44035745360 passed; browser #44035745340 pending at handover update |
 
 ### Next actions (resume here)
 
-1. Finish and inspect browser validation #44035146696 for exact code SHA `1e64cd9c94c26d149dee6e4714232a8860b7d854`; investigate logs and fix any failure before declaring the Gym milestone validated.
-2. Once checks pass, consider a further Gym milestone only after inspecting record semantics; do not infer personal bests, units or improvements.
-3. Keep Gym and Hiking separate, preserve missing-value behavior, and continue isolated browser tests with cleanup.
-4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
-5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
+1. Finish and inspect browser validation #44035745340 for exact feature/test SHA `4769bc6776cc1eccccea4e782e8cedd86d52ffb2`; if it fails, inspect the browser log and correct the regression before proceeding.
+2. Review the protected V21.1 source and actual legacy Gym data-entry labels to determine whether weight values have a documented, consistent unit and whether exercise names/recording modes support like-for-like comparisons. Do not modify V21.1 or `main`.
+3. Only after that source review, decide whether a defensible exercise-specific progression comparison can be added. Never infer personal bests or improvement from incomparable records.
+4. Keep Gym and Hiking separate, preserve missing-value behavior, and continue isolated browser tests with cleanup.
+5. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
 
