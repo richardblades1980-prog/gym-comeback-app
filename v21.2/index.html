@@ -139,6 +139,14 @@
           <h3>Full V21.2 backup</h3><p class="muted">Export all app stores to a versioned JSON file.</p>
           <button id="backup-download" class="primary">Download full backup</button>
         </div>
+        <div class="panel" id="identity-upgrade-panel">
+          <h3>Canonical exercise identity foundation</h3>
+          <p class="muted">This additive database upgrade is separate from the V21.1 Gym data migration. A verified V1 safety backup must be downloaded and saved before the schema changes. The app then verifies a V2 backup/restore round trip.</p>
+          <p id="identity-upgrade-status" class="migration-summary" role="status">Checking database schema…</p>
+          <button id="identity-upgrade-backup" class="secondary">Download verified V1 safety backup</button>
+          <label id="identity-upgrade-confirm-wrap" class="check-row"><input id="identity-upgrade-confirm" type="checkbox" disabled> I have saved the safety backup and authorise the additive V6 identity schema upgrade.</label>
+          <button id="identity-upgrade-run" class="primary" disabled hidden>Upgrade identity foundation</button>
+        </div>
         <div class="panel">
           <h3>Restore preview</h3><p class="muted">Choose a Project Comeback JSON backup to see what would change. Nothing is restored until you explicitly confirm.</p>
           <label>Backup file<input id="restore-file" type="file" accept="application/json,.json"></label>
@@ -160,6 +168,7 @@
     </main>
   </div>
   <script src="./assets/database.js"></script>
+  <script src="./assets/exercise-identity.js"></script>
   <script src="./assets/gym-migration.js"></script>
   <script src="./assets/shared-migration.js"></script>
   <script src="./assets/migration.js"></script>

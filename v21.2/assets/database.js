@@ -6,7 +6,10 @@
   "use strict";
 
   const DB_NAME = "ProjectComebackDB";
-  const DB_VERSION = 5;
+  const DB_VERSION = 6;
+  const BASE_DB_VERSION = 5;
+  const IMMUTABLE_STORES = new Set(["identityReviewEvents", "catalogueReleases"]);
+  let currentVersion = BASE_DB_VERSION;
   const STORES = {
     profile: { keyPath: "id", indexes: [] },
     objectives: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
@@ -24,8 +27,28 @@
     progression: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }] },
     preferences: { keyPath: "id", indexes: [] },
     metadata: { keyPath: "id", indexes: [{ name: "by_type", keyPath: "type" }] },
-    legacyRecords: { keyPath: "id", indexes: [{ name: "by_key", keyPath: "key" }] }
+    legacyRecords: { keyPath: "id", indexes: [{ name: "by_key", keyPath: "key" }] },
+    exerciseDefinitions: { keyPath: "id", indexes: [{ name: "by_kind", keyPath: "kind" }, { name: "by_status", keyPath: "status" }] },
+    exerciseVariations: { keyPath: "id", indexes: [{ name: "by_definition", keyPath: "exerciseDefinitionId" }, { name: "by_status", keyPath: "status" }] },
+    exerciseAliases: { keyPath: "id", indexes: [{ name: "by_profile_source", keyPath: ["profileId", "sourceNamespace", "exactValue"], unique: true }, { name: "by_definition", keyPath: "exerciseDefinitionId" }] },
+    identityReviewEvents: { keyPath: "id", indexes: [{ name: "by_profile", keyPath: "profileId" }, { name: "by_subject", keyPath: ["profileId", "subjectType", "subjectId"] }, { name: "by_profile_idempotency", keyPath: ["profileId", "idempotencyKey"], unique: true }, { name: "by_catalogue_release", keyPath: "catalogueReleaseId" }] },
+    catalogueReleases: { keyPath: "id", indexes: [{ name: "by_version", keyPath: "version" }, { name: "by_catalogue_version", keyPath: ["catalogueId", "version"], unique: true }] },
+    exerciseConfigurations: { keyPath: "id", indexes: [{ name: "by_profile", keyPath: "profileId" }, { name: "by_scope_key", keyPath: "scopeKey", unique: true }] },
+    programmeVersions: { keyPath: "id", indexes: [{ name: "by_programme", keyPath: "programmeId" }, { name: "by_status", keyPath: "status" }, { name: "by_catalogue_release", keyPath: "catalogueReleaseId" }] },
+    programmeDays: { keyPath: "id", indexes: [{ name: "by_version", keyPath: "programmeVersionId" }, { name: "by_lineage", keyPath: "dayLineageId" }] },
+    programmeSlots: { keyPath: "id", indexes: [{ name: "by_version", keyPath: "programmeVersionId" }, { name: "by_day", keyPath: "programmeDayId" }, { name: "by_lineage", keyPath: "slotLineageId" }, { name: "by_definition", keyPath: "exerciseDefinitionId" }, { name: "by_catalogue_release", keyPath: "catalogueReleaseId" }] }
   };
+
+  const BASE_STORE_NAMES = Object.freeze([
+    "profile", "objectives", "equipment", "readiness", "weighIns", "assessments",
+    "modules", "programmes", "sessions", "exerciseRecords", "setRecords",
+    "hikingRecords", "schedules", "progression", "preferences", "metadata", "legacyRecords"
+  ]);
+  const IDENTITY_STORE_NAMES = Object.freeze([
+    "exerciseDefinitions", "exerciseVariations", "exerciseAliases",
+    "identityReviewEvents", "catalogueReleases", "exerciseConfigurations",
+    "programmeVersions", "programmeDays", "programmeSlots"
+  ]);
 
   function requestResult(request) {
     return new Promise((resolve, reject) => {
@@ -42,22 +65,26 @@
     });
   }
 
-  function open() {
+  function createStores(db, transaction, names) {
+    names.forEach(name => {
+      const config = STORES[name];
+      const store = db.objectStoreNames.contains(name)
+        ? transaction.objectStore(name)
+        : db.createObjectStore(name, { keyPath: config.keyPath });
+      config.indexes.forEach(index => {
+        if (!store.indexNames.contains(index.name)) {
+          store.createIndex(index.name, index.keyPath, { unique: index.unique === true });
+        }
+      });
+    });
+  }
+
+  function openAtVersion(version, upgrade) {
     if (!global.indexedDB) return Promise.reject(new Error("IndexedDB is not available in this browser."));
     return new Promise((resolve, reject) => {
-      const request = global.indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        Object.entries(STORES).forEach(([name, config]) => {
-          const store = db.objectStoreNames.contains(name)
-            ? request.transaction.objectStore(name)
-            : db.createObjectStore(name, { keyPath: config.keyPath });
-          config.indexes.forEach(index => {
-            if (!store.indexNames.contains(index.name)) {
-              store.createIndex(index.name, index.keyPath, { unique: false });
-            }
-          });
-        });
+      const request = global.indexedDB.open(DB_NAME, version);
+      request.onupgradeneeded = event => {
+        if (upgrade) upgrade(request.result, request.transaction, event.oldVersion);
       };
       request.onsuccess = () => {
         const db = request.result;
@@ -66,6 +93,102 @@
       };
       request.onerror = () => reject(request.error || new Error("Could not open Project Comeback database."));
       request.onblocked = () => reject(new Error("Database upgrade is blocked by another open Project Comeback tab."));
+    });
+  }
+
+  function openCurrentVersion() {
+    if (!global.indexedDB) return Promise.reject(new Error("IndexedDB is not available in this browser."));
+    return new Promise((resolve, reject) => {
+      const request = global.indexedDB.open(DB_NAME);
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onversionchange = () => db.close();
+        resolve(db);
+      };
+      request.onerror = () => reject(request.error || new Error("Could not inspect Project Comeback database version."));
+      request.onblocked = () => reject(new Error("Database access is blocked by another open Project Comeback tab."));
+    });
+  }
+
+  async function open() {
+    let db = await openCurrentVersion();
+    if (db.version < BASE_DB_VERSION) {
+      db.close();
+      db = await openAtVersion(BASE_DB_VERSION, (upgradedDb, transaction) => {
+        createStores(upgradedDb, transaction, BASE_STORE_NAMES);
+      });
+    }
+    if (db.version > DB_VERSION) {
+      const version = db.version;
+      db.close();
+      throw new Error("This Project Comeback database was created by a newer schema version (" + version + "). Update the app before writing data.");
+    }
+    currentVersion = db.version;
+    return db;
+  }
+
+  async function getVersion() {
+    const db = await open();
+    try { return db.version; }
+    finally { db.close(); }
+  }
+
+  function validateIdentitySafetyEnvelope(envelope) {
+    if (!envelope || typeof envelope !== "object" || envelope.app !== "Project Comeback" ||
+        envelope.backupFormatVersion !== 1 || !envelope.data || typeof envelope.data !== "object") {
+      throw new Error("A validated V1 full safety backup is required before the identity schema upgrade.");
+    }
+    const actual = Object.keys(envelope.data).sort();
+    const expected = BASE_STORE_NAMES.slice().sort();
+    if (actual.length !== expected.length || actual.some((name, index) => name !== expected[index])) {
+      throw new Error("The pre-upgrade safety backup must contain the exact V1 store set.");
+    }
+    for (const name of BASE_STORE_NAMES) {
+      if (!Array.isArray(envelope.data[name])) throw new Error("The pre-upgrade safety backup is missing store: " + name);
+      for (const record of envelope.data[name]) {
+        if (!record || typeof record !== "object" || record.id === undefined || record.id === null || record.id === "") {
+          throw new Error("The pre-upgrade safety backup contains an invalid record in " + name + ".");
+        }
+      }
+    }
+  }
+
+  async function upgradeToV6(safetyEnvelope) {
+    validateIdentitySafetyEnvelope(safetyEnvelope);
+    const current = await open();
+    const version = current.version;
+    current.close();
+    if (version === DB_VERSION) return { status: "already-upgraded", version, safetySnapshotId: "identity-upgrade-v6-safety-snapshot" };
+    if (version !== BASE_DB_VERSION) {
+      throw new Error("Identity foundation upgrade requires schema v5; found v" + version + ".");
+    }
+    const safetySnapshotId = "identity-upgrade-v6-safety-snapshot";
+    const safetyRecord = {
+      id: safetySnapshotId,
+      type: "pre-identity-upgrade-safety-snapshot",
+      backupFormatVersion: 1,
+      exportedAt: safetyEnvelope.exportedAt || null,
+      createdAt: new Date().toISOString(),
+      verificationStatus: "pending",
+      data: JSON.parse(JSON.stringify(safetyEnvelope.data))
+    };
+    return new Promise((resolve, reject) => {
+      const request = global.indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = event => {
+        if (event.oldVersion !== BASE_DB_VERSION) {
+          request.transaction.abort();
+          return;
+        }
+        createStores(request.result, request.transaction, IDENTITY_STORE_NAMES);
+        request.transaction.objectStore("metadata").add(safetyRecord);
+      };
+      request.onsuccess = () => {
+        currentVersion = request.result.version;
+        request.result.close();
+        resolve({ status: "upgraded", version: DB_VERSION, safetySnapshotId });
+      };
+      request.onerror = () => reject(request.error || new Error("Identity schema upgrade failed; the version-change transaction was rolled back."));
+      request.onblocked = () => reject(new Error("Identity schema upgrade is blocked by another open Project Comeback tab. Close other tabs and retry."));
     });
   }
 
@@ -79,6 +202,7 @@
     validateStore(name);
     const db = await open();
     try {
+      if (!db.objectStoreNames.contains(name)) throw new Error("Store " + name + " is not available until the identity foundation schema upgrade is completed.");
       const tx = db.transaction(name, mode);
       const done = transactionDone(tx);
       const store = tx.objectStore(name);
@@ -121,6 +245,29 @@
     if (!record || record.id === undefined || record.id === null || record.id === "") {
       throw new Error("Records must have a stable, non-empty id.");
     }
+    await assertProgrammeRecordMutable(name, record);
+    if (name === "identityReviewEvents") {
+      if (record.eventSchemaVersion !== 1 || !record.profileId || !record.idempotencyKey || !record.actor ||
+          typeof record.sourceExactValue !== "string" || !record.sourceNamespace ||
+          !record.evidence || typeof record.evidence !== "object" || Array.isArray(record.evidence) || !Object.keys(record.evidence).length ||
+          !["verified", "ambiguous", "rejected", "unresolved", "reversed"].includes(record.outcome) ||
+          (record.outcome === "verified" && (!record.proposedMapping || typeof record.proposedMapping !== "object" || Array.isArray(record.proposedMapping))) ||
+          (record.outcome === "reversed" && !record.reversesEventId && !record.supersedesEventId)) {
+        throw new Error("Identity review events require profile-scoped provenance, exact source evidence and a supported outcome.");
+      }
+      if (record.catalogueReleaseId && !await get("catalogueReleases", record.catalogueReleaseId)) {
+        throw new Error("Identity review event references a catalogue release that is not retained.");
+      }
+    }
+    if (name === "catalogueReleases") {
+      if (!record.catalogueId || !Number.isInteger(record.version) || record.version < 1 || !record.checksum) {
+        throw new Error("Catalogue release records require a catalogue ID, positive version and checksum.");
+      }
+      const releases = await getAll("catalogueReleases");
+      const latestVersion = releases.filter(item => item.catalogueId === record.catalogueId)
+        .reduce((latest, item) => Math.max(latest, Number(item.version) || 0), 0);
+      if (record.version <= latestVersion) throw new Error("Catalogue release versions must increase monotonically within a catalogue.");
+    }
     const now = new Date().toISOString();
     const saved = Object.assign({}, record, {
       createdAt: record.createdAt || now,
@@ -129,10 +276,48 @@
     return withStore(name, "readwrite", store => requestResult(store.add(saved)));
   }
 
+  async function assertProgrammeRecordMutable(name, recordOrId) {
+    if (!["programmeVersions", "programmeDays", "programmeSlots"].includes(name)) return;
+    if (recordOrId && typeof recordOrId === "object") {
+      if (name === "programmeVersions" && (!recordOrId.programmeId || !recordOrId.status)) {
+        throw new Error("Programme versions require a programme ID and lifecycle status.");
+      }
+      if (name === "programmeDays" && (!recordOrId.programmeVersionId || !recordOrId.dayLineageId)) {
+        throw new Error("Programme days require a parent version and stable day lineage ID.");
+      }
+      if (name === "programmeSlots" && (!recordOrId.programmeVersionId || !recordOrId.programmeDayId || !recordOrId.slotLineageId)) {
+        throw new Error("Programme slots require a parent version, day and stable slot lineage ID.");
+      }
+    }
+    const id = typeof recordOrId === "string" ? recordOrId : recordOrId && recordOrId.id;
+    const existing = id ? await get(name, id) : undefined;
+    if (name === "programmeVersions") {
+      if (existing && existing.status === "published") throw new Error("Published programme versions are immutable; create a new version instead.");
+      if (recordOrId && typeof recordOrId === "object" && recordOrId.status === "published") {
+        if (!recordOrId.catalogueReleaseId) throw new Error("A published programme version must pin an immutable catalogue release.");
+        const release = await get("catalogueReleases", recordOrId.catalogueReleaseId);
+        if (!release) throw new Error("A published programme version must reference a retained catalogue release manifest.");
+      }
+      return;
+    }
+    const versionIds = new Set([
+      existing && existing.programmeVersionId,
+      recordOrId && typeof recordOrId === "object" ? recordOrId.programmeVersionId : null
+    ].filter(Boolean));
+    for (const versionId of versionIds) {
+      const version = await get("programmeVersions", versionId);
+      if (version && version.status === "published") {
+        throw new Error("Days and slots in a published programme version are immutable; create a new version instead.");
+      }
+    }
+  }
+
   async function put(name, record) {
+    if (IMMUTABLE_STORES.has(name)) throw new Error("Store " + name + " is append-only and cannot be overwritten.");
     if (!record || record.id === undefined || record.id === null || record.id === "") {
       throw new Error("Records must have a stable, non-empty id.");
     }
+    await assertProgrammeRecordMutable(name, record);
     const now = new Date().toISOString();
     const saved = Object.assign({}, record, {
       createdAt: record.createdAt || now,
@@ -142,6 +327,9 @@
   }
 
   async function remove(name, id) {
+    if (IMMUTABLE_STORES.has(name)) throw new Error("Store " + name + " is append-only and records cannot be deleted.");
+    if (name === "exerciseDefinitions" || name === "exerciseVariations") throw new Error("Exercise definitions and variations are retained by ID; retire them by changing status instead of deleting.");
+    await assertProgrammeRecordMutable(name, id);
     return withStore(name, "readwrite", store => requestResult(store.delete(id)));
   }
 
@@ -307,7 +495,7 @@
       const names = Array.from(db.objectStoreNames);
       const tx = db.transaction(names, "readwrite");
       const done = transactionDone(tx);
-      names.forEach(name => tx.objectStore(name).clear());
+      names.filter(name => !IMMUTABLE_STORES.has(name)).forEach(name => tx.objectStore(name).clear());
       await done;
     } finally {
       db.close();
@@ -316,7 +504,9 @@
 
   global.ProjectComebackDB = Object.freeze({
     name: DB_NAME,
-    version: DB_VERSION,
+    get version() { return currentVersion; },
+    getVersion,
+    upgradeToV6,
     stores: Object.freeze(Object.keys(STORES)),
     open,
     get,

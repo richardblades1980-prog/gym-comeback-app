@@ -11,7 +11,7 @@ const backup = sandbox.window.ProjectComebackBackup;
 
 function validEnvelope() {
   const data = {};
-  for (const store of backup.stores) data[store] = [];
+  for (const store of backup.legacyStores) data[store] = [];
   data.profile.push({ id: "profile-main", displayName: "Test" });
   data.sessions.push({ id: "gym-session-1", moduleId: "gym", date: "2026-01-01" });
   data.hikingRecords.push({ id: "hike-1", moduleId: "hiking", date: "2026-01-02" });

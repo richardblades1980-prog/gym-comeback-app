@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -306,6 +306,28 @@ $("followup-form").addEventListener("submit",async event=>{
 $("compare-first").addEventListener("change",renderAssessmentComparison);
 $("compare-second").addEventListener("change",renderAssessmentComparison);
 
+async function refreshIdentityUpgradePanel(){
+ const version=await ProjectComebackDB.getVersion();
+ const status=$("identity-upgrade-status"),backupButton=$("identity-upgrade-backup");
+ const confirmWrap=$("identity-upgrade-confirm-wrap"),confirm=$("identity-upgrade-confirm"),run=$("identity-upgrade-run");
+ if(version<6){
+  status.textContent="Current database schema v"+version+". Download and save a verified V1 safety backup before enabling the additive identity schema upgrade.";
+  backupButton.hidden=false;confirmWrap.hidden=false;run.hidden=false;run.textContent="Upgrade identity foundation";
+  confirm.disabled=!identitySafetyBackup;run.disabled=!(identitySafetyBackup&&confirm.checked);
+  return;
+ }
+ backupButton.hidden=true;confirmWrap.hidden=true;
+ const snapshot=await ProjectComebackDB.get("metadata","identity-upgrade-v6-safety-snapshot");
+ if(snapshot&&snapshot.verificationStatus!=="complete"){
+  status.textContent="Schema v6 is in place. The pre-upgrade safety snapshot is retained. The V2 backup/restore round-trip verification is still pending.";
+  run.hidden=false;run.disabled=false;run.textContent="Complete backup & restore verification";
+ }else{
+  status.textContent=snapshot
+   ?"Schema v6 enabled. The pre-upgrade safety snapshot is retained and the V2 backup/restore round trip is verified."
+   :"Schema v6 enabled. This database did not require a v5 migration.";
+  run.hidden=true;
+ }
+}
 async function inspectMigration(){
  const info=await ProjectComebackMigration.inspect();
  $("migration-status").textContent=info.legacyKeyCount+" legacy Gym data keys found. Migration status: "+info.status+". Original browser storage will not be deleted.";
@@ -329,6 +351,44 @@ $("schedule-form").addEventListener("submit",async event=>{
  try{await ProjectComebackProgrammeManager.saveSchedule(entry);form.reset();form.elements.date.value=today;await refresh();notice("Activity added to your schedule.");}catch(error){notice(error.message,true);}
 });
 $("backup-download").addEventListener("click",async event=>{const b=event.currentTarget;try{setBusy(b,true);const result=await ProjectComebackBackup.downloadBackup();notice("Full backup downloaded ("+result.bytes.toLocaleString()+" characters). Keep it somewhere safe.");}catch(error){notice(error.message,true);}finally{setBusy(b,false,"Download full backup");}});
+$("identity-upgrade-backup").addEventListener("click",async event=>{
+ const b=event.currentTarget;
+ try{
+  setBusy(b,true);
+  identitySafetyBackup=await ProjectComebackBackup.createLegacySafetyBackup();
+  const validation=ProjectComebackBackup.validateBackup(identitySafetyBackup);
+  if(!validation.valid||validation.formatVersion!==1)throw new Error("The pre-upgrade V1 safety backup did not pass validation.");
+  await ProjectComebackBackup.downloadEnvelope(identitySafetyBackup,"ProjectComeback-Pre-Identity-Upgrade-v1.json");
+  $("identity-upgrade-confirm").disabled=false;
+  $("identity-upgrade-status").textContent="V1 safety backup validated and download requested. Save the file, then confirm below before upgrading.";
+  $("identity-upgrade-run").disabled=!$("identity-upgrade-confirm").checked;
+  notice("Verified V1 safety backup downloaded. Keep it safe before continuing.");
+ }catch(error){notice(error.message,true);}
+ finally{setBusy(b,false,"Download verified V1 safety backup");}
+});
+$("identity-upgrade-confirm").addEventListener("change",event=>{
+ $("identity-upgrade-run").disabled=!(event.target.checked&&identitySafetyBackup);
+});
+$("identity-upgrade-run").addEventListener("click",async event=>{
+ const b=event.currentTarget;
+ try{
+  setBusy(b,true);
+  if(await ProjectComebackDB.getVersion()<6){
+   if(!identitySafetyBackup||!$("identity-upgrade-confirm").checked)throw new Error("Download the verified V1 safety backup and confirm that it has been saved first.");
+   const upgraded=await ProjectComebackDB.upgradeToV6(identitySafetyBackup);
+   if(upgraded.status!=="upgraded"&&upgraded.status!=="already-upgraded")throw new Error("The identity schema upgrade did not complete.");
+  }
+  const verification=await ProjectComebackBackup.verifyIdentityUpgradeRoundTrip();
+  if(!["verified","already-verified","not-required"].includes(verification.status))throw new Error("Post-upgrade backup/restore verification is incomplete.");
+  await refreshIdentityUpgradePanel();
+  notice(verification.status==="not-required"?"Identity foundation is ready.":"Identity foundation upgraded and the V2 backup/restore round trip is verified.");
+ }catch(error){
+  $("identity-upgrade-status").textContent="Upgrade/verification needs attention: "+error.message+" Keep your downloaded safety backup.";
+  notice(error.message,true);
+  try{await refreshIdentityUpgradePanel();}catch(ignored){}
+ }finally{setBusy(b,false,"Upgrade identity foundation");}
+});
+
 $("legacy-snapshot").addEventListener("click",async event=>{const b=event.currentTarget;try{setBusy(b,true);await ProjectComebackMigration.downloadSafetySnapshot();safetySnapshotSaved=true;$("migration-confirm").disabled=false;notice("Legacy safety snapshot download requested. Save that file before confirming migration.");}catch(error){notice(error.message,true);}finally{setBusy(b,false,"Download legacy safety snapshot");}});
 $("migration-confirm").addEventListener("change",event=>{$("migration-run").disabled=!(event.target.checked&&safetySnapshotSaved);});
 $("migration-run").addEventListener("click",async event=>{
@@ -346,7 +406,7 @@ $("restore-apply").addEventListener("click",async event=>{
  try{setBusy(b,true);const result=await ProjectComebackBackup.restoreBackup(restorePayload,{confirmed:true});restorePayload=null;$("restore-preview").hidden=true;$("restore-confirm-wrap").hidden=true;$("restore-file").value="";$("restore-confirm").checked=false;await refresh();await refreshAssessments();notice("Restore completed. A pre-restore safety snapshot was saved in the database.");}catch(error){notice(error.message,true);}finally{setBusy(b,false,"Confirm restore");b.disabled=true;}
 });
 async function start(){
- try{await ProjectComebackDB.open();const result=await ProjectComebackModules.initialise();await refresh();await refreshAssessments();await inspectMigration();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
+ try{const initialConnection=await ProjectComebackDB.open();initialConnection.close();await refreshIdentityUpgradePanel();const result=await ProjectComebackModules.initialise();await refresh();await refreshAssessments();await inspectMigration();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
  catch(error){$("connection-state").textContent="Storage unavailable";notice("Could not initialise local storage: "+error.message,true);}
 }
 start();

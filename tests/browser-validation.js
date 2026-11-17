@@ -138,6 +138,37 @@ function server() {
     }
     console.log("PASS skip link is first keyboard target and moves focus to main content");
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    const identityOfflineAsset = await app.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      const assetUrl = new URL("./assets/exercise-identity.js", location.href).href;
+      const names = await caches.keys();
+      let cached = false;
+      for (const name of names) {
+        const response = await (await caches.open(name)).match(assetUrl);
+        if (response) { cached = true; break; }
+      }
+      return { loaded: typeof ProjectComebackIdentity === "object", cached };
+    });
+    if (!identityOfflineAsset.loaded || !identityOfflineAsset.cached) {
+      throw new Error("Canonical identity service was not loaded and retained in the real V21.2 offline app shell: " + JSON.stringify(identityOfflineAsset));
+    }
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    if (!(await app.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
+      throw new Error("The real V21.2 app was not controlled by its service worker before offline validation.");
+    }
+    await appContext.setOffline(true);
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    const identityOfflineReload = await app.evaluate(() => ({
+      loaded: typeof ProjectComebackIdentity === "object",
+      title: document.title
+    }));
+    await appContext.setOffline(false);
+    if (!identityOfflineReload.loaded || !identityOfflineReload.title.includes("V21.2")) {
+      throw new Error("The real V21.2 app could not cold-start its canonical identity service offline: " + JSON.stringify(identityOfflineReload));
+    }
+    console.log("PASS canonical identity service is cached and the real V21.2 app cold-starts offline");
     const emptyComparisonText = await app.locator("#assessment-comparison").textContent();
     if (!emptyComparisonText.includes("Save your original baseline") ||
         !emptyComparisonText.includes("add a follow-up assessment")) {
@@ -742,6 +773,28 @@ function server() {
         sourcePreserved: Boolean(migrated.source)
       }));
     }
+
+    console.log("[browser] Backup-first canonical identity schema upgrade");
+    const identitySafetyDownloadPromise = app.waitForEvent("download", { timeout: STEP_TIMEOUT_MS });
+    await app.locator("#identity-upgrade-backup").click();
+    const identitySafetyDownload = await identitySafetyDownloadPromise;
+    if (!identitySafetyDownload.suggestedFilename().includes("Pre-Identity-Upgrade-v1")) {
+      throw new Error("Pre-identity V1 safety backup did not download.");
+    }
+    await app.locator("#identity-upgrade-confirm").check();
+    await app.locator("#identity-upgrade-run").click();
+    await app.waitForFunction(() => document.querySelector("#identity-upgrade-status").textContent.includes("round trip is verified"), null, { timeout: 15000 });
+    const identityUpgradeCheck = await app.evaluate(async () => ({
+      version: await ProjectComebackDB.getVersion(),
+      reviewStore: await ProjectComebackDB.count("identityReviewEvents"),
+      safety: await ProjectComebackDB.get("metadata", "identity-upgrade-v6-safety-snapshot"),
+      identityServiceLoaded: typeof ProjectComebackIdentity === "object"
+    }));
+    if (identityUpgradeCheck.version !== 6 || identityUpgradeCheck.reviewStore !== 0 ||
+        identityUpgradeCheck.safety?.verificationStatus !== "complete" || !identityUpgradeCheck.identityServiceLoaded) {
+      throw new Error("Backup-first V6 identity upgrade or post-upgrade restore verification failed: " + JSON.stringify(identityUpgradeCheck));
+    }
+    console.log("PASS explicit V1 safety backup, additive V5→V6 upgrade, V2 backup/restore verification and retained safety snapshot");
 
     console.log("[browser] Full backup and invalid/valid restore");
     console.log("[browser] Full backup download");
