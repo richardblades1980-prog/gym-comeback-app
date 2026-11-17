@@ -13,6 +13,7 @@
     equipment: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }] },
     readiness: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }] },
     weighIns: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }] },
+    assessments: { keyPath: "id", indexes: [{ name: "by_date", keyPath: "date" }, { name: "by_kind", keyPath: "kind" }] },
     modules: { keyPath: "id", indexes: [{ name: "by_enabled", keyPath: "enabled" }] },
     programmes: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }, { name: "by_status", keyPath: "status" }] },
     sessions: { keyPath: "id", indexes: [{ name: "by_module", keyPath: "moduleId" }, { name: "by_module_date", keyPath: ["moduleId", "date"] }, { name: "by_programme", keyPath: "programmeId" }, { name: "by_status", keyPath: "status" }] },
