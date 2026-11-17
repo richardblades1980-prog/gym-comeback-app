@@ -43,7 +43,7 @@
   async function createBaseline(input) {
     if (await getBaseline()) throw new Error("The original baseline already exists and cannot be overwritten.");
     const record = validateAssessment(input, "baseline");
-    await db().put("assessments", record);
+    await db().add("assessments", record);
     return record;
   }
   async function addFollowUp(input) {
