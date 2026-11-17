@@ -775,3 +775,16 @@ This was a source-grounded design/inventory update only. No production catalogue
 - The source register is documentary only. No production catalogue payload, canonical IDs, app/UI, service-worker, schema, backup or legacy root changes were made.
 - Next: review identity/variation candidates and complete the 27 guide gaps, then design the V21.2-local artwork package and offline tests. Keep the exercise guide, press-and-hold, set/rest controls, completion treatment and save/celebration buttons in the acceptance suite.
 - Commit adding source register: `3bc43868c21b2f30c286579a0d869a16dc67fa8b`. This handover update is a separate documentation commit and requires exact-SHA browser and backup validation.
+
+
+---
+
+# Exercise identity curation review — 2026-11-18
+
+- Added `docs/V21.2-EXERCISE-IDENTITY-CURATION-REVIEW.md` as a source-grounded draft review of the ten programme labels that do not exactly match an optional-library row.
+- Draft recommendation only: four proposed exact, source-scoped aliases (Chest Press Machine, Leg Press, Seated Leg Extension, Shoulder Press Machine); two position-specific leg-curl variation candidates (seated and prone/lying); three keep-separate/unresolved cases (Abdominal Crunch, Incline Chest Press, and Dumbbell Biceps Curl relative to Cable Biceps Curl); and one distinct catalogue-addition candidate (Dumbbell Lateral Raise).
+- No mapping is verified or approved. No canonical IDs, aliases, variation records, production catalogue content or workout UI changes were created.
+- Key source evidence: `baseExerciseReady()` treats Abdominal Crunch as machine-or-mat and Incline Chest Press as compatible with several equipment paths; `machineDescriptions` has distinct seated and prone/lying leg-curl guides; dumbbell and cable biceps curls have separate source labels/equipment mappings.
+- The draft explicitly preserves exact programme labels and requires human approval before identity review events or production IDs are authored. Equipment matching and illustration selection are not treated as identity evidence.
+- Protected root `index.html` remains read-only. No database, backup, service-worker, historical data, production `main`, merge or deployment changes were made.
+- Curation review commit: `48c049bd3b2ace5ffa7c0e69f6a3e8a904f3c9f9`. This handover update must be validated by browser and backup workflows against its exact resulting commit SHA.
