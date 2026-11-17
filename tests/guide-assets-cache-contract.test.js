@@ -36,7 +36,7 @@ test("published cache versions are immutable and failed installs preserve caches
   assert.match(sw, /if\(createdPublishedCache&&!publishedCacheExisted\)await caches\.delete\(GUIDE_CACHE_NAME\)/);
   assert.match(sw, /Existing guide cache is incomplete; publish a new guide cache version/);
   assert.match(sw, /Never touch a cache an active worker could be using/);
-  assert.doesNotMatch(sw, /await caches\.delete\(GUIDE_CACHE_NAME\)/);
+  assert.doesNotMatch(sw, /^\s*await caches\.delete\(GUIDE_CACHE_NAME\);/m);
   assert.match(sw, /finally\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*\}/);
   assert.ok(sw.indexOf("await installGuideAssets()") < sw.indexOf("await self.skipWaiting()"));
 });

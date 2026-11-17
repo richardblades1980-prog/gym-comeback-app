@@ -892,3 +892,5 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Follow-up test-source inspection found the first cache-safety contract edit had introduced escaped newline text into the JavaScript test file and retained an obsolete catch-block assertion. Replaced the test file cleanly with six focused assertions for cache immutability, MIME mappings, strict checksum verification, cache isolation and offline browser coverage. Application/service-worker code is unchanged by this test-only correction. Exact-SHA workflows will run on the corrected branch head.
 
 - Final review tightened the cache immutability assertion to distinguish an unconditional destination-cache deletion from cleanup guarded by proof that the cache was newly created during the failed install. This is a test-only precision correction.
+
+- CI exposed that the previous generated cache-contract test still contained literal escaped newline sequences and therefore failed to parse. Replaced it with a clean source string using real line breaks. This is test-only; service-worker and app source are unchanged. The next exact-SHA workflow is the authority for validation.
