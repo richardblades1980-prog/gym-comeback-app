@@ -15,3 +15,27 @@
 .gym-exercise-history-list{margin-top:16px}.gym-exercise-history-list>h4{margin:0 0 10px;font-size:14px}.gym-exercise-history{border-top:1px solid var(--line);padding:12px 0}.gym-exercise-history h4{margin:0;font-size:13px}.gym-exercise-history>p{margin:4px 0 8px;color:var(--muted);font-size:11px}.gym-exercise-history ol{margin:0;padding-left:20px;display:grid;gap:8px}.gym-exercise-history ul{margin:5px 0 0;padding-left:18px;color:var(--muted);font-size:11px;display:grid;gap:3px}.gym-exercise-history li{line-height:1.45}
 
 .gym-load-trend{margin:8px 0 10px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--panel2);font-size:12px;line-height:1.45}
+
+.gym-launch-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:15px}
+.gym-workout-active{margin:18px 0}
+.gym-workout-exercises{display:grid;gap:12px}
+.gym-exercise-card{padding:16px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}
+.gym-exercise-heading{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:12px}
+.gym-exercise-heading h3{margin:0;font-size:16px}
+.gym-exercise-heading p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.gym-set-row{padding:12px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:80px minmax(0,1fr) auto;align-items:center;gap:12px}
+.gym-set-heading{display:grid;gap:4px}
+.gym-set-heading strong{font-size:13px}
+.gym-set-state{color:var(--muted);font-size:11px}
+.gym-set-fields{display:flex;gap:9px;flex-wrap:wrap}
+.gym-set-fields label{display:grid;gap:4px;color:var(--muted);font-size:10px}
+.gym-set-fields input{width:94px;min-height:36px;padding:7px 8px;font-size:13px}
+.gym-set-action{display:flex;justify-content:flex-end}
+.gym-set-action button{white-space:nowrap;font-size:12px;padding:9px 11px}
+@media(max-width:700px){
+ .gym-set-row{grid-template-columns:1fr;gap:8px}
+ .gym-set-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .gym-set-fields input{width:100%}
+ .gym-set-action{justify-content:flex-start}
+ .gym-exercise-heading{flex-direction:column}
+}
