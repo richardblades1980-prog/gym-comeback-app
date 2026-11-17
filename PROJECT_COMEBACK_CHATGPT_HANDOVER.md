@@ -5,68 +5,46 @@
 ## Current state
 
 - **Active development branch:** `V21.2-development`
-- **Latest validated code/test checkpoint:** `62891c15c1c5cb19359b4083948dc36c5e72a6e5`
-- **Browser validation:** [run #44051299865 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44051299865)
-- **Backup validation:** [run #44051299425 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44051299425)
-- Both workflows completed successfully on the exact code/test SHA above. This handover-documentation commit must receive its own fresh browser and backup validations.
+- **Latest design/test checkpoint:** `e6bd0fd969bd2127e4d71bad9174933c5d0ed09d`
+- **Browser validation:** [run #44052088969 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088969)
+- **Backup validation:** [run #44052088959 — success](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088959)
+- Both workflows completed successfully on the exact design/test SHA above. This handover-documentation commit must receive its own fresh browser and backup validations.
+- **Design proposal:** [V21.2 canonical exercise identity model](docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md)
+- **Design acceptance tests:** `tests/exercise-identity-contract.test.js` (9 tests; included in both workflows).
 - **Protected V21.1 source:** root `index.html` remains at inspected baseline blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
 - **Production boundary:** `main` remains at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge or deployment is authorised.
 
 ## Immediate work in progress
 
-1. V21.2 has session-scoped exercise records, not a canonical exercise library or reusable exercise identity.
-2. The `programmes` store and Programme Manager currently support programme-level records and calendar scheduling; the shared manager does not define exercise catalogue entries or programme exercise slots.
-3. The V21.2 database has no `exerciseLibrary` store and no canonical-exercise index on `exerciseRecords`.
-4. Legacy V21.1 workout/library definitions are name-led arrays without stable exercise IDs. The legacy exercise-config key is derived from a normalised name and can collide.
-5. Added regression tests proving repeated same-name exercises in separate sessions receive separate session-scoped record IDs, retain their raw values, and are not assigned an invented canonical ID; schema test confirms the absence of a canonical library/index.
-6. Next: design the canonical exercise-definition and programme-slot model before implementing it. Do not retrofit old records with guessed IDs or aliases.
+1. Source inspection confirmed V21.2 has session-scoped exercise records, but no canonical exercise catalogue or reusable exercise IDs.
+2. Added a design-only model separating exercise definitions, variations, performed records, equipment definitions, programme versions, version-scoped slots, aliases and reusable configuration.
+3. Added nine design acceptance tests covering opaque IDs, variations, equipment references, programme-version/slot lineage, exact verified aliases, unresolved collisions, historical preservation, configuration scope and performed-record identity.
+4. Both workflows now run the design acceptance tests. Browser workflow also retains bundle-parity and Chromium migration/offline tests; backup workflow retains the existing backup/migration/programme test suite.
+5. **No application implementation, IndexedDB schema, V21.1 source, or historical user data was changed in this checkpoint.**
+6. Next: review open model decisions, then implement the catalogue/service and schema incrementally with tests first. Do not treat the design fixtures as evidence that the application already supports these entities.
 
-## Verified decision register
+## Current design direction
 
-### Confirmed implementation and safety decisions
-
-- IndexedDB is the V21.2 primary application database; full JSON backup is the primary backup format.
-- Gym and Hiking remain separate first-class modules. Hiking records are not Gym workouts.
-- V21.1 localStorage remains intact during migration; migration is restart-safe, idempotent and non-destructive.
-- Preserve original legacy JSON, exact supplied exercise names and set values. Missing names remain missing and are warned; do not invent fallback names.
-- Invalid calendar dates remain undated with a warning; genuinely absent dates remain undated without a warning.
-- Blank resistance stays blank; only explicitly recorded resistance is carried forward.
-- Ambiguous multiple same-date completion snapshots do not prove which active workout they belong to; migrated session remains incomplete and all evidence keys are retained.
-- Do not infer 1RM, physiological strength gain, technique, effort, bodyweight load, exercise classification or completion from absent data.
-- V21.2 browser bundles must remain byte-identical to their canonical `src/` sources; the browser workflow checks this parity.
-- V21.2 migration exercise-record IDs are deterministic workout-instance IDs derived from session ID and exercise position. They are not reusable exercise-definition IDs.
-- V21.2 does not currently contain an exercise-library store, canonical exercise ID, or canonical identity index.
-- The V21.2 Programme Manager currently manages schedule entries and day/range summaries. A schedule ID/title is not an exercise or programme-slot identity.
-- V21.1 exercise definitions are name-led arrays; no stable ID was found in the inspected programme/library structures. Its exercise configuration key is derived from normalised exercise name and is collision-prone.
-
-### Recommended design direction — not yet implemented
-
-- Introduce a curated exercise-definition catalogue with immutable, opaque canonical IDs. Do not derive canonical IDs from mutable display names.
-- Keep each performed exercise record's own session-scoped ID. Add an optional canonical exercise-definition reference only when the mapping is verified.
-- Preserve the exact historical/performed name and raw source value separately from the canonical display name.
-- Model programme exercise slots separately from exercise definitions. A slot should have a stable programme/slot identity and reference a canonical exercise ID; swaps should reference a verified replacement ID.
-- Keep explicit aliases in a reviewed alias table. Normalisation may help search suggestions, but must never silently merge identities or attach history.
-- Keep colliding legacy configuration preferences unassigned until a unique mapping is supported by source evidence or user confirmation.
-- Make unresolved legacy records visible as unresolved rather than forcing an identity.
-
-### Open questions — not yet approved
-
-- Exact canonical exercise catalogue fields and ID namespace.
-- Whether a movement variation (grip, equipment, range, unilateral/bilateral) is a distinct exercise definition or a parameterised variation.
-- Stable identity rules for programme, programme version, day and exercise slot.
-- How verified legacy aliases and user-created custom exercises will be represented.
-- How legacy exercise configuration preferences can be reviewed and assigned without collisions.
-- No actual user legacy dataset has been inspected; do not claim these risks have affected the user's records.
+- Immutable opaque IDs are separate for exercise definitions, exercise variations, performed records, equipment definitions, programme versions and version-specific slots.
+- Exact verified aliases may resolve source names. Normalised matching is suggestion-only.
+- Name-derived legacy configuration preferences that have lost distinguishing information remain unresolved.
+- Unresolved performed records retain exact names, raw JSON and set values; no fuzzy cross-session history grouping.
+- Published programme versions are immutable. New versions get new slot records; logical slot lineage can continue across versions.
+- Reusable configuration is keyed by profile + canonical definition + optional variation/equipment context. Programme prescriptions and actual performance remain separate.
+- The full proposal and test boundaries are in the linked design document.
 
 ## Live audit checklist
 
-- [x] Inspect live V21.2 branch, database schema, programme manager, Gym migration, browser code and tests before editing.
-- [x] Inspect legacy V21.1 programme and exercise-library definition structures read-only.
-- [x] Add regression test for same-name exercises across separate sessions and raw-value preservation.
-- [x] Add schema regression test proving current exercise records are session-scoped and no canonical exercise library/index exists.
-- [x] Run browser and backup workflows on code/test commit `62891c15c1c5cb19359b4083948dc36c5e72a6e5`.
+- [x] Inspect live branch, database schema, Gym migration, Programme Manager, existing tests and workflows before editing.
+- [x] Inspect V21.1 exercise/programme definitions read-only.
+- [x] Add source-grounded characterization tests for legacy name collisions and session-scoped exercise records (previous checkpoint).
+- [x] Write canonical exercise identity design proposal without implementing it.
+- [x] Add nine design-level acceptance tests before application implementation.
+- [x] Add the acceptance tests to both browser and backup workflows.
+- [x] Browser and backup workflows passed on design/test commit `e6bd0fd969bd2127e4d71bad9174933c5d0ed09d`.
 - [ ] Update this manual and validate the exact resulting handover commit with both workflows.
-- [ ] Draft and review the canonical exercise-definition, programme-slot and alias data model before implementation.
+- [ ] Review open decisions (variation taxonomy, catalogue delivery, programme day/slot lineage, config boundaries).
+- [ ] Only then implement the data model and services on `V21.2-development`.
 
 ---
 
@@ -531,4 +509,22 @@ During development:
 - Backup validation #44051299425 PASS on exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44051299425
 - Design conclusion: current V21.2 records and legacy V21.1 name arrays cannot safely serve as canonical exercise IDs for cross-session history or reusable settings. Create a curated catalogue with immutable IDs; keep session exercise IDs and programme-slot IDs separate; link history only through verified canonical IDs; preserve unresolved legacy names/settings verbatim.
 - Next step: agree the canonical exercise definition, variation, programme-version/slot and alias model before adding any identity implementation. Do not rewrite V21.1, merge names, assign guessed IDs or change historical values.
+
+
+
+### Canonical exercise identity data model — design and test contract (2026-11-17)
+
+- Started by inspecting live `V21.2-development` at `49606d38a886d475c640d1b3f2501147a99aa8ed`; reviewed `src/data/database.js`, `src/data/gym-migration.js`, `src/programme-manager/programme-manager.js`, migration/schema tests, legacy collision characterization tests and both Actions workflows.
+- Confirmed current database schema is version 5. It has session-scoped `exerciseRecords`, user/module equipment records and a programme-level store; no canonical exercise definition, variation, equipment taxonomy, alias, programme-version/slot or reusable exercise-configuration stores.
+- Confirmed Programme Manager currently handles calendar schedules and day/range summaries, not programme versions or exercise slots. The current `equipment` store is not a master catalogue.
+- Added `docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md` as a proposal only. It defines opaque immutable exercise-definition IDs, separate variation IDs, equipment catalogue references, optional verified canonical links on performed exercise records, source-scoped exact aliases, unresolved legacy records, immutable programme versions, version-scoped slots with lineage, and profile/definition/variation/equipment-scoped reusable configuration.
+- Design rules: no IDs derived from names; normalisation is suggestion-only; exact verified aliases require source/provenance; collision-prone name-derived settings remain unresolved; raw historical names and values are never overwritten; history uses verified canonical IDs and variation IDs; programme prescriptions, reusable defaults and performed sets are separate.
+- Added `tests/exercise-identity-contract.test.js` with nine design-level acceptance tests. These are explicitly fixture/contract tests, not tests of a production identity service (none exists yet). They must be moved onto actual service and IndexedDB APIs when implementation begins.
+- Added the new contract test command to both `.github/workflows/v21-2a-browser-validation.yml` and `.github/workflows/v21-2a-backup-validation.yml`.
+- Design/test commit: `e6bd0fd969bd2127e4d71bad9174933c5d0ed09d`.
+- Browser validation #44052088969 PASS on exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088969
+- Backup validation #44052088959 PASS on exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44052088959
+- No application source, IndexedDB schema, V21.1 source, or historical user data changed in this checkpoint.
+- Open design decisions: variation taxonomy; controlled movement/equipment vocabularies; static vs persisted system catalogue; programme day/slot lineage; identity-review audit event storage; reusable configuration vs programme prescription boundaries.
+- Next: review these decisions with the user, then implement incrementally with real service-level tests before schema/UI changes. Keep `main` and V21.1 untouched.
 
