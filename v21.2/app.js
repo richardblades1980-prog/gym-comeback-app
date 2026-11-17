@@ -97,6 +97,31 @@ function assessmentMeasures(form){
 function assessmentLabel(record){
  return formatDate(record.date)+" · "+(record.kind==="baseline"?"Original baseline":"Follow-up");
 }
+function renderAssessmentJourney(history){
+ const target=$("assessment-journey");
+ const baseline=history.find(item=>item.id===ProjectComebackAssessments.baselineId);
+ if(!baseline){
+  target.innerHTML='<p class="empty-state">Complete your original baseline assessment to start your progress journey. Open Assessments to record it.</p>';
+  return;
+ }
+ const rows=history.map(record=>{
+  const isBaseline=record.id===baseline.id;
+  const comparison=isBaseline?null:ProjectComebackAssessments.compare(baseline,record);
+  const measures=Object.entries(ProjectComebackAssessments.metrics).map(([key,definition])=>{
+   const hasValue=Object.prototype.hasOwnProperty.call(record.measures||{},key);
+   const value=hasValue?String(record.measures[key])+" "+definition.unit:"Not recorded";
+   let change=isBaseline?"Original starting measure":"Not comparable to baseline";
+   if(comparison&&comparison.measures[key].difference!==null){
+    const difference=comparison.measures[key].difference;
+    change="Change from baseline: "+(difference>0?"+":"")+String(Number(difference.toFixed(2)))+" "+definition.unit;
+   }
+   return '<div class="journey-measure"><span>'+esc(definition.label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(change)+'</small></div>';
+  }).join("");
+  const dateLabel=new Date(record.date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
+  return '<article class="journey-milestone"><span class="journey-marker" aria-hidden="true"></span><div class="journey-card"><div class="journey-card-heading"><div><span class="journey-kind">'+(isBaseline?"ORIGINAL BASELINE":"FOLLOW-UP ASSESSMENT")+'</span><h3>'+esc(dateLabel)+'</h3></div><span class="journey-measure-count">'+Object.keys(record.measures||{}).length+' of 3 measures recorded</span></div><div class="journey-measures">'+measures+'</div></div></article>';
+ }).join("");
+ target.innerHTML=rows+(history.length===1?'<p class="journey-next-step">Your starting point is saved. Add a follow-up assessment when you are ready to capture a change.</p>':"");
+}
 function renderAssessmentComparison(){
  const history=window._assessmentHistory||[];
  const firstId=$("compare-first").value,secondId=$("compare-second").value;
@@ -149,6 +174,7 @@ async function refreshAssessments(){
   return '<div class="record-item assessment-record"><div><strong>'+esc(assessmentLabel(item))+'</strong><small>'+esc(measures)+'</small>'+(item.notes?'<small>'+esc(item.notes)+'</small>':"")+'</div><small>'+Object.keys(item.measures).length+' measure(s)</small></div>';
  }).join(""):'<div class="empty-state">No assessments recorded yet. Your first assessment will establish your original baseline.</div>';
  renderAssessmentComparison();
+ renderAssessmentJourney(history);
 }
 $("baseline-form").elements.date.value=today;
 $("followup-form").elements.date.value=today;
