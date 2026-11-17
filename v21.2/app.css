@@ -32,6 +32,11 @@
 .gym-set-fields input{width:94px;min-height:36px;padding:7px 8px;font-size:13px}
 .gym-set-action{display:flex;justify-content:flex-end}
 .gym-set-action button{white-space:nowrap;font-size:12px;padding:9px 11px}
+.gym-stopwatch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:150px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.gym-stopwatch>strong{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:.04em;min-width:58px}
+.gym-stopwatch-actions{display:flex;gap:6px;flex-wrap:wrap}
+.gym-stopwatch-actions button{font-size:11px;padding:7px 9px}
+
 @media(max-width:700px){
  .gym-set-row{grid-template-columns:1fr;gap:8px}
  .gym-set-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
