@@ -219,6 +219,44 @@ function server() {
     }
     console.log("PASS five-day Gym programme loads in the app and is available in the offline shell cache");
 
+    console.log("[browser] Start, enter and resume a real Gym workout");
+    await app.locator('[data-view="gym"]').click();
+    await app.locator("#gym-workout-day").selectOption("1");
+    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.locator("#gym-workout-start").click();
+    await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
+    const workoutGraph = await app.evaluate(() => ({
+      title: document.querySelector("#gym-workout-title").textContent,
+      exercises: document.querySelectorAll("#gym-workout-exercises .gym-exercise-card").length,
+      sets: document.querySelectorAll("#gym-workout-exercises .gym-set-row").length,
+      firstName: document.querySelector("#gym-workout-exercises .gym-exercise-card h3").textContent
+    }));
+    if (workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
+      throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
+    }
+    const firstExercise = app.locator("#gym-workout-exercises .gym-exercise-card").first();
+    await firstExercise.locator('[data-gym-field="weight"]').first().fill("15");
+    await firstExercise.locator('[data-gym-field="weight"]').first().dispatchEvent("change");
+    await firstExercise.locator('[data-gym-field="reps"]').first().fill("12");
+    await firstExercise.locator('[data-gym-field="reps"]').first().dispatchEvent("change");
+    await firstExercise.locator('[data-gym-action="start"]').first().click();
+    await firstExercise.locator('[data-gym-action="complete"]').first().click();
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    await app.locator('[data-view="gym"]').click();
+    await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
+    const resumedWorkout = await app.evaluate(() => ({
+      weight: document.querySelector('[data-gym-field="weight"]').value,
+      reps: document.querySelector('[data-gym-field="reps"]').value,
+      firstStatus: document.querySelector("#gym-workout-exercises .gym-set-row .gym-set-state").textContent,
+      lockedLaterSet: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector("input").disabled
+    }));
+    if (resumedWorkout.weight !== "15" || resumedWorkout.reps !== "12" ||
+        !resumedWorkout.firstStatus.includes("completed") || !resumedWorkout.lockedLaterSet) {
+      throw new Error("Workout values or set state did not survive reload/resume: " + JSON.stringify(resumedWorkout));
+    }
+    console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
+
     console.log("[browser] Failed guide-cache update preserves the active offline version");
     testServerState.serveGuideWorkerV2 = true;
     testServerState.failGuideAsset = true;
@@ -1064,8 +1102,8 @@ function server() {
       storedSchedule: await ProjectComebackDB.count("schedules"),
       assessments: await ProjectComebackDB.count("assessments")
     }));
-    if (afterColdStart.gym !== "2" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" ||
-        afterColdStart.storedGym !== 2 || afterColdStart.storedHikes !== 1 || afterColdStart.storedSchedule !== 1 ||
+    if (afterColdStart.gym !== "3" || afterColdStart.hikes !== "1" || afterColdStart.schedule !== "1" ||
+        afterColdStart.storedGym !== 3 || afterColdStart.storedHikes !== 1 || afterColdStart.storedSchedule !== 1 ||
         afterColdStart.assessments !== assessmentCountAfterRapidSubmit) {
       throw new Error("V21.2 records did not survive a full browser close/reopen with the same profile: " + JSON.stringify(afterColdStart));
     }
