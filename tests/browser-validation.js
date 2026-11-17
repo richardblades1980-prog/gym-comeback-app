@@ -852,6 +852,13 @@ function server() {
     }));
     console.log("[browser] Verified catalogue materialisation and offline lookup");
     const catalogueOnlineCheck = await app.evaluate(async () => {
+      const beforeSeed = await ProjectComebackCatalogueDelivery.getStatus();
+      let lookupUnavailable = false;
+      try { await ProjectComebackCatalogueDelivery.lookup(""); }
+      catch (error) { lookupUnavailable = /no verified catalogue release/.test(error.message); }
+      if (beforeSeed.status !== "unavailable" || !lookupUnavailable) {
+        throw new Error("An unseeded device must report catalogue unavailable, not an empty valid catalogue.");
+      }
       const payload = {
         catalogueId: "exercise-catalogue",
         releaseId: "browser-catalogue-r1",
