@@ -1,4 +1,3 @@
-/* Browser bundle: keep byte-for-byte aligned with src/progress/assessment-manager.js. */
 /* Project Comeback V21.2A — immutable assessment history.
  * The original baseline is write-once. Follow-up assessments are dated snapshots.
  * Missing measurements remain absent; comparisons never infer values.
