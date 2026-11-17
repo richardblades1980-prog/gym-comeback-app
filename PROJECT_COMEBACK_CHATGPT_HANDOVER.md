@@ -925,3 +925,25 @@ This was a source-grounded design/inventory update only. No production catalogue
 - Scope boundary: documentation only. No binary artwork, v1 manifest, service-worker logic, catalogue data, IndexedDB schema, backup payloads, workout/history records, root `index.html`, or `main` was changed. No merge or deployment.
 - Next artwork step: visual review of the existing image content against the metadata audit, then approve sample direction for replacement equipment photos and muscle illustrations before generating a batch. Do not replace all artwork before visual approval and a new immutable manifest/cache release is ready.
 
+
+
+---
+
+# V21.2 first review-only artwork samples — 2026-11-18
+
+- Added a generic chest-press equipment illustration sample:
+  - `v21.2/assets/artwork-samples/v1/equipment/equipment-chest-press.svg`
+  - SVG viewBox 1200 × 800 (3:2), dark metallic/navy frame, blue pads and restrained lime details.
+- Added a simplified chest muscle anatomy sample:
+  - `v21.2/assets/artwork-samples/v1/muscles/muscle-chest.svg`
+  - SVG viewBox 1200 × 1600 (3:4), portrait anatomy canvas with pectoral area highlighted in lime.
+- Added a review-only sample manifest: `v21.2/assets/artwork-samples/v1/manifest.json`. Uses distinct sample IDs and status `review-only-not-for-production`; no production asset IDs are allocated.
+- Added review brief: `docs/V21.2-ARTWORK-SAMPLE-REVIEW.md`. It records the visual direction based on V21.2 dark navy surfaces, blue highlights and lime accent, plus the equipment/anatomy accuracy limits and human review gates.
+- Added `tests/artwork-samples-contract.test.js` and browser-workflow step. Test verifies sample names/paths/IDs, exact viewBoxes and aspect ratios, SVG accessibility title/description, unique/resolved local IDs, no scripts/embedded text/external resources, transparent backgrounds and separation from production guide manifest.
+- Review samples deliberately live outside `v21.2/assets/guides/`; they are not imported by the app, catalogue or service worker, and are not included in the verified 41-file v1 guide release. Do not publish or treat either sample as guide-ready without visual and accuracy review.
+- The chest press is intentionally generic; it does not prove or map a pin-selected/plate-loaded machine variation. The chest muscle image is a simplified educational visual, not a medical reference.
+- Exact-SHA browser validation on `b9006204062a0e666c836f552c2617f243f4b528`: #44180770603 PASS. This included the new sample contract, full Chromium migration/offline suite, 41-asset guide cache, failed-update preservation, catalogue offline lookup, backup/restore and cold-start persistence checks.
+- Exact-SHA backup validation on `b9006204062a0e666c836f552c2617f243f4b528`: #44180770470 PASS.
+- Repository boundary remains unchanged: production `main` still `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; protected root `index.html` blob remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`. No merge, deployment, production artwork replacement, catalogue or DB/backup/history changes.
+- Next action: review the two SVG sample images for visual style and anatomy/geometry quality. Only after sample direction is accepted should full equipment-photo and muscle-illustration batches be commissioned. Preserve current unresolved machine-style decisions until the equipment configuration is known.
+
