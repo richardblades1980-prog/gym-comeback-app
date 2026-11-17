@@ -7,7 +7,7 @@
   const APP_ID = "Project Comeback";
   const APP_VERSION = "V21.2A";
   const FORMAT_VERSION = 1;
-  const STORE_NAMES = ["profile","objectives","equipment","readiness","weighIns","modules","programmes","sessions","exerciseRecords","setRecords","hikingRecords","schedules","progression","preferences","metadata","legacyRecords"];
+  const STORE_NAMES = ["profile","objectives","equipment","readiness","weighIns","assessments","modules","programmes","sessions","exerciseRecords","setRecords","hikingRecords","schedules","progression","preferences","metadata","legacyRecords"];
 
   function cloneJson(value) {
     return JSON.parse(JSON.stringify(value));
