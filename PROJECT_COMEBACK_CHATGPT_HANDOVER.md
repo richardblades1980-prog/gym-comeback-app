@@ -267,7 +267,10 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Latest validated code branch head: `f57be83e33eadba7cb3da6b3b38ac244a5dc6a62`.
+- Latest validated code commit: `f57be83e33eadba7cb3da6b3b38ac244a5dc6a62`.
+- Latest branch head including the handover-manual update: `77305c5c8d21eb184208ebe301b9034e3ce217f0`.
+- Browser validation for that exact branch head: **success**, run [#44013768316](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013768316).
+- Backup validation for that exact branch head: **success**, run [#44013768250](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013768250).
 - Browser validation for the exact latest SHA: **success**, run [#44013474634](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013474634).
 - Backup validation for the exact latest SHA: **success**, run [#44013474727](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013474727).
 - Assessment follow-up sequence remains approved and implemented: baseline required first; follow-up date may be the baseline date or later, never earlier. Service and UI both enforce it.
@@ -321,6 +324,7 @@ During development:
 | 2026-11-17 | `eb44f65` | Added responsive visual timeline styling | Browser #44013395826 and backup #44013395782 passed |
 | 2026-11-17 | `8793f8a` | Added browser checks for the baseline and follow-up journey milestones | Included in final validation |
 | 2026-11-17 | `f57be83` | Bumped offline shell cache to v9 for the assessment journey timeline | Browser #44013474634 and backup #44013474727 passed |
+| 2026-11-17 | `77305c5` | Updated handover with the assessment comparison empty-state and first Visual Progress Journey milestone timeline | Browser #44013768316 and backup #44013768250 passed |
 
 ### Next actions (resume here)
 
