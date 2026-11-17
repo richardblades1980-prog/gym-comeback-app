@@ -31,6 +31,8 @@ jobs:
         run: node --test tests/guide-assets-contract.test.js
       - name: Run guide artwork service-worker cache contract
         run: node --test tests/guide-assets-cache-contract.test.js
+      - name: Run review-only artwork sample contract
+        run: node --test tests/artwork-samples-contract.test.js
       - name: Run real IndexedDB identity persistence and backup compatibility tests
         run: node --test tests/identity-persistence.test.js
       - name: Install Chromium
