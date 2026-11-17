@@ -139,6 +139,27 @@ test("accepts valid leap-day dates and leaves genuinely absent dates undated wit
   assert.equal(undatedResult.warnings.length, 0);
 });
 
+test("preserves blank and explicitly recorded optional resistance without inferring exercise load", () => {
+  const raw = fixture({});
+  const log = JSON.parse(raw["gym-comeback-w2-d3"]);
+  log.exercises = [{
+    name: "Bodyweight movement",
+    setCount: 1,
+    sets: [{ weight: "", reps: "8" }]
+  }, {
+    name: "Mobility movement",
+    setCount: 1,
+    sets: [{ weight: "2.5", reps: "6" }]
+  }];
+  raw["gym-comeback-w2-d3"] = JSON.stringify(log);
+  const result = migration.normaliseSnapshot(raw);
+  assert.equal(result.setRecords[0].weight, "");
+  assert.equal(result.setRecords[1].weight, "2.5");
+  assert.equal(result.setRecords[0].legacyRawValue, JSON.stringify({ weight: "", reps: "8" }));
+  assert.equal(result.setRecords[1].legacyRawValue, JSON.stringify({ weight: "2.5", reps: "6" }));
+  assert.equal(result.sessions[0].legacyRawValue, raw["gym-comeback-w2-d3"]);
+});
+
 test("does not invent missing exercise names and preserves exact supplied names", () => {
   const raw = fixture({ "Goblet squat::1": "complete", "Goblet squat::2": "complete", "Plank::1": "complete" });
   const log = JSON.parse(raw["gym-comeback-w2-d3"]);
