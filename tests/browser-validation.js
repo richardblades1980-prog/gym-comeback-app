@@ -272,7 +272,21 @@ function server() {
     }
     await app.locator('[data-gym-action="timer-stop"]').first().click();
     const stoppedDuration = await app.locator('[data-gym-field="duration"]').first().inputValue();
-    if (Number(stoppedDuration) < 1) throw new Error("Stopping the stopwatch did not save elapsed seconds.");
+    if (Number(stoppedDuration) < 1) {
+      const stopwatchDebug = await app.evaluate(async () => {
+        const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"]);
+        const session = sessions.find(item => item.status === "in-progress" && item.day === 1);
+        const exercises = session ? await ProjectComebackDB.getAllByIndex("exerciseRecords", "by_session", session.id) : [];
+        const sets = session ? await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id) : [];
+        return {
+          input: document.querySelector('[data-gym-field="duration"]')?.value,
+          stopButton: !!document.querySelector('[data-gym-action="timer-stop"]'),
+          timerDisplay: document.querySelector("[data-stopwatch-display]")?.outerHTML,
+          set: sets.find(item => item.exerciseRecordId === exercises[0]?.id && item.setNumber === 1)
+        };
+      });
+      throw new Error("Stopping the stopwatch did not save elapsed seconds: " + JSON.stringify({ stoppedDuration, stopwatchDebug }));
+    }
     await app.locator('[data-gym-field="duration"]').first().fill("7");
     await app.locator('[data-gym-field="duration"]').first().dispatchEvent("change");
     await app.waitForFunction(() => document.querySelector('[data-gym-field="duration"]').value === "7");
