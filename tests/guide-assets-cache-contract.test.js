@@ -9,7 +9,7 @@ const browser = fs.readFileSync(path.join(root, "tests/browser-validation.js"), 
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "v21.2/assets/guides/manifest.v1.json"), "utf8"));
 
 test("guide cache is separately versioned and isolated from shell and catalogue namespaces", () => {
-  assert.match(sw, /project-comeback-v21-2a-guides-v1/);
+  assert.match(sw, /GUIDE_CACHE_NAME=GUIDE_CACHE_PREFIX\+"v1"/);
   assert.match(sw, /project-comeback-v21-2a-shell-/);
   assert.doesNotMatch(sw, /project-comeback-v21-2a-catalogue-/);
   assert.match(sw, /Catalogue release assets are cached only by the verified release loader/);
