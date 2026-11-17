@@ -205,6 +205,24 @@ function server() {
     }
     console.log("PASS assessment UI: immutable baseline, follow-up entry, history and selectable comparisons");
 
+    const assessmentCountBeforeRapidSubmit = await app.evaluate(async () => (await ProjectComebackAssessments.listHistory()).length);
+    await app.locator('#followup-form [name="date"]').fill("2026-11-17");
+    await app.locator('#followup-form [name="singleLegBalanceSeconds"]').fill("6");
+    await app.locator("#followup-form").evaluate(form => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    await app.waitForTimeout(250);
+    const assessmentCountAfterRapidSubmit = await app.evaluate(async () => (await ProjectComebackAssessments.listHistory()).length);
+    if (assessmentCountAfterRapidSubmit !== assessmentCountBeforeRapidSubmit + 1) {
+      throw new Error("Rapid repeated follow-up submission created an unexpected number of records: " +
+        JSON.stringify({ before: assessmentCountBeforeRapidSubmit, after: assessmentCountAfterRapidSubmit }));
+    }
+    if (!(await app.locator('#followup-form button[type="submit"]').isEnabled())) {
+      throw new Error("Follow-up submit button was not re-enabled after saving.");
+    }
+    console.log("PASS follow-up form locks during save and prevents duplicate records from rapid repeated submission");
+
     const contrastAudit = await app.evaluate(() => {
       const rgb = value => {
         const hex = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
