@@ -48,7 +48,7 @@ test("starting each source programme day creates the exact 7/7/6/6/6 exercise gr
       assert.equal(exercise.name, exercise.sourceExerciseLabel);
       assert.equal(exercise.setCount, 3);
       assert.equal(exercise.sets[0].status, "not-started");
-      assert.deepEqual(exercise.sets.slice(1).map(set => set.status), ["locked", "locked"]);
+      assert.equal(JSON.stringify(exercise.sets.slice(1).map(set => set.status)), JSON.stringify(["locked", "locked"]));
     }
   }
   assert.deepEqual(counts, [7,7,6,6,6]);
