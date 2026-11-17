@@ -162,6 +162,8 @@ function server() {
     }
     console.log("PASS original baseline protection, follow-up history and missing-value comparisons");
     console.log("[browser] Assessment screens and Before & Now UI");
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="assessments"]').click();
     if (!(await app.locator("#baseline-status").textContent()).includes("Saved") ||
         !(await app.locator("#baseline-save").isDisabled()) ||
