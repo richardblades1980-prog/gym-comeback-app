@@ -267,19 +267,25 @@ During development:
 ### Current status — last checked 17 November 2026
 
 - Active branch: `V21.2-development`.
-- Latest validated code commit: `fb74a5421f94b0fa3940e392fa1a9960ad9c0224`.
-- Browser validation for latest code commit `fb74a54`: **success**, run [#44012152284](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44012152284).
-- Backup validation for latest code commit `fb74a54`: **success**, run [#44012152325](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44012152325).
-- The user's approved follow-up rule is implemented: save the original baseline first; follow-ups may be dated on the same day or later, never earlier.
-- Canonical service `src/progress/assessment-manager.js` enforces baseline existence and date ordering. Browser bundle `v21.2/assets/assessment-manager.js` is synchronized and passed parity validation.
-- `v21.2/index.html` explains that follow-up assessments are unavailable before baseline creation and starts its controls disabled.
-- `v21.2/app.js` enables follow-up fields only when the immutable baseline exists, applies the baseline date as the form's minimum date, and adjusts the next default date when needed.
-- After a backup restore, the app refreshes assessment history and the baseline gate so controls cannot remain stale when a restored backup has a different assessment set.
-- Browser regressions verify: follow-up blocked before baseline; service rejects bypass attempts before baseline; earlier dates rejected; same-day follow-ups accepted; follow-up form unlocked after baseline; minimum date correctly displayed; immutable baseline; missing-value comparison; and duplicate-submit prevention.
-- The same browser run also passed migration/reload, offline fixture, skip-link keyboard access, assessment UI, contrast, navigation state, mobile width, PWA metadata, safety snapshot/manual migration, full backup/restore, offline app reload, and cold-start IndexedDB persistence.
-- Prior duplicate-submit guard remains in place for baseline and follow-up forms. Rapid repeated follow-up submissions create exactly one record.
-- UX review confirms baseline immutability, missing-value handling, selector stability and newest-first history ordering.
-- Remaining small UX polish item: improve the comparison panel's message when only one assessment exists.
+- Latest validated code branch head: `f57be83e33eadba7cb3da6b3b38ac244a5dc6a62`.
+- Browser validation for the exact latest SHA: **success**, run [#44013474634](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013474634).
+- Backup validation for the exact latest SHA: **success**, run [#44013474727](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44013474727).
+- Assessment follow-up sequence remains approved and implemented: baseline required first; follow-up date may be the baseline date or later, never earlier. Service and UI both enforce it.
+- Comparison panel empty states are now stage-specific:
+  - No assessments: explains to save the original baseline, then add a follow-up.
+  - One baseline: explains that the starting point is saved and a follow-up is needed to compare.
+  - Two or more records: selectors allow comparison of any two saved assessments; identical selections prompt for two different assessments.
+- First Visual Progress Journey increment is implemented on the Overview as **Starting point to now**:
+  - Chronological milestones for the original baseline and each follow-up.
+  - Shows the three approved measures using saved values only.
+  - Follow-up entries show numerical change versus the original baseline only where both values exist.
+  - Missing metrics remain “Not recorded” and their change is “Not comparable to baseline”; no zero or progress value is invented.
+  - One-baseline state invites the user to add a follow-up; no-baseline state explains how to start.
+- The journey is rendered from the canonical assessment history and refreshed after baseline/follow-up changes and backup restore.
+- Browser regressions verify the empty journey state, single-baseline milestone, two-assessment timeline, baseline deltas, missing-value treatment, and the existing assessment, migration, backup, offline and cold-start flows.
+- Service-worker cache is now v9 to refresh the changed overview HTML, CSS and app script in installed offline shells.
+- Previous guardrails remain: immutable baseline, no duplicate submissions, duplicate follow-up IDs rejected, and restore refreshes assessment history and follow-up gating.
+- The next Visual Progress Journey increment should use actual saved Gym and Hiking records. Keep module data separated, never infer missing duration/intensity, and avoid invented personal-best or training values.
 - No merge or deployment has been performed. `main` and protected baseline branches remain untouched.
 
 ### Recent change log
@@ -290,7 +296,7 @@ During development:
 | 2026-11-17 | `68799a7` | Added assessment navigation and screen structure | Follow-up checks triggered |
 | 2026-11-17 | `00a7253` | Wired original baseline and follow-up assessment forms and comparisons | Browser #136 and backup #228 passed |
 | 2026-11-17 | `5eb83f5` | Added assessment screen styling | Backup #229 passed; browser run later superseded |
-| 2026-11-17 | `c182d60` | Bumped offline shell cache to v8 | Browser #138 and backup #230 passed |
+| 2026-11-17 | `c182d60` | Bumped offline shell cache to v8 during assessment UI implementation | Browser #138 and backup #230 passed |
 | 2026-11-17 | `c200531` | Added browser regression test for assessment UI | Later browser checks exposed test sequencing issues; backup #231 passed |
 | 2026-11-17 | `ac327d6` | Reloaded seeded assessment records before UI assertions | Later browser checks continued |
 | 2026-11-17 | `87f566c` | Added this handover manual to the repository | Browser and backup checks were running at the time |
@@ -298,19 +304,29 @@ During development:
 | 2026-11-17 | `8f86c2d` | Added persistent browser-context cleanup on browser-test failure paths | Backup #44008583130 passed; browser #44008583074 exposed stale initial-navigation assertion |
 | 2026-11-17 | `94028b8` | Corrected navigation accessibility test sequencing while preserving first-load and tab-change checks | Browser #44008882136 and backup #44008882122 passed |
 | 2026-11-17 | `fc17d64` | Added in-flight guards to prevent duplicate baseline/follow-up submissions | Browser #44010024786 and backup #44010024901 passed |
-| 2026-11-17 | `7e652de` | Added rapid repeated-submit browser regression test | New test passed; restore count expectation then adjusted |
+| 2026-11-17 | `7e652de` | Added rapid repeated-submit browser regression test | Rapid double-submit assertion passed; restore count expectation then updated |
 | 2026-11-17 | `a68cd16` | Aligned restore and cold-start assessment count assertions with dynamic test setup | Browser #44010251181 and backup #44010251174 passed |
-| 2026-11-17 | `886c90f` | Added service-layer requirement for baseline before follow-ups and date ordering | Intermediate browser run blocked by expected source/bundle mismatch before bundle sync |
-| 2026-11-17 | `47d12e4` | Added UI baseline gate, follow-up status guidance, and minimum date | Intermediate checks correctly detected stale browser service bundle |
-| 2026-11-17 | `adb0ef2` | Added follow-up lock explanation and disabled initial form controls in HTML | Intermediate checks correctly detected stale browser service bundle |
+| 2026-11-17 | `886c90f` | Added service-layer requirement for baseline before follow-ups and date ordering | Intermediate browser run detected unsynced canonical/browser bundle |
+| 2026-11-17 | `47d12e4` | Added UI baseline gate, follow-up status guidance, and minimum date | Intermediate checks detected stale browser service bundle |
+| 2026-11-17 | `adb0ef2` | Added follow-up lock explanation and disabled initial form controls in HTML | Intermediate checks detected stale browser service bundle |
 | 2026-11-17 | `429154a` | Added browser tests for no-baseline rejection, earlier-date rejection, same-day allowance and UI unlock/date minimum | Intermediate parity run failed because browser bundle had not yet been synchronized |
-| 2026-11-17 | `e0241d2` | Synchronized browser assessment service with canonical baseline sequencing rules | Browser #44011654605 passed; backup #44011654603 passed |
-| 2026-11-17 | `fb74a54` | Refresh assessment history and baseline gate after restoring backup data | Browser #44012152284 passed; backup #44012152325 passed |
+| 2026-11-17 | `e0241d2` | Synchronized browser assessment service with canonical baseline sequencing rules | Browser #44011654605 and backup #44011654603 passed |
+| 2026-11-17 | `fb74a54` | Refresh assessment history and baseline gate after restoring backup data | Browser #44012152284 and backup #44012152325 passed |
+| 2026-11-17 | `b3249f6` | Added specific comparison guidance for no assessments, one baseline and selectable pairs | Browser #44012776836 and backup #44012756773 passed |
+| 2026-11-17 | `5c54dbb` | Updated initial HTML fallback guidance for the no-assessment comparison state | Backup #44012776733 passed; browser run for a later commit superseded |
+| 2026-11-17 | `01ac4dc` | Added browser coverage for zero-assessment and single-baseline comparison messages | Browser #44012916881 and backup #44012916874 passed on subsequent cache-bumped head |
+| 2026-11-17 | `dc2ff16` | Bumped offline shell cache to v8 for stage-specific assessment comparison guidance | Browser #44012916881 and backup #44012916874 passed |
+| 2026-11-17 | `09c4541` | Added the Overview progress-journey section | Included in later validation |
+| 2026-11-17 | `49dfc41` | Rendered chronological assessment milestones with changes from original baseline | Included in later validation |
+| 2026-11-17 | `eb44f65` | Added responsive visual timeline styling | Browser #44013395826 and backup #44013395782 passed |
+| 2026-11-17 | `8793f8a` | Added browser checks for the baseline and follow-up journey milestones | Included in final validation |
+| 2026-11-17 | `f57be83` | Bumped offline shell cache to v9 for the assessment journey timeline | Browser #44013474634 and backup #44013474727 passed |
 
 ### Next actions (resume here)
 
-1. Improve the assessment comparison empty state so a user with one saved assessment is told to add a follow-up before comparing.
-2. Recheck assessment history, selector defaults and mobile layout after that small UX change, then run browser and backup validation.
-3. Once the assessment UI is signed off, begin the next approved Visual Progress Journey increment. Start with a small, testable slice based on actual saved records only.
+1. Begin the next Visual Progress Journey slice using existing completed Gym and Hiking records. Keep the modules separate and make missing fields explicit; do not infer durations, intensity, personal bests or improvements.
+2. Inspect the actual Gym set/exercise record fields and Hiking record fields before choosing the first summary or milestone calculation. Prefer a small slice with direct source-to-display traceability.
+3. Add browser coverage using isolated test records, confirm test data is removed or safely isolated, and validate the full app, offline shell and backup.
 4. Keep all work on `V21.2-development`; inspect live head and exact run SHAs after each change. Do not merge or deploy without explicit approval.
-5. Keep this handover manual updated with decisions, implementation commits, test outcomes and exact CI links.
+5. Keep this handover manual updated with decisions, implementation commits, validation links and next actions.
+
