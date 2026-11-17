@@ -788,3 +788,17 @@ This was a source-grounded design/inventory update only. No production catalogue
 - The draft explicitly preserves exact programme labels and requires human approval before identity review events or production IDs are authored. Equipment matching and illustration selection are not treated as identity evidence.
 - Protected root `index.html` remains read-only. No database, backup, service-worker, historical data, production `main`, merge or deployment changes were made.
 - Curation review commit: `48c049bd3b2ace5ffa7c0e69f6a3e8a904f3c9f9`. This handover update must be validated by browser and backup workflows against its exact resulting commit SHA.
+
+
+---
+
+# Exercise machine nomenclature clarification — 2026-11-18
+
+- Updated `docs/V21.2-EXERCISE-IDENTITY-CURATION-REVIEW.md` with user-supplied machine nomenclature for chest press, leg press, seated leg extension and shoulder press.
+- Revised the earlier alias proposal: Chest Press Machine, Leg Press and Shoulder Press Machine remain broad machine-family candidates on HOLD until the intended machine geometry/operation is known. Converging handles and iso-lateral independent arms are variation attributes, not generic synonyms.
+- Leg Press must not default to a 45-degree sled: horizontal seated and vertical machines are distinct configurations; “sled press” is informal angled-sled terminology.
+- Seated Leg Extension ↔ Leg Extension Machine remains a strong but conditional alias candidate; Quad Extension Machine, Knee Extension Machine and Leg Extension are possible naming alternatives, subject to confirming the optional-library row means a seated machine.
+- Shoulder press naming alternatives include Overhead Press Machine, Machine Military Press and Deltoid Press; converging handle path remains a variation attribute where relevant.
+- No gym brand/model or pin-selected/plate-loaded configuration has been confirmed. No aliases, variations, canonical IDs or production catalogue records were approved or created.
+- All programme source labels remain preserved and unresolved pending explicit review. No legacy root, application, database, backup, history, production main, merge or deployment changes.
+- Curation document refinement commit: `3ea6d364759b15c420c6fa92cd228262f887c49d`. This handover update requires exact-SHA browser and backup validation.
