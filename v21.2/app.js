@@ -120,9 +120,9 @@ function renderGymJourney(sessions,exercises,sets){
     fields.push(String(set.weight??"").trim()!==""?"Weight entry "+String(set.weight):"Weight not recorded");
     fields.push(String(set.reps??"").trim()!==""?String(set.reps)+" reps":"Reps not recorded");
     if(String(set.duration??"").trim()!=="")fields.push(String(set.duration)+" duration");
-    return "Set "+String(set.setNumber)+": "+fields.join(" · ");
-   }).join("</li><li>"):"No set details recorded";
-   return '<li><strong>'+esc(date)+'</strong><ul><li>'+esc(setText)+'</li></ul></li>';
+    return '<li>'+esc("Set "+String(set.setNumber)+": "+fields.join(" · "))+'</li>';
+   }).join(""):'<li>No set details recorded</li>';
+   return '<li><strong>'+esc(date)+'</strong><ul>'+setText+'</ul></li>';
   }).join("");
   return '<section class="gym-exercise-history"><h4>'+esc(group.name)+'</h4><p>'+entries.length+' completed session'+(entries.length===1?"":"s")+' recorded</p><ol>'+rows+'</ol></section>';
  }).join("");
