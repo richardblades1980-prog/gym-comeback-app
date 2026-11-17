@@ -312,6 +312,251 @@
     }
   }
 
+
+  function validateGymWorkoutCreateBundle(bundle) {
+    if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) {
+      throw new Error("A Gym workout bundle is required.");
+    }
+    const session = bundle.session;
+    const exercises = bundle.exerciseRecords;
+    const sets = bundle.setRecords;
+    if (!session || typeof session !== "object" || session.moduleId !== "gym" ||
+        typeof session.id !== "string" || !session.id || !/^gym-\d{4}-\d{2}-\d{2}$/.test(session.status || "")) {
+      // The status is checked below; the date-shaped expression here intentionally
+      // only rejects absent core session identity. Session status is not an ID field.
+      if (!session || typeof session !== "object" || session.moduleId !== "gym" ||
+          typeof session.id !== "string" || !session.id) {
+        throw new Error("Gym session requires a stable ID and moduleId gym.");
+      }
+    }
+    if (!Array.isArray(exercises) || !exercises.length || !Array.isArray(sets) || !sets.length) {
+      throw new Error("A new Gym workout must contain exercise and set records.");
+    }
+    if (session.status !== "in-progress") throw new Error("A new Gym workout must start in progress.");
+    if (!Number.isInteger(session.day) || session.day < 1 || session.day > 5) {
+      throw new Error("Gym session day must be an integer from 1 to 5.");
+    }
+    if (typeof session.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(session.date)) {
+      throw new Error("Gym session date must use YYYY-MM-DD.");
+    }
+    const exerciseIds = new Set();
+    const expectedSets = new Map();
+    for (const exercise of exercises) {
+      if (!exercise || typeof exercise !== "object" || exercise.moduleId !== "gym" ||
+          exercise.sessionId !== session.id || typeof exercise.id !== "string" || !exercise.id ||
+          typeof exercise.name !== "string" || !exercise.name.trim() ||
+          !Number.isInteger(exercise.setCount) || exercise.setCount < 1 || exercise.setCount > 8) {
+        throw new Error("Gym exercise records require a stable ID, exact name, session link and valid set count.");
+      }
+      if (exerciseIds.has(exercise.id)) throw new Error("Gym exercise record IDs must be unique.");
+      exerciseIds.add(exercise.id);
+      expectedSets.set(exercise.id, exercise.setCount);
+    }
+    const setIds = new Set();
+    const setNumbers = new Set();
+    for (const set of sets) {
+      if (!set || typeof set !== "object" || set.moduleId !== "gym" ||
+          set.sessionId !== session.id || typeof set.id !== "string" || !set.id ||
+          !exerciseIds.has(set.exerciseRecordId) ||
+          !Number.isInteger(set.setNumber) || set.setNumber < 1 ||
+          set.setNumber > expectedSets.get(set.exerciseRecordId)) {
+        throw new Error("Gym set records require a valid parent exercise, session link and set number.");
+      }
+      if (setIds.has(set.id)) throw new Error("Gym set record IDs must be unique.");
+      const key = set.exerciseRecordId + "::" + set.setNumber;
+      if (setNumbers.has(key)) throw new Error("Gym set numbers must be unique within each exercise.");
+      setIds.add(set.id);
+      setNumbers.add(key);
+      for (const field of ["weight", "reps", "duration", "targetDuration"]) {
+        if (set[field] !== undefined && typeof set[field] !== "string") {
+          throw new Error("Gym set field " + field + " must be stored as a string.");
+        }
+      }
+    }
+    const requiredSetCount = [...expectedSets.values()].reduce((sum, count) => sum + count, 0);
+    if (sets.length !== requiredSetCount) throw new Error("Gym workout bundle must include every initial set.");
+    for (const [exerciseId, count] of expectedSets.entries()) {
+      for (let number = 1; number <= count; number++) {
+        if (!setNumbers.has(exerciseId + "::" + number)) throw new Error("Gym workout bundle is missing a set record.");
+      }
+    }
+    return { session, exercises, sets };
+  }
+
+  async function createGymWorkoutBundle(bundle) {
+    const validated = validateGymWorkoutCreateBundle(bundle);
+    const db = await open();
+    const requiredStores = ["modules", "sessions", "exerciseRecords", "setRecords"];
+    try {
+      if (requiredStores.some(name => !db.objectStoreNames.contains(name))) {
+        throw new Error("Gym workout stores are not available in this database.");
+      }
+      const tx = db.transaction(requiredStores, "readwrite");
+      const done = transactionDone(tx);
+      let failure = null;
+      const now = new Date().toISOString();
+      const moduleRequest = tx.objectStore("modules").get("gym");
+      moduleRequest.onsuccess = () => {
+        const module = moduleRequest.result;
+        if (!module || module.enabled !== true) {
+          failure = new Error("Gym module is disabled; the workout was not created.");
+          try { tx.abort(); } catch (error) {}
+          return;
+        }
+        try {
+          tx.objectStore("sessions").add(Object.assign({}, validated.session, {
+            createdAt: validated.session.createdAt || now,
+            updatedAt: now
+          }));
+          validated.exercises.forEach(record => {
+            tx.objectStore("exerciseRecords").add(Object.assign({}, record, {
+              createdAt: record.createdAt || now,
+              updatedAt: now
+            }));
+          });
+          validated.sets.forEach(record => {
+            tx.objectStore("setRecords").add(Object.assign({}, record, {
+              createdAt: record.createdAt || now,
+              updatedAt: now
+            }));
+          });
+        } catch (error) {
+          failure = error;
+          try { tx.abort(); } catch (abortError) {}
+        }
+      };
+      try {
+        await done;
+      } catch (error) {
+        throw failure || error;
+      }
+      return {
+        session: Object.assign({}, validated.session),
+        exerciseRecords: validated.exercises.map(record => Object.assign({}, record)),
+        setRecords: validated.sets.map(record => Object.assign({}, record))
+      };
+    } finally {
+      db.close();
+    }
+  }
+
+  function validateGymWorkoutUpdateBundle(bundle) {
+    if (!bundle || typeof bundle !== "object" || Array.isArray(bundle) ||
+        typeof bundle.sessionId !== "string" || !bundle.sessionId) {
+      throw new Error("Gym workout updates require a session ID.");
+    }
+    const session = bundle.session || null;
+    const exercises = bundle.exerciseRecords === undefined ? [] : bundle.exerciseRecords;
+    const sets = bundle.setRecords === undefined ? [] : bundle.setRecords;
+    if ((!session && !exercises.length && !sets.length) ||
+        !Array.isArray(exercises) || !Array.isArray(sets)) {
+      throw new Error("Gym workout updates must contain records to save.");
+    }
+    if (session && (session.id !== bundle.sessionId || session.moduleId !== "gym")) {
+      throw new Error("Gym session update has an invalid identity.");
+    }
+    const seen = { exerciseRecords: new Set(), setRecords: new Set() };
+    for (const [name, records] of [["exerciseRecords", exercises], ["setRecords", sets]]) {
+      for (const record of records) {
+        if (!record || typeof record !== "object" || record.moduleId !== "gym" ||
+            record.sessionId !== bundle.sessionId || typeof record.id !== "string" || !record.id) {
+          throw new Error("Gym " + name + " updates must retain their Gym module and session identity.");
+        }
+        if (seen[name].has(record.id)) throw new Error("Gym update contains duplicate " + name + " IDs.");
+        seen[name].add(record.id);
+      }
+    }
+    return { session, exercises, sets };
+  }
+
+  async function updateGymWorkoutBundle(bundle) {
+    const validated = validateGymWorkoutUpdateBundle(bundle);
+    const db = await open();
+    const requiredStores = ["modules", "sessions", "exerciseRecords", "setRecords"];
+    try {
+      if (requiredStores.some(name => !db.objectStoreNames.contains(name))) {
+        throw new Error("Gym workout stores are not available in this database.");
+      }
+      const tx = db.transaction(requiredStores, "readwrite");
+      const done = transactionDone(tx);
+      let failure = null;
+      let pendingChecks = 2 + validated.exercises.length + validated.sets.length;
+      const now = new Date().toISOString();
+      const fail = message => {
+        if (failure) return;
+        failure = message instanceof Error ? message : new Error(message);
+        try { tx.abort(); } catch (error) {}
+      };
+      const checkFinished = () => {
+        pendingChecks--;
+      };
+      const moduleRequest = tx.objectStore("modules").get("gym");
+      moduleRequest.onsuccess = () => {
+        if (!moduleRequest.result || moduleRequest.result.enabled !== true) {
+          fail("Gym module is disabled; workout changes were not saved.");
+          return;
+        }
+        checkFinished();
+      };
+      const sessionRequest = tx.objectStore("sessions").get(bundle.sessionId);
+      sessionRequest.onsuccess = () => {
+        const existing = sessionRequest.result;
+        if (!existing || existing.moduleId !== "gym") {
+          fail("Gym workout session no longer exists.");
+          return;
+        }
+        if (validated.session) {
+          const updated = Object.assign({}, validated.session, {
+            createdAt: existing.createdAt || validated.session.createdAt || now,
+            updatedAt: now
+          });
+          tx.objectStore("sessions").put(updated);
+        }
+        checkFinished();
+      };
+      validated.exercises.forEach(record => {
+        const request = tx.objectStore("exerciseRecords").get(record.id);
+        request.onsuccess = () => {
+          const existing = request.result;
+          if (!existing || existing.moduleId !== "gym" || existing.sessionId !== bundle.sessionId ||
+              existing.name !== record.name || existing.programmeSlotId !== record.programmeSlotId) {
+            fail("Gym exercise record is missing or its source identity changed.");
+            return;
+          }
+          tx.objectStore("exerciseRecords").put(Object.assign({}, record, {
+            createdAt: existing.createdAt || record.createdAt || now,
+            updatedAt: now
+          }));
+          checkFinished();
+        };
+      });
+      validated.sets.forEach(record => {
+        const request = tx.objectStore("setRecords").get(record.id);
+        request.onsuccess = () => {
+          const existing = request.result;
+          if (!existing || existing.moduleId !== "gym" || existing.sessionId !== bundle.sessionId ||
+              existing.exerciseRecordId !== record.exerciseRecordId || existing.setNumber !== record.setNumber) {
+            fail("Gym set record is missing or its exercise/set identity changed.");
+            return;
+          }
+          tx.objectStore("setRecords").put(Object.assign({}, record, {
+            createdAt: existing.createdAt || record.createdAt || now,
+            updatedAt: now
+          }));
+          checkFinished();
+        };
+      });
+      try {
+        await done;
+      } catch (error) {
+        throw failure || error;
+      }
+      return { sessionId: bundle.sessionId, updatedAt: now };
+    } finally {
+      db.close();
+    }
+  }
+
   async function put(name, record) {
     if (IMMUTABLE_STORES.has(name)) throw new Error("Store " + name + " is append-only and cannot be overwritten.");
     if (!record || record.id === undefined || record.id === null || record.id === "") {
@@ -507,6 +752,8 @@
     get version() { return currentVersion; },
     getVersion,
     upgradeToV6,
+    createGymWorkoutBundle,
+    updateGymWorkoutBundle,
     stores: Object.freeze(Object.keys(STORES)),
     open,
     get,
