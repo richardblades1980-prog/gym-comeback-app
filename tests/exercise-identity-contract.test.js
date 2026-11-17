@@ -256,3 +256,202 @@ test("performed exercise identity remains separate from canonical definition ide
   assert.equal(historyIdentity(performedA), historyIdentity(performedB));
   assert.notEqual(performedA.id, performedA.exerciseDefinitionId);
 });
+
+
+// Decision review contracts: these fixtures express the recommended model;
+// they are not production services and do not imply that V21.2 implements it.
+
+const variationDimensions = Object.freeze([
+  "implement",
+  "grip",
+  "stance",
+  "laterality",
+  "rangeOfMotion"
+]);
+const prescriptionOnlyDimensions = Object.freeze([
+  "load",
+  "reps",
+  "sets",
+  "restSeconds",
+  "tempo",
+  "effort"
+]);
+
+function applyCatalogueRelease(existingSystem, release) {
+  const incoming = new Map(release.definitions.map(item => [item.id, item]));
+  const next = existingSystem.map(previous => {
+    const updated = incoming.get(previous.id);
+    if (!updated) return { ...previous, status: "retired" };
+    incoming.delete(previous.id);
+    return updated;
+  });
+  return next.concat([...incoming.values()]);
+}
+
+function validateLineageSnapshot(version) {
+  const dayIds = new Set();
+  const slotIds = new Set();
+  const lineages = new Set();
+  for (const day of version.days) {
+    if (dayIds.has(day.id)) return false;
+    dayIds.add(day.id);
+    for (const slot of day.slots) {
+      if (slotIds.has(slot.id) || lineages.has(slot.slotLineageId)) return false;
+      if (slot.programmeVersionId !== version.id || slot.programmeDayId !== day.id) return false;
+      slotIds.add(slot.id);
+      lineages.add(slot.slotLineageId);
+    }
+  }
+  return true;
+}
+
+test("variation taxonomy distinguishes curated execution variants from prescription settings", () => {
+  assert.deepEqual([...variationDimensions], [
+    "implement", "grip", "stance", "laterality", "rangeOfMotion"
+  ]);
+  assert.ok(prescriptionOnlyDimensions.every(item => !variationDimensions.includes(item)));
+  const explicitVariations = [
+    { id: "exv_barbell", attributes: { implement: "barbell" } },
+    { id: "exv_dumbbell", attributes: { implement: "dumbbell" } },
+    { id: "exv_single_leg", attributes: { laterality: "unilateral" } }
+  ];
+  assert.equal(new Set(explicitVariations.map(item => item.id)).size, explicitVariations.length);
+  assert.equal(explicitVariations.length, 3, "only curated variations exist; no Cartesian product is generated");
+});
+
+test("materially different movement mechanics receive separate exercise definitions", () => {
+  const definitions = [
+    { id: "exd_rdl", movementPattern: "hip-hinge", canonicalName: "Romanian deadlift" },
+    { id: "exd_conventional_deadlift", movementPattern: "floor-pull", canonicalName: "Conventional deadlift" },
+    { id: "exd_machine_chest_press", movementPattern: "machine-horizontal-press", canonicalName: "Machine chest press" }
+  ];
+  assert.equal(new Set(definitions.map(item => item.id)).size, definitions.length);
+  assert.notEqual(definitions[0].id, definitions[1].id);
+  assert.notEqual(definitions[0].movementPattern, definitions[1].movementPattern);
+  assert.ok(definitions.every(item => item.id.startsWith("exd_")));
+});
+
+test("system catalogue release is versioned bundled authority with a local IndexedDB materialisation", () => {
+  const release = Object.freeze({
+    releaseId: "system-catalogue-2026.11.1",
+    version: 1,
+    checksum: "sha256:0123456789abcdef",
+    source: "bundled-versioned-local-asset",
+    definitions: [{ id: "exd_catalogue_001", kind: "system", canonicalName: "Goblet squat" }]
+  });
+  const indexedDbMaterialisation = {
+    releaseId: release.releaseId,
+    checksum: release.checksum,
+    status: "materialised"
+  };
+  assert.equal(release.source, "bundled-versioned-local-asset");
+  assert.equal(indexedDbMaterialisation.releaseId, release.releaseId);
+  assert.equal(indexedDbMaterialisation.checksum, release.checksum);
+  assert.equal(release.definitions[0].kind, "system");
+});
+
+test("catalogue refresh retires removed system IDs and never overwrites custom records or user aliases", () => {
+  const existingSystem = [
+    { id: "exd_system_a", kind: "system", canonicalName: "Old label", status: "active" },
+    { id: "exd_system_retired", kind: "system", canonicalName: "Retired movement", status: "active" }
+  ];
+  const customDefinitions = [
+    { id: "exd_custom_owner_1", kind: "custom", canonicalName: "My variation" }
+  ];
+  const aliases = [
+    { id: "alias_owner_1", exactValue: "My old name", exerciseDefinitionId: "exd_custom_owner_1", verificationStatus: "verified" }
+  ];
+  const release = {
+    releaseId: "system-catalogue-2026.12.1",
+    definitions: [{ id: "exd_system_a", kind: "system", canonicalName: "Updated label", status: "active" }]
+  };
+  const refreshedSystem = applyCatalogueRelease(existingSystem, release);
+  assert.equal(refreshedSystem.find(item => item.id === "exd_system_a").canonicalName, "Updated label");
+  assert.equal(refreshedSystem.find(item => item.id === "exd_system_retired").status, "retired");
+  assert.deepEqual(customDefinitions, [
+    { id: "exd_custom_owner_1", kind: "custom", canonicalName: "My variation" }
+  ]);
+  assert.equal(aliases[0].verificationStatus, "verified");
+  assert.equal(aliases[0].exerciseDefinitionId, "exd_custom_owner_1");
+});
+
+test("published programme versions use separate version-scoped day and slot IDs with stable semantic lineage", () => {
+  const versionOne = {
+    id: "prv_programme_1",
+    versionNumber: 1,
+    days: [{
+      id: "pdy_v1_day_a",
+      programmeVersionId: "prv_programme_1",
+      dayLineageId: "daylineage_upper",
+      label: "Upper body",
+      slots: [
+        { id: "psl_v1_a", programmeVersionId: "prv_programme_1", programmeDayId: "pdy_v1_day_a", slotLineageId: "slotlineage_press", exerciseDefinitionId: "exd_press", order: 1 },
+        { id: "psl_v1_b", programmeVersionId: "prv_programme_1", programmeDayId: "pdy_v1_day_a", slotLineageId: "slotlineage_row", exerciseDefinitionId: "exd_row", order: 2 }
+      ]
+    }]
+  };
+  const versionTwo = {
+    id: "prv_programme_2",
+    versionNumber: 2,
+    basedOnVersionId: versionOne.id,
+    days: [{
+      id: "pdy_v2_day_a",
+      programmeVersionId: "prv_programme_2",
+      dayLineageId: "daylineage_upper",
+      label: "Upper strength",
+      slots: [
+        { id: "psl_v2_b", programmeVersionId: "prv_programme_2", programmeDayId: "pdy_v2_day_a", slotLineageId: "slotlineage_row", exerciseDefinitionId: "exd_row", order: 1 },
+        { id: "psl_v2_a", programmeVersionId: "prv_programme_2", programmeDayId: "pdy_v2_day_a", slotLineageId: "slotlineage_press", exerciseDefinitionId: "exd_incline_press", order: 2 }
+      ]
+    }]
+  };
+  assert.equal(validateLineageSnapshot(versionOne), true);
+  assert.equal(validateLineageSnapshot(versionTwo), true);
+  assert.notEqual(versionOne.days[0].id, versionTwo.days[0].id);
+  assert.equal(versionOne.days[0].dayLineageId, versionTwo.days[0].dayLineageId);
+  const oldPress = versionOne.days[0].slots[0];
+  const newPress = versionTwo.days[0].slots[1];
+  assert.notEqual(oldPress.id, newPress.id);
+  assert.equal(oldPress.slotLineageId, newPress.slotLineageId);
+  assert.notEqual(oldPress.exerciseDefinitionId, newPress.exerciseDefinitionId);
+  assert.notEqual(oldPress.order, newPress.order, "reordering does not change logical slot lineage");
+});
+
+test("split or merged programme slots receive new lineages with explicit predecessor links", () => {
+  const oldLineage = "slotlineage_compound";
+  const splitSlots = [
+    { slotLineageId: "slotlineage_split_a", supersedesSlotLineageIds: [oldLineage] },
+    { slotLineageId: "slotlineage_split_b", supersedesSlotLineageIds: [oldLineage] }
+  ];
+  const mergedSlot = {
+    slotLineageId: "slotlineage_merged",
+    supersedesSlotLineageIds: ["slotlineage_split_a", "slotlineage_split_b"]
+  };
+  assert.ok(splitSlots.every(slot => slot.slotLineageId !== oldLineage));
+  assert.ok(splitSlots.every(slot => slot.supersedesSlotLineageIds.includes(oldLineage)));
+  assert.deepEqual(mergedSlot.supersedesSlotLineageIds, splitSlots.map(slot => slot.slotLineageId));
+  assert.notEqual(mergedSlot.slotLineageId, oldLineage);
+});
+
+test("performed session snapshots pin the exact programme version, slot and labels used", () => {
+  const performed = Object.freeze({
+    id: "gym-session-77-exercise-1",
+    programmeVersionId: "prv_programme_1",
+    programmeSlotId: "psl_v1_a",
+    exerciseDefinitionId: "exd_press",
+    exerciseVariationId: "exv_barbell",
+    exerciseNameSnapshot: "Flat bench press",
+    variationNameSnapshot: "Barbell",
+    prescriptionSnapshot: Object.freeze({ sets: 3, repTarget: "8-10" })
+  });
+  const laterProgrammeEdit = {
+    programmeVersionId: "prv_programme_2",
+    programmeSlotId: "psl_v2_a",
+    exerciseDefinitionId: "exd_incline_press"
+  };
+  assert.equal(performed.programmeVersionId, "prv_programme_1");
+  assert.equal(performed.programmeSlotId, "psl_v1_a");
+  assert.equal(performed.exerciseNameSnapshot, "Flat bench press");
+  assert.notEqual(performed.programmeVersionId, laterProgrammeEdit.programmeVersionId);
+  assert.notEqual(performed.exerciseDefinitionId, laterProgrammeEdit.exerciseDefinitionId);
+});
