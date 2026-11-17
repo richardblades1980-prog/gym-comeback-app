@@ -873,7 +873,7 @@ function server() {
       const manifest = {
         id: payload.releaseId, catalogueId: payload.catalogueId, releaseId: payload.releaseId,
         version: payload.version, schemaVersion: payload.schemaVersion,
-        assetUrl: "./catalogues/exercise/browser-fixture/browser-catalogue-r1.json",
+        assetUrl: "./catalogues/exercise/" + payload.releaseId + "/" + checksum.slice(7) + ".json",
         contentType: "application/json", byteLength: bytes.byteLength, checksum,
         entryCount: payload.definitions.length, variationCount: payload.variations.length
       };
