@@ -450,11 +450,45 @@ function server() {
         id: "browser-workload-hike", moduleId: "hiking", date,
         title: "Browser workload Hiking record", status: "completed"
       });
+      await ProjectComebackModules.putOwnedRecord("gym", "exerciseRecords", {
+        id: "browser-journey-exercise", moduleId: "gym", sessionId: "browser-workload-gym",
+        name: "Test squat", setCount: 3, progressionFocus: "repetitions"
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
+        id: "browser-journey-set-1", moduleId: "gym", sessionId: "browser-workload-gym",
+        exerciseRecordId: "browser-journey-exercise", setNumber: 1, weight: "20", reps: "8"
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
+        id: "browser-journey-set-2", moduleId: "gym", sessionId: "browser-workload-gym",
+        exerciseRecordId: "browser-journey-exercise", setNumber: 2, weight: "20", reps: "10"
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
+        id: "browser-journey-set-3", moduleId: "gym", sessionId: "browser-workload-gym",
+        exerciseRecordId: "browser-journey-exercise", setNumber: 3, weight: "20", reps: ""
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "sessions", {
+        id: "browser-incomplete-gym", moduleId: "gym", date,
+        title: "Incomplete Gym record", status: "incomplete"
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "exerciseRecords", {
+        id: "browser-incomplete-exercise", moduleId: "gym", sessionId: "browser-incomplete-gym",
+        name: "Excluded exercise", setCount: 1
+      });
+      await ProjectComebackModules.putOwnedRecord("gym", "setRecords", {
+        id: "browser-incomplete-set", moduleId: "gym", sessionId: "browser-incomplete-gym",
+        exerciseRecordId: "browser-incomplete-exercise", setNumber: 1, weight: "999", reps: "99"
+      });
     }, workloadDate);
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="overview"]').click();
     await app.waitForFunction(() => document.querySelector("#upcoming-overview").textContent.includes("Browser test gym session"));
+    const gymJourneyCheck = await app.locator("#gym-journey").textContent();
+    if (!gymJourneyCheck.includes("1") || !gymJourneyCheck.includes("18") ||
+        !gymJourneyCheck.includes("2 of 3 sets include a numeric repetition count") ||
+        !gymJourneyCheck.includes("Weight is not totalled")) {
+      throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
+    }
     const hikingJourneyCheck = await app.locator("#hiking-journey").textContent();
     if (!hikingJourneyCheck.includes("2") || !hikingJourneyCheck.includes("4.25 km") ||
         !hikingJourneyCheck.includes("320 m") || !hikingJourneyCheck.includes("95 min") ||
@@ -488,6 +522,12 @@ function server() {
     await app.evaluate(async () => {
       await ProjectComebackDB.remove("sessions", "browser-workload-gym");
       await ProjectComebackDB.remove("hikingRecords", "browser-workload-hike");
+      await ProjectComebackDB.remove("sessions", "browser-incomplete-gym");
+      await ProjectComebackDB.remove("exerciseRecords", "browser-journey-exercise");
+      await ProjectComebackDB.remove("exerciseRecords", "browser-incomplete-exercise");
+      for (const id of ["browser-journey-set-1","browser-journey-set-2","browser-journey-set-3","browser-incomplete-set"]) {
+        await ProjectComebackDB.remove("setRecords", id);
+      }
     });
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
