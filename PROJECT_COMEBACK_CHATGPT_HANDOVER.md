@@ -3,12 +3,13 @@
 - **Active branch:** V21.2-development
 - **Implementation decision:** G2 PASS explicitly given by the user on 17 November 2026.
 - **Implementation base:** ad4e72d054a009d6500c7cd01f384440068fc4d9 (the exact live branch head inspected before implementation).
-- **Latest implementation/documentation commit before this handover update:** a783a4799f162a8afce961bfa22ded676a0a5c50.
+- **Latest implementation/documentation commit before this handover update:** 6615515ed5caaed466423c02afc3c85bea0cd723.
 - **Delivery service:** src/data/catalogue-delivery.js; identical app bundle: v21.2/assets/catalogue-delivery.js.
 - **App wiring:** v21.2/index.html loads the service; v21.2/sw.js shell cache is v16 and precaches the service. Catalogue asset requests bypass generic shell caching; verified release bytes use a dedicated CacheStorage namespace.
 - **Atomic activation:** existing V6 IndexedDB stores only: catalogueReleases, exerciseDefinitions, exerciseVariations and metadata. Manifest, system definitions/variations and active pointer commit in one transaction. No database version/index change.
 - **Integrity:** exact UTF-8 byte length and SHA-256 before parse; manifest/payload identity, schema, counts, unique IDs and variation parent checks; cache read-back verification.
 - **Offline lookup:** ProjectComebackCatalogueDelivery.getStatus() and lookup() require a matching active manifest and complete local materialisation. Unseeded devices report unavailable, not an empty valid catalogue.
+- **Verified-only activation:** only the delivery loader writes assetVerificationStatus=verified after byte/payload/cache read-back verification. Legacy metadata-only release records remain unverified and cannot be promoted under the same release ID.
 - **Browser regression:** tests/browser-validation.js seeds a clearly test-only synthetic release, verifies materialisation and lookup, reloads the app offline, then verifies lookup and release cache persistence.
 - **Release references:** src/data/exercise-identity.js now includes direct programmeSlots pins alongside published programme versions, non-terminal sessions and identity-review events. No garbage collection.
 - **Data boundary:** backup format and historical display snapshots unchanged. No automatic history rebinding or legacy migration.
