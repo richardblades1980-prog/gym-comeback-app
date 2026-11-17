@@ -761,3 +761,17 @@ The current V21.2 app shell is not yet the complete legacy workout UI. Its `v21.
 ## Scope and safety
 
 This was a source-grounded design/inventory update only. No production catalogue payload, permanent exercise IDs, V21.2 workout UI, asset copy, database change, backup change, legacy root edit, historical data rewrite, merge or deployment was made. The 409484e9 checkpoint's browser and backup validations were previously confirmed PASS; this handover update itself still requires both workflows to pass on its exact resulting commit SHA.
+
+---
+
+# Gym exercise source register — 2026-11-18
+
+- Added `docs/V21.2-GYM-EXERCISE-SOURCE-REGISTER.md` from a fresh read-only inspection of the protected legacy root `index.html` at blob `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
+- Register inventories 42 optional-library rows, 32 slots across all five base programme days, 17 distinct base-programme labels, 25 explicit exercise-specific guide-description entries and 17 generic-fallback gaps in the optional library.
+- All 42 machine-reference JPG paths and all 14 muscle keys used by the optional library resolve to existing files. Root asset inventory contains 15 equipment SVGs, 10 machine-reference JPGs and 17 muscle JPGs; three legacy celebration GIFs are also present.
+- Important source correction: the optional library's sixth array field is gear-match text used by `exerciseReady()`, not exercise aliases. Base-programme equipment matching is separately implemented in `baseExerciseReady()`. Do not turn gear terms into canonical identity aliases.
+- Ten base-programme labels do not directly match an optional-library row. The register lists them as review candidates and preserves source labels; no merges or IDs are approved.
+- 25 entries have explicit guide copy; 17 optional-library entries currently fall back to generic guide wording. Existing guide copy still needs content/safety review before production.
+- The source register is documentary only. No production catalogue payload, canonical IDs, app/UI, service-worker, schema, backup or legacy root changes were made.
+- Next: review identity/variation candidates and complete the 17 guide gaps, then design the V21.2-local artwork package and offline tests. Keep the exercise guide, press-and-hold, set/rest controls, completion treatment and save/celebration buttons in the acceptance suite.
+- Commit adding source register: `3bc43868c21b2f30c286579a0d869a16dc67fa8b`. This handover update is a separate documentation commit and requires exact-SHA browser and backup validation.
