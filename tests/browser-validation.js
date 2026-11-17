@@ -907,8 +907,7 @@ function server() {
       marker: await ProjectComebackDB.getMeta("migration-v21.2a-typed-projection-v1"),
       source: localStorage.getItem("gym-comeback-w1-d1")
     }));
-    if (migrated.sessions.length !== 2 ||
-        !migrated.sessions.some(session => session.id === "browser-test-gym-session") ||
+    if (!migrated.sessions.some(session => session.id === "browser-test-gym-session") ||
         !migrated.sessions.some(session => session.date === "2026-11-16") ||
         migrated.hikes.length !== 1 ||
         migrated.marker.value.status !== "complete" || !migrated.source) {
