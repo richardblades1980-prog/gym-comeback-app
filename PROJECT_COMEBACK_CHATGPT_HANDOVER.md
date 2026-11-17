@@ -572,3 +572,15 @@ During development:
 - Backup validation #44053125864 PASS on exact SHA: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44053125864
 - Next: review remaining boundaries (identity-review audit record, catalogue release retention/display snapshots and exact configuration fields), then implement only after tests target actual services and IndexedDB upgrades from v5, backup v1 compatibility and production offline asset caching. Keep V21.1 and main untouched.
 
+### Evolution and Data Integrity Standard adopted (2026-11-17)
+
+- Re-inspected live `V21.2-development` at `96641b3d6eaed3dc5186638f8b718e713731efe5`; confirmed the latest canonical exercise identity design and 16-test design contract before editing. Production `main` was checked read-only at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; its root `index.html` blob remains `e3eb0093648cc6c5d706bb5b1008b58ec01a5576`.
+- Added `docs/V21.2-EVOLUTION-STAGE-GATE.md`, a permanent governance standard for V21.2 design and implementation. It defines G0 routine work, G1 focused evolution, G2 foundation evolution and G3 release/production gates; lists mandatory triggers, required impact/evidence records, compatibility and historical-data rules, approval states (pass/hold/revise/reject), and stop/reopen conditions.
+- Adopted the governing principle: **evolution must preserve the past while making room for the future**. The assistant should recommend a gate proactively before a consequential or hard-to-reverse decision. The user retains authority to pass, hold, revise or reject it. Routine cosmetic/contained changes do not trigger unnecessary formal gates; hidden risk escalates the level.
+- Classified canonical exercise identity, durable IDs, catalogue, programme lineage, audit, migrations, backups and offline architecture as G2 foundation-evolution candidates. Release, production-data operations and deployment are G3. A passing workflow is evidence, not user approval.
+- Linked the standard from `docs/V21.2-CANONICAL-EXERCISE-IDENTITY-DESIGN.md` in a new Evolution and Data Integrity section.
+- Standard/design commit: `04b5edcc6b447746cb903c7081b6e2e8f4590787`.
+- Browser validation #44054666013 PASS on exact SHA `04b5edcc6b447746cb903c7081b6e2e8f4590787`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44054666013
+- Backup validation #44054666239 PASS on exact SHA `04b5edcc6b447746cb903c7081b6e2e8f4590787`: https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44054666239
+- This was documentation/governance only. No app source, IndexedDB schema v5, backup format v1, V21.1 file, historical user data, production `main`, merge or deployment was changed.
+- Next: continue the remaining canonical identity design boundaries (append-only review/audit events, catalogue release retention/display snapshots and reusable configuration fields). Raise a G2 gate before implementing identity stores or migrations; first convert design contracts into real service/IndexedDB/backup/offline tests. Keep V21.1 and `main` untouched.
