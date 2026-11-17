@@ -223,3 +223,96 @@ The exact live branch head may have advanced when this manual is read. Always in
 - Be honest about what is implemented versus merely designed/approved.
 - If the repository or tools are unavailable in a new chat, explain that clearly and ask the user to reconnect or provide the relevant files; do not pretend to have committed code.
 - Never ask the user to repeat context already contained in this guide.
+
+
+---
+
+## 10. Living project record — update this continuously
+
+**This manual is the single source of continuity for future chats.** Do not create a separate disconnected summary unless the user asks for one. Keep the stable rules/decisions above and maintain this living record below.
+
+### Update protocol (required)
+
+At the start of every new chat or resumed work:
+1. Read this manual from the live GitHub development branch.
+2. Check the live branch head SHA and recent GitHub Actions runs.
+3. Compare the live repository state with the “Current status” and “Recent change log” below. The repository is authoritative for code; this manual is authoritative for recorded decisions and working method.
+4. If a conflict exists, do not guess. Inspect commits/files and record the resolved fact.
+5. Continue from the listed next action without asking the user to repeat known information.
+
+During development:
+1. When the user makes a product decision, add it to the approved decisions section with date/context; distinguish **approved**, **proposed**, **deferred**, and **rejected**.
+2. When a development method proves useful, add it to the operating method section so it is reused.
+3. After each meaningful implementation milestone, update the recent change log with date, commit SHA, files/features, and test status.
+4. When CI starts, record run IDs/links and mark them **running**. When finished, replace that status with the exact conclusion and commit SHA. Never leave a running test described as passed.
+5. Before ending a work session or chat, update Current status and Next actions. Commit the manual update on `V21.2-development`.
+6. Do not overwrite earlier log entries. Append new entries so the development history remains traceable.
+7. Keep this file concise enough to use, but detailed enough that another ChatGPT session can resume without reconstructing decisions from old chats.
+
+### Proven working method (retain and improve)
+
+**Repository editing**
+- Use GitHub connector Code Mode directly; inspect `ALL_TOOLS` for current tool names/schemas if necessary.
+- Fetch the live file and current blob SHA before each update.
+- Always specify the development branch explicitly.
+- Never run simultaneous writes to the same path.
+- Prefer small commits, each with a single purpose.
+- Fetch the resulting branch head/commit and verify that the write landed where expected.
+
+**CI discovery**
+- Use GitHub REST via `mcp__GitHub__fetch` to list Actions runs by branch. The wrapper `fetch_commit_workflow_runs` can miss push-triggered runs.
+- Match each run's `head_sha` to the commit under test.
+- Poll the run details/jobs until `status=completed`; inspect logs on failure.
+- A later commit can trigger new runs while older runs are still running. The latest branch head's checks are the ones that determine current validation status.
+- Browser validation includes source/bundle parity, Chromium, migration and offline/browser checks; backup validation covers backup/restore data behavior.
+
+**Test discipline**
+- Test actual user-facing UI as well as service-level behavior.
+- Include persistence/reload/cold-start/offline coverage for local-first functionality.
+- Do not let test-only records leak into production or user data. Use isolated browser profiles and clean up seeded records where appropriate.
+- Validate backup/restore and data migration whenever changing stored record structures.
+- Check browser console/page errors and meaningful empty/error states, not only happy paths.
+- If a UI test is brittle because it assumes localized date text, prefer stable IDs/data attributes or exact ISO values in test assertions rather than locale-dependent fragments.
+
+**User collaboration**
+- Give short milestone updates when useful, not constant play-by-play.
+- Explain failures plainly and report the fix and rerun outcome.
+- Keep the user involved in product decisions; do not silently expand scope.
+- Do not ask the user to restate decisions captured here.
+- Treat the user’s “D” and “N” shorthand as above.
+
+### Current status — last checked 17 November 2026
+
+- Active branch: `V21.2-development`.
+- Last observed branch head before this manual update: `87f566c48dfa049ed6d0be43c1e54fbba67df447` (handover manual added).
+- Assessment UI implementation is present on the development branch.
+- Assessment UI regression test has been added.
+- Assessment source/bundle parity passed on the preceding browser run for commit `ac327d6`; later run has progressed through bundle parity and Chromium installation.
+- Backup validation #232 for `ac327d6`: **success**.
+- Browser validation #140 for `ac327d6`: **in progress** at last check.
+- Browser validation for the later manual commit `87f566c`: **in progress** at last check.
+- Backup validation for `87f566c`: **in progress** at last check.
+- Do not describe the assessment UI as fully validated until browser validation for the latest branch head has completed successfully.
+
+### Recent change log
+
+| Date (UTC) | Commit | Change | Validation |
+|---|---|---|---|
+| 2026-11-17 | `71ac15a` | Corrected IndexedDB integration test for schema version 5 | Browser #134 and backup #226 passed |
+| 2026-11-17 | `68799a7` | Added assessment navigation and screen structure | Follow-up checks triggered |
+| 2026-11-17 | `00a7253` | Wired original baseline and follow-up assessment forms and comparisons | Browser #136 and backup #228 passed |
+| 2026-11-17 | `5eb83f5` | Added assessment screen styling | Backup #229 passed; browser run later superseded |
+| 2026-11-17 | `c182d60` | Bumped offline shell cache to v8 | Browser #138 and backup #230 passed |
+| 2026-11-17 | `c200531` | Added browser regression test for assessment UI | Browser run #139 still running at last check; backup #231 passed |
+| 2026-11-17 | `ac327d6` | Reloaded seeded assessment records before UI assertions | Browser #140 still running at last check; backup #232 passed |
+| 2026-11-17 | `87f566c` | Added this handover manual to the repository | Browser and backup checks running at last check |
+
+### Next actions (resume here)
+
+1. Poll browser validation #140 and the runs for current branch head `87f566c`.
+2. If browser validation fails, inspect the job logs and fix the precise failing assertion/behavior on `V21.2-development`.
+3. If the failure is only a locale-dependent test selector, change the test to use a stable selector or date value; do not weaken the functional assertions.
+4. Rerun checks and confirm browser + backup validation on the latest branch head.
+5. Review the assessment UI end-to-end, including mobile layout, form validation, error states, history ordering, and comparison values.
+6. Update this manual with final validation links and exact validated commit SHA.
+7. Once assessment UI is signed off, proceed to the next approved Visual Progress Journey increment, keeping scope controlled and using actual recorded data only.
