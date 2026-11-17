@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, "..");
 const read = p => fs.readFileSync(path.join(root, p), "utf8");
 const identitySource = read("src/data/exercise-identity.js");
 const deliverySource = read("src/data/catalogue-delivery.js");
+const bundledDeliverySource = read("v21.2/assets/catalogue-delivery.js");
+const databaseSource = read("src/data/database.js");
 const swSource = read("v21.2/sw.js");
 const backupSource = read("src/data/backup.js");
 const browserSource = read("tests/browser-validation.js");
@@ -86,6 +88,8 @@ test("source characterization: production service worker precaches shell, not ca
   assert.doesNotMatch(shell,/catalogue/i);
   assert.match(swSource,/key\.startsWith\(CACHE_PREFIX\)&&key!==CACHE_NAME/);
   assert.match(swSource,/caches\.open\(CACHE_NAME\)\.then\(cache=>cache\.put\(request,copy\)\)/);
+  assert.match(swSource,/catalogues\/exercise/);
+  assert.match(swSource,/if\(url\.pathname\.includes\("\/catalogues\/exercise\/"\)\)return/);
 });
 test("production delivery service verifies immutable assets and exposes offline lookup", () => {
   assert.match(deliverySource,/crypto\.subtle\.digest\("SHA-256"/);
@@ -97,6 +101,10 @@ test("production delivery service verifies immutable assets and exposes offline 
   assert.match(deliverySource,/catalogueReleases.*exerciseDefinitions.*exerciseVariations.*metadata/s);
   assert.match(deliverySource,/active-exercise-catalogue-release/);
   assert.match(deliverySource,/local catalogue materialisation is incomplete or stale/);
+  assert.equal(bundledDeliverySource, deliverySource, "the app shell must load the same reviewed delivery implementation");
+  assert.match(deliverySource,/new URL\(manifest\.assetUrl, global\.location\.href\)/);
+  assert.match(deliverySource,/metadataStore\.put\(/);
+  assert.match(databaseSource,/const DB_VERSION = 6;/, "catalogue delivery must not require a schema change");
 });
 test("real browser validation seeds a verified fixture and checks offline catalogue lookup", () => {
   assert.match(browserSource,/ProjectComebackCatalogueDelivery\.installRelease/);
