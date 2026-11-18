@@ -34,8 +34,8 @@ function updateGymStopwatchDisplays(){
   display.textContent=String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
  });
 }
-function gymRestRemainingMs(){return activeGymWorkout&&activeGymWorkout.session.restEndAt?Math.max(0,Number(activeGymWorkout.session.restEndAt)-Date.now()):0;}
-function updateGymRestDisplay(){const session=activeGymWorkout&&activeGymWorkout.session,box=$("gym-rest-timer");if(!box)return;if(!session||!session.restEndAt){box.hidden=true;return;}box.hidden=false;const remaining=gymRestRemainingMs(),seconds=Math.ceil(remaining/1000),minutes=Math.floor(seconds/60),remainder=seconds%60;$("gym-rest-countdown").textContent=String(minutes).padStart(2,"0")+":"+String(remainder).padStart(2,"0");const duration=Math.max(1,Number(session.restDurationSeconds)||90);$("gym-rest-progress-bar").style.width=Math.max(0,Math.min(100,remaining/(duration*1000)*100))+"%";const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===session.restExerciseId);$("gym-rest-label").textContent=(exercise?exercise.name+" · after set "+session.restSetNumber:"Rest period")+" — "+(remaining?"Take your rest.":"Rest complete — ready for your next set.");if(!remaining&&gymRestAlertedEndAt!==session.restEndAt){gymRestAlertedEndAt=session.restEndAt;notice("Rest complete — ready for your next set.");}}
+function gymRestAlert(){const mode=localStorage.getItem("gym-comeback-rest-alert")||"both";if((mode==="both"||mode==="vibrate")&&"vibrate"in navigator){try{navigator.vibrate([250,100,250,100,500]);}catch(_){}}if(mode==="both"||mode==="sound"){try{const AudioContext=window.AudioContext||window.webkitAudioContext;if(AudioContext){const ctx=new AudioContext();[0,.22,.44].forEach((delay,index)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type="square";osc.frequency.value=index===2?880:660;gain.gain.setValueAtTime(.0001,ctx.currentTime+delay);gain.gain.exponentialRampToValueAtTime(.15,ctx.currentTime+delay+.02);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+delay+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+.2);});setTimeout(()=>ctx.close().catch(()=>{}),1200);}}catch(_){}}\nfunction gymRestRemainingMs(){return activeGymWorkout&&activeGymWorkout.session.restEndAt?Math.max(0,Number(activeGymWorkout.session.restEndAt)-Date.now()):0;}
+function updateGymRestDisplay(){const session=activeGymWorkout&&activeGymWorkout.session,box=$("gym-rest-timer");if(!box)return;if(!session||!session.restEndAt){box.hidden=true;return;}box.hidden=false;const remaining=gymRestRemainingMs(),seconds=Math.ceil(remaining/1000),minutes=Math.floor(seconds/60),remainder=seconds%60;$("gym-rest-countdown").textContent=String(minutes).padStart(2,"0")+":"+String(remainder).padStart(2,"0");const duration=Math.max(1,Number(session.restDurationSeconds)||90);$("gym-rest-progress-bar").style.width=Math.max(0,Math.min(100,remaining/(duration*1000)*100))+"%";const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===session.restExerciseId);$("gym-rest-label").textContent=(exercise?exercise.name+" · after set "+session.restSetNumber:"Rest period")+" — "+(remaining?"Take your rest.":"Rest complete — ready for your next set.");if(!remaining&&gymRestAlertedEndAt!==session.restEndAt){gymRestAlertedEndAt=session.restEndAt;gymRestAlert();notice("Rest complete — ready for your next set.");}}
 function renderGymWorkout(){
  const workout=activeGymWorkout;
  if(!workout){$("gym-workout-active").hidden=true;return;}
@@ -45,7 +45,7 @@ function renderGymWorkout(){
  const completed=allSets.filter(set=>set.status==="completed").length;
  $("gym-workout-progress").textContent=completed+" of "+allSets.length+" sets completed · Changes save automatically on each field edit.";
  $("gym-workout-finish").disabled=!allSets.length||completed!==allSets.length;
- updateGymRestDisplay();\n $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
+ const alertMode=$("gym-rest-alert-mode");if(alertMode)alertMode.value=localStorage.getItem("gym-comeback-rest-alert")||"both";\n updateGymRestDisplay();\n $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
   const sets=exercise.sets.map(set=>{
    const locked=set.status==="locked",done=set.status==="completed";
    const repField=exercise.recordingMode==="reps"||exercise.recordingMode==="timed-reps"
@@ -446,7 +446,7 @@ async function inspectMigration(){
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
 $("gym-workout-start").addEventListener("click",startGymWorkout);
-$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
+$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);\n$("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
 $("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
 $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
