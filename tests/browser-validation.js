@@ -340,11 +340,12 @@ function server() {
       const exerciseId = document.querySelector('[data-gym-field="restSeconds"]').dataset.exerciseId;
       return (await ProjectComebackDB.get("exerciseRecords", exerciseId)).restSeconds === 120;
     });
+    const secondSetRow = firstExercise.locator(".gym-set-row").nth(1);
+    await secondSetRow.locator('[data-gym-action="start"]').click();
     await secondSetRow.locator('[data-gym-action="complete"]').click();
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
     const timerLabel = await app.locator("#gym-rest-label").textContent();
     if (!timerLabel.includes("after set 2")) throw new Error("Rest timer did not identify the completed set: " + timerLabel);
-    const secondSetRow = firstExercise.locator(".gym-set-row").nth(1);
     await secondSetRow.locator('[data-gym-action="undo"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
     const undoRestState = await app.evaluate(async date => {
@@ -356,8 +357,7 @@ function server() {
     if (undoRestState.restEndAt !== undefined || undoRestState.secondSetStatus !== "in-progress") {
       throw new Error("Undoing a completed set did not clear its rest state: " + JSON.stringify(undoRestState));
     }
-    await app.locator('[data-gym-action="start"]').first().click();
-    await app.locator('[data-gym-action="complete"]').first().click();
+    await secondSetRow.locator('[data-gym-action="complete"]').click();
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
     await app.locator('[data-gym-action="rest-cancel"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
