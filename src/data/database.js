@@ -672,10 +672,12 @@
     });
 
     const db = await open();
+    let tx = null;
+    let done = null;
     try {
       const names = [...new Set([...entries.map(item => item.storeName), "metadata"])];
-      const tx = db.transaction(names, "readwrite");
-      const done = transactionDone(tx);
+      tx = db.transaction(names, "readwrite");
+      done = transactionDone(tx);
       const metaStore = tx.objectStore("metadata");
       const marker = await requestResult(metaStore.get(markerId));
       if (marker && marker.value && marker.value.status === "complete") {
@@ -719,6 +721,12 @@
       await done;
       return { status: "complete", writtenCount: entries.length, counts };
     } catch (error) {
+      if (tx) {
+        try { tx.abort(); } catch (ignored) {}
+      }
+      if (done) {
+        try { await done; } catch (ignored) {}
+      }
       throw error;
     } finally {
       db.close();
