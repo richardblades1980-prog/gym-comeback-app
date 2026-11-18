@@ -236,14 +236,35 @@ function server() {
     }
     console.log("PASS five-day Gym programme loads in the app and is available in the offline shell cache");
 
-    console.log("[browser] Start, enter and resume a real Gym workout");
+    console.log("[browser] Gym programme plan controls, sequential day lock and manual beta override");
     await app.locator('[data-view="gym"]').click();
+    const planControls = await app.evaluate(() => ({
+      weeks: [...document.querySelector("#gym-programme-weeks").options].map(option => option.value),
+      weekOptions: [...document.querySelector("#gym-workout-week").options].map(option => option.value),
+      daysPerWeek: document.querySelector("#gym-days-per-week").value,
+      startDisabled: document.querySelector("#gym-workout-start").disabled
+    }));
+    if (planControls.weeks.join(",") !== "4,8,12" || planControls.weekOptions.join(",") !== "1,2,3,4" ||
+        planControls.daysPerWeek !== "2" || !planControls.startDisabled === false) {
+      throw new Error("Gym progression controls do not match the legacy plan defaults: " + JSON.stringify(planControls));
+    }
+    await app.locator("#gym-workout-day").selectOption("2");
+    await app.waitForFunction(() => document.querySelector("#gym-workout-start").disabled);
+    await app.locator("#gym-progression-override").click();
+    await app.waitForFunction(() => !document.querySelector("#gym-workout-start").disabled);
+    await app.locator("#gym-progression-override").click();
+    await app.waitForFunction(() => document.querySelector("#gym-workout-start").disabled);
     await app.locator("#gym-workout-day").selectOption("1");
     await app.locator("#gym-workout-date").fill(testDates.today);
+    console.log("PASS default 4-week/2-day plan, Day 2 locked until Day 1 completion, manual unlock and relock");
+
+    console.log("[browser] Start, enter and resume a real Gym workout");
     await app.locator("#gym-workout-start").click();
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const workoutGraph = await app.evaluate(() => ({
       title: document.querySelector("#gym-workout-title").textContent,
+      week: document.querySelector("#gym-workout-week").value,
+      storedWeek: ProjectComebackDB.get("sessions", document.querySelector("#gym-workout-title").dataset.sessionId),
       exercises: document.querySelectorAll("#gym-workout-exercises .gym-exercise-card").length,
       sets: document.querySelectorAll("#gym-workout-exercises .gym-set-row").length,
       firstName: document.querySelector("#gym-workout-exercises .gym-exercise-card h3").textContent
