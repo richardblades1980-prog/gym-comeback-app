@@ -337,11 +337,18 @@
     const now = new Date();
     const started = Date.parse(workout.session.startedAt || "");
     const durationMinutes = Number.isFinite(started) ? Math.max(0, Math.round((now.getTime() - started) / 60000)) : 0;
-    clearRest(workout.session);
-    workout.session.status = "completed";
-    workout.session.completedAt = now.toISOString();
-    workout.session.durationMinutes = durationMinutes;
-    await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session });
+    const completedSession = Object.assign({}, workout.session);
+    clearRest(completedSession);
+    completedSession.status = "completed";
+    completedSession.completedAt = now.toISOString();
+    completedSession.durationMinutes = durationMinutes;
+    // Persist the completed state before mutating the in-memory workout. A failed
+    // write must leave the session in progress so the user can retry safely.
+    await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: completedSession });
+    Object.keys(workout.session).forEach(key => {
+      if (!Object.prototype.hasOwnProperty.call(completedSession, key)) delete workout.session[key];
+    });
+    Object.assign(workout.session, completedSession);
     return workout.session;
   }
 
