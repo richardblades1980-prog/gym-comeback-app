@@ -10,7 +10,7 @@ const workers = [
   { path: "../v21.2/sw.js", scope: "https://gym.example/v21.2/" }
 ];
 
-async function runFetchWithCacheFailure(worker, failure) {
+async function runFetchWithCacheFailure(worker, failure, mode) {
   const listeners = {};
   const cacheCalls = [];
   const caches = {
@@ -42,7 +42,7 @@ async function runFetchWithCacheFailure(worker, failure) {
     : "https://gym.example/v21.2/assets/runtime.js";
   let responsePromise;
   listeners.fetch({
-    request: { method: "GET", mode: "cors", url: requestUrl },
+    request: { method: "GET", mode, url: requestUrl },
     respondWith: promise => { responsePromise = promise; }
   });
   const response = await responsePromise;
