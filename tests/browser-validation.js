@@ -435,6 +435,7 @@ function server() {
       return session ? { id: session.id, status: session.status, completedAt: session.completedAt, updatedAt: session.updatedAt } : null;
     }, { day, date });
 
+    await startCelebrationWorkout(1, testDates.celebrationDay1);
     const firstCelebrationFixture = await seedCompletedWorkoutForCelebration(1, testDates.celebrationDay1);
     await app.evaluate(() => {
       const original = window.ProjectComebackDB;
