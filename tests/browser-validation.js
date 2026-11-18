@@ -138,6 +138,12 @@ function server() {
         JSON.stringify({ "Goblet squat::1": "complete", "Goblet squat::2": "complete" }));
     });
     await app.goto(base + "/v21.2/");
+    const testDates = await app.evaluate(() => {
+      const iso = date => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return { today: iso(new Date()), future: iso(tomorrow) };
+    });
     if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
       throw new Error("Initial navigation state is not exposed accessibly.");
     }
@@ -222,7 +228,7 @@ function server() {
     console.log("[browser] Start, enter and resume a real Gym workout");
     await app.locator('[data-view="gym"]').click();
     await app.locator("#gym-workout-day").selectOption("1");
-    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.locator("#gym-workout-date").fill(testDates.today);
     await app.locator("#gym-workout-start").click();
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const workoutGraph = await app.evaluate(() => ({
@@ -245,7 +251,7 @@ function server() {
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="gym"]').click();
     await app.locator("#gym-workout-day").selectOption("1");
-    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.locator("#gym-workout-date").fill(testDates.today);
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const firstExercise = app.locator("#gym-workout-exercises .gym-exercise-card").first();
     await firstExercise.locator('[data-gym-action="timer-start"]').first().click();
@@ -261,7 +267,7 @@ function server() {
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="gym"]').click();
     await app.locator("#gym-workout-day").selectOption("1");
-    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.locator("#gym-workout-date").fill(testDates.today);
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const recovered = await app.evaluate(() => ({
       startedAt: Number(document.querySelector("[data-stopwatch-display]").dataset.stopwatchStartedAt),
@@ -299,7 +305,7 @@ function server() {
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     await app.locator('[data-view="gym"]').click();
     await app.locator("#gym-workout-day").selectOption("1");
-    await app.locator("#gym-workout-date").fill("2026-11-18");
+    await app.locator("#gym-workout-date").fill(testDates.today);
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     const resumedWorkout = await app.evaluate(() => ({
       weight: document.querySelector('[data-gym-field="weight"]').value,
@@ -316,13 +322,13 @@ function server() {
     }
     console.log("[browser] Smart rest timer recovery and controls");
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
-    const initialEnd = await app.evaluate(async () => (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"])).find(item => item.status === "in-progress")?.restEndAt);
+    const initialEnd = await app.evaluate(async date => (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress")?.restEndAt, testDates.today);
     await app.locator('[data-gym-action="rest-add"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden === false);
-    const extendedEnd = await app.evaluate(async () => {
-      const session = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"]);
+    const extendedEnd = await app.evaluate(async date => {
+      const session = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]);
       return session.find(item => item.status === "in-progress")?.restEndAt;
-    });
+    }, testDates.today);
     if (!Number.isFinite(extendedEnd) || extendedEnd < initialEnd + 15000) throw new Error("Rest timer end timestamp was not extended and persisted after +15: "+JSON.stringify({initialEnd,extendedEnd}));
     await app.locator('[data-gym-action="rest-skip"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
@@ -339,9 +345,23 @@ function server() {
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
     const timerLabel = await app.locator("#gym-rest-label").textContent();
     if (!timerLabel.includes("after set 2")) throw new Error("Rest timer did not identify the completed set: " + timerLabel);
+    await app.locator('[data-gym-action="undo"]').first().click();
+    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    const undoRestState = await app.evaluate(async date => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress");
+      const exercise = (await ProjectComebackDB.getAllByIndex("exerciseRecords", "by_session", session.id))[0];
+      const sets = await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id);
+      return { restEndAt: session.restEndAt, secondSetStatus: sets.find(set => set.exerciseRecordId === exercise.id && set.setNumber === 2)?.status };
+    }, testDates.today);
+    if (undoRestState.restEndAt !== undefined || undoRestState.secondSetStatus !== "in-progress") {
+      throw new Error("Undoing a completed set did not clear its rest state: " + JSON.stringify(undoRestState));
+    }
+    await app.locator('[data-gym-action="start"]').first().click();
+    await app.locator('[data-gym-action="complete"]').first().click();
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
     await app.locator('[data-gym-action="rest-cancel"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
-    console.log("PASS persisted rest countdown, +15, skip/cancel, and per-exercise rest override");
+    console.log("PASS persisted rest countdown, +15, skip/cancel, undo cleanup, and per-exercise rest override");
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
 
     console.log("[browser] Failed guide-cache update preserves the active offline version");
@@ -684,7 +704,7 @@ function server() {
     }
     await app.locator('[data-view="schedule"]').click();
     await app.locator('#schedule-form [name="title"]').fill("Browser test gym session");
-    await app.locator('#schedule-form [name="date"]').fill("2026-11-17");
+    await app.locator('#schedule-form [name="date"]').fill(testDates.future);
     await app.locator('#schedule-form button[type="submit"]').click();
     try {
       await app.waitForFunction(() => document.querySelector("#schedule-count").textContent === "1", null, { timeout: 8000 });
