@@ -42,6 +42,10 @@ async function refreshGymProgressionControls(){
  }
  button.textContent=manual?"Relock selected workout":unlocked?"Unlocked by sequence":"Manually unlock selected workout";
  button.disabled=unlocked&&!manual;
+ const startButton=$("gym-workout-start"),selectedDate=$("gym-workout-date").value||today;
+ const resumable=await ProjectComebackGymWorkout.findInProgress(day,selectedDate,week);
+ startButton.disabled=!unlocked&&!resumable;
+ startButton.textContent=resumable?"Resume workout":"Start / resume workout";
  button.onclick=async()=>{
   try{await progression.setManualUnlock(week,day,!manual);await refreshGymProgressionControls();notice(manual?"Manual unlock removed.":"Selected workout manually unlocked for testing.");}
   catch(error){notice(error.message,true);}
@@ -571,7 +575,7 @@ $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(err
 $("gym-workout-date").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
 $("gym-programme-weeks").addEventListener("change",async event=>{try{await ProjectComebackGymProgression.savePlan({weeks:Number(event.target.value),daysPerWeek:Number($("gym-days-per-week").value)});await refreshGymProgressionControls();await refreshGymWorkout();notice("Programme length saved. Existing workout history remains unchanged.");}catch(error){notice(error.message,true);}});
 $("gym-days-per-week").addEventListener("change",async event=>{try{await ProjectComebackGymProgression.savePlan({weeks:Number($("gym-programme-weeks").value),daysPerWeek:Number(event.target.value)});await refreshGymProgressionControls();await refreshGymWorkout();notice("Planned training frequency saved. Days beyond this frequency are unavailable.");}catch(error){notice(error.message,true);}});
-$("gym-records").addEventListener("click",event=>{const button=event.target.closest("[data-history-resume]");if(!button)return;$("gym-workout-week").value=button.dataset.week;$("gym-workout-day").value=button.dataset.day;$("gym-workout-date").value=button.dataset.date;showView("gym");refreshGymWorkout().then(startGymWorkout).catch(error=>notice(error.message,true));});
+$("gym-records").addEventListener("click",event=>{const button=event.target.closest("[data-history-resume]");if(!button)return;$("gym-workout-week").value=button.dataset.week;$("gym-workout-day").value=button.dataset.day;$("gym-workout-date").value=button.dataset.date;showView("gym");startGymWorkout().catch(error=>notice(error.message,true));});
  $("module-cards").addEventListener("click",async event=>{const button=event.target.closest("[data-module-id]");if(!button)return;const id=button.dataset.moduleId;try{button.disabled=true;const current=await ProjectComebackModules.get(id);await ProjectComebackModules.setEnabled(id,!current.enabled);await refresh();notice(current.enabled?"Module paused. Existing records have been kept.":"Module enabled. You can add and schedule activities again.");}catch(error){notice(error.message,true);}finally{button.disabled=false;}});
 $("today-date").textContent=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
 $("hiking-form").elements.date.value=today;$("schedule-form").elements.date.value=today;$("gym-workout-date").value=today;
