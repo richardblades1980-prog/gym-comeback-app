@@ -1192,3 +1192,9 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Validation exposed a synchronous IndexedDB write failure path that was not explicitly aborting the restore transaction. The implementation now aborts on any transaction-body exception and confirms original data and snapshot state remain unchanged.
 - A further retention edge case was corrected: restore-snapshot records supplied by an incoming backup are skipped during the metadata replace loop, then the union of existing/incoming/new safety history is capped at three. The current pre-identity-upgrade snapshot takes precedence and is preserved.
 - Documentation checkpoint validation on the exact final SHA is pending; do not touch main or deploy.
+
+
+### G3.6b browser assertion copy correction
+
+- Corrected the browser assertion from “performed label” to the actual approved interface wording “performed exercise”. The prior run again stopped at this assertion before the remaining Gym-history checks. The backup validation passed on the preceding SHA.
+- Validation is pending on the corrected commit. Continue until both workflows pass on the exact final SHA; do not touch main or deploy.

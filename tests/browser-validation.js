@@ -1105,7 +1105,7 @@ function server() {
     const gymJourneyCheck = await app.locator("#gym-journey").textContent();
     if (!gymJourneyCheck.includes("Completed sessions9") || !gymJourneyCheck.includes("24") ||
         !gymJourneyCheck.includes("3 of 14 sets include a numeric repetition count") ||
-        !gymJourneyCheck.includes("Manual substitutions are displayed with the performed label and recorded values") || !gymJourneyCheck.includes("excluded from the original programme exercise progression trend")) {
+        !gymJourneyCheck.includes("Manual substitutions are displayed with the performed exercise and recorded values") || !gymJourneyCheck.includes("excluded from the original programme exercise progression trend")) {
       throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
     }
     const gymHistoryCheck = await app.locator("#gym-journey").textContent();
