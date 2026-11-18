@@ -1346,3 +1346,46 @@ Checkpoint based on the verified G3.7.2f SHA `8da7c28be06db8b319e3f83499d878a3d8
 **Next boundary:** actual guide content review and any later publication require verified qualified human reviewers, exact-digest approvals and explicit per-slot assignments. Passing code tests does not satisfy that human approval gate. Do not populate the registry or publish drafts without that separate authorization.
 
 Protected main remains 0d0527a6463c3cfd0fbb54d69123316c9a384b42.
+
+
+---
+
+# Gym Comeback V21.2 — G3.7.3a continuation checkpoint (2026-11-19)
+
+**Current development branch:** `V21.2-development`  
+**Implementation commit:** `8097a505cb8d5637ccbf26fb2226c99cb435fed8` — [Isolate V21.1 and V21.2 service-worker scopes](https://github.com/richardblades1980-prog/gym-comeback-app/commit/8097a505cb8d5637ccbf26fb2226c99cb435fed8)  
+**Protected main:** `0d0527a6463c3cfd0fbb54d69123316c9a384b42` — unchanged.
+
+## Hosting/origin decision
+
+The user supplied the existing V21.1 address:
+`https://richardblades1980-prog.github.io/gym-comeback-app/index.html`
+
+The selected target for V21.2 is the same GitHub Pages project site at:
+`https://richardblades1980-prog.github.io/gym-comeback-app/v21.2/`
+
+Both paths share browser origin `https://richardblades1980-prog.github.io`. This is a design decision only. No Pages settings have changed; V21.2 is not published to that address. The raw.githack preview remains a different origin and test-data-only. Do not attempt real V21.1 migration on that preview.
+
+## G3.7.3a implementation
+
+- V21.1 root `sw.js` derives the V21.2 path from its own script URL and leaves all requests under that directory to the network / narrower V21.2 service worker.
+- Root activation cache cleanup now deletes only obsolete keys beginning `gym-comeback-v21-1b-`; V21.2 shell/guide caches and unrelated namespaces are preserved.
+- Root `index.html` is now part of the V21.1 install precache. This prevents an update from deleting the old root cache's only homepage before the new cache has an offline entry page.
+- Added `tests/shared-origin-service-worker.test.js` (five focused tests), and added it to both browser and backup workflows.
+- Extended `tests/browser-validation.js` with a same-origin dual-app scenario at the GitHub Pages-style `/gym-comeback-app/` path: install V21.1 root worker, open V21.2 at `/v21.2/`, verify separate controllers and caches/root homepage, simulate V21.1 worker replacement, confirm V21.2 cache/controller and same-origin sentinel survive, and cold-start both apps offline.
+
+## Exact-SHA validation
+
+- Browser validation [#44394324284 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44394324284) — all job steps completed successfully, including the new same-origin service-worker isolation test and the full Chromium suite.
+- Backup validation [#44394324662 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44394324662).
+- Both workflow `head_sha` values exactly equal implementation commit `8097a505cb8d5637ccbf26fb2226c99cb435fed8`.
+
+## Remaining gates / safety boundary
+
+- Same-origin migration rehearsal remains open. Use a controlled real-shape V21.1 dataset, downloadable safety backup, explicit user confirmation, source-key preservation checks and post-migration verification. Do not experiment destructively on the live dataset.
+- Verify HTTPS, manifest/icon delivery, install prompt and shortcut behaviour on the actual GitHub Pages target after a separately approved publication.
+- Complete rollback/recovery runbook and preserve the V21.1 backup.
+- Exercise-guide human review/qualification, exact digest approvals and all 32 explicit programme-slot assignments remain outstanding; the production guide registry is still empty.
+- No merge, deployment, live hosting change, actual data migration or production approval occurred. Main remains unchanged.
+
+**Next suggested work:** after this validated checkpoint, finish the independent release-readiness documentation sweep (included in this checkpoint), then design the controlled same-origin migration rehearsal without running it against live data.
