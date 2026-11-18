@@ -27,7 +27,7 @@ async function setup() {
   const db = window.ProjectComebackDB;
   await db.open().then(connection => connection.close());
   await db.put("modules", { id: "gym", enabled: true, name: "Gym Comeback" });
-  return { db, workout: window.ProjectComebackGymWorkout };
+  return { db, workout: window.ProjectComebackGymWorkout, window };
 }
 
 test("starting each source programme day creates the exact 7/7/6/6/6 exercise graph and three sets per slot", async () => {
@@ -208,6 +208,60 @@ test("smart rest starts on set completion, persists absolute end time, supports 
   assert.equal(loaded.session.restEndAt, undefined);
   await assert.rejects(() => workout.setExerciseRest(loaded, exercise.id, 80), /supported rest duration/);
   const persisted = await db.get("sessions", loaded.session.id);
+  assert.equal(persisted.restEndAt, undefined);
+});
+
+
+test("finishing a workout commits first and leaves the live session retryable after a failed write", async () => {
+  const { db, workout, window } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  await assert.rejects(
+    () => workout.finishSession(created.workout),
+    /Complete every set before finishing/
+  );
+
+  for (const exercise of created.workout.exerciseRecords) {
+    for (const set of exercise.sets) {
+      await workout.startSet(created.workout, exercise.id, set.setNumber);
+      await workout.completeSet(created.workout, exercise.id, set.setNumber);
+    }
+  }
+
+  const sessionId = created.workout.session.id;
+  Object.assign(created.workout.session, {
+    restEndAt: Date.now() + 5000,
+    restDurationSeconds: 90,
+    restExerciseId: created.workout.exerciseRecords[0].id,
+    restSetNumber: 3
+  });
+  await db.updateGymWorkoutBundle({ sessionId, session: created.workout.session });
+
+  const originalDb = window.ProjectComebackDB;
+  window.ProjectComebackDB = Object.assign({}, originalDb, {
+    updateGymWorkoutBundle: async bundle => {
+      if (bundle.session && bundle.session.status === "completed") {
+        throw new Error("Injected completion write failure");
+      }
+      return originalDb.updateGymWorkoutBundle(bundle);
+    }
+  });
+  await assert.rejects(
+    () => workout.finishSession(created.workout),
+    /Injected completion write failure/
+  );
+  assert.equal(created.workout.session.status, "in-progress");
+  assert.equal(created.workout.session.completedAt, undefined);
+  assert.ok(created.workout.session.restEndAt, "the in-memory rest state is unchanged when the completion write fails");
+  assert.equal((await db.get("sessions", sessionId)).status, "in-progress");
+
+  window.ProjectComebackDB = originalDb;
+  const completed = await workout.finishSession(created.workout);
+  assert.equal(completed.status, "completed");
+  assert.ok(completed.completedAt);
+  assert.equal(completed.restEndAt, undefined);
+  const persisted = await db.get("sessions", sessionId);
+  assert.equal(persisted.status, "completed");
+  assert.equal(persisted.completedAt, completed.completedAt);
   assert.equal(persisted.restEndAt, undefined);
 });
 
