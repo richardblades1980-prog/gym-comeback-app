@@ -293,3 +293,69 @@ test("completing a timed set stops its running stopwatch and saves the elapsed d
   assert.ok(result.set.stopwatchElapsedMs >= 3000);
   assert.equal(result.set.duration, String(Math.round(result.set.stopwatchElapsedMs / 1000)));
 });
+
+test("manual exercise substitution preserves programme identity, sets, persists, and permits a repeated swap before work begins", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const exercise = created.workout.exerciseRecords[0];
+  const original = {
+    name: exercise.name,
+    sourceExerciseLabel: exercise.sourceExerciseLabel,
+    programmeSlotId: exercise.programmeSlotId,
+    sourceDescription: exercise.sourceDescription,
+    setIds: exercise.sets.map(set => set.id),
+    setValues: exercise.sets.map(set => [set.weight, set.reps, set.duration, set.targetDuration, set.status])
+  };
+  await workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Floor Press", "available");
+  assert.equal(exercise.name, "Dumbbell Floor Press");
+  assert.equal(exercise.performedExerciseName, "Dumbbell Floor Press");
+  assert.deepEqual(exercise.substitution, {
+    sourceExerciseLabel: original.sourceExerciseLabel,
+    performedExerciseName: "Dumbbell Floor Press",
+    equipmentStatus: "available",
+    selectedAt: exercise.substitution.selectedAt,
+    selectionMode: "manual"
+  });
+  assert.equal(exercise.sourceExerciseLabel, original.sourceExerciseLabel);
+  assert.equal(exercise.programmeSlotId, original.programmeSlotId);
+  assert.equal(exercise.sourceDescription, original.sourceDescription);
+  assert.deepEqual(exercise.sets.map(set => set.id), original.setIds);
+  assert.deepEqual(exercise.sets.map(set => [set.weight, set.reps, set.duration, set.targetDuration, set.status]), original.setValues);
+
+  await workout.setExerciseSubstitution(created.workout, exercise.id, "Resistance Band Chest Press", "unknown");
+  assert.equal(exercise.name, "Resistance Band Chest Press");
+  assert.equal(exercise.substitution.sourceExerciseLabel, original.sourceExerciseLabel);
+  assert.equal(exercise.substitution.equipmentStatus, "unknown");
+
+  let loaded = await workout.loadSession(created.workout.session.id);
+  let saved = loaded.exerciseRecords[0];
+  assert.equal(saved.name, "Resistance Band Chest Press");
+  assert.equal(saved.performedExerciseName, "Resistance Band Chest Press");
+  assert.equal(saved.sourceExerciseLabel, original.sourceExerciseLabel);
+  assert.equal(saved.programmeSlotId, original.programmeSlotId);
+  assert.deepEqual(saved.sets.map(set => set.id), original.setIds);
+  assert.deepEqual(saved.sets.map(set => [set.weight, set.reps, set.duration, set.targetDuration, set.status]), original.setValues);
+
+  await workout.setExerciseSubstitution(loaded, saved.id, original.sourceExerciseLabel, "unknown");
+  assert.equal(saved.name, original.sourceExerciseLabel);
+  assert.equal(saved.performedExerciseName, undefined);
+  assert.equal(saved.substitution, undefined);
+  const restored = await workout.loadSession(created.workout.session.id);
+  assert.equal(restored.exerciseRecords[0].name, original.sourceExerciseLabel);
+  assert.equal(restored.exerciseRecords[0].substitution, undefined);
+  assert.equal(await db.count("exerciseRecords"), 7);
+});
+
+test("manual exercise substitution rejects invalid input, unsupported equipment status, and any started or recorded set", async () => {
+  const { workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const exercise = created.workout.exerciseRecords[0];
+  await assert.rejects(() => workout.setExerciseSubstitution(created.workout, exercise.id, "  ", "unknown"), /Replacement exercise name is required/);
+  await assert.rejects(() => workout.setExerciseSubstitution(created.workout, exercise.id, "x".repeat(121), "unknown"), /120 characters/);
+  await assert.rejects(() => workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Press", "maybe"), /Equipment status/);
+  await workout.updateSetValues(created.workout, exercise.id, 1, { reps: "8" });
+  await assert.rejects(() => workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Press", "available"), /after any set has started or recorded/);
+  await workout.updateSetValues(created.workout, exercise.id, 1, { reps: "" });
+  await workout.startSet(created.workout, exercise.id, 1);
+  await assert.rejects(() => workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Press", "available"), /after any set has started or recorded/);
+});
