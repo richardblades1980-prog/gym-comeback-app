@@ -314,6 +314,33 @@ function server() {
         !resumedWorkout.nextSetEnabled || !resumedWorkout.thirdSetLocked) {
       throw new Error("Workout values or set state did not survive reload/resume: " + JSON.stringify(resumedWorkout));
     }
+    console.log("[browser] Smart rest timer recovery and controls");
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
+    const restBefore = await app.evaluate(() => ProjectComebackDB.get("sessions", document.querySelector("#gym-workout-title").dataset.sessionId));
+    const endBefore = await app.evaluate(() => ProjectComebackGymWorkout && document.querySelector("#gym-rest-countdown").textContent);
+    await app.locator('[data-gym-action="rest-add"]').click();
+    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden === false);
+    const extendedEnd = await app.evaluate(async () => {
+      const session = await ProjectComebackDB.getAll("sessions");
+      return session.find(item => item.moduleId === "gym" && item.date === "2026-11-18" && item.status === "in-progress")?.restEndAt;
+    });
+    if (!Number.isFinite(extendedEnd)) throw new Error("Rest timer end timestamp was not persisted after +15.");
+    await app.locator('[data-gym-action="rest-skip"]').click();
+    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    const restPreset = app.locator('[data-gym-field="restSeconds"]').first();
+    await restPreset.selectOption("120");
+    await app.waitForFunction(async () => {
+      const exerciseId = document.querySelector('[data-gym-field="restSeconds"]').dataset.exerciseId;
+      return (await ProjectComebackDB.get("exerciseRecords", exerciseId)).restSeconds === 120;
+    });
+    await app.locator('[data-gym-action="start"]').first().click();
+    await app.locator('[data-gym-action="complete"]').first().click();
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
+    const timerLabel = await app.locator("#gym-rest-label").textContent();
+    if (!timerLabel.includes("after set 2")) throw new Error("Rest timer did not identify the completed set: " + timerLabel);
+    await app.locator('[data-gym-action="rest-cancel"]').click();
+    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    console.log("PASS persisted rest countdown, +15, skip/cancel, and per-exercise rest override");
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
 
     console.log("[browser] Failed guide-cache update preserves the active offline version");
