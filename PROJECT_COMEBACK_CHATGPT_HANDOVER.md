@@ -1297,3 +1297,15 @@ G3.7.2f hardening: asset-set human reviews bind `manifestId@release` and schema 
 
 
 G3.7.2f integrity amendment: guide content digest now also binds the exact unique ordered `assetIds` references. Validator requires each selected ID to exist in the guide's exact bound asset-set release and be locally verified. This closes the gap where the asset-set digest was valid but a guide's selected-artwork list could be altered independently.
+
+
+## Gym Comeback V21.2 — G3.7.2g runtime integration checkpoint
+
+Checkpoint based on the verified G3.7.2f SHA `8da7c28be06db8b319e3f83499d878a3d8e83529`. G3.7.2g implementation is underway on `V21.2-development` and is not yet PASS pending exact-final-SHA browser and backup workflows.
+
+- Empty schema-v2 registry file added: `v21.2/assets/guides/registry.v2.json`; guides, assetSets, reviews and assignments remain empty.
+- Added canonical source-snapshot payload + SHA-256 runtime validation using existing async crypto, digest and registry modules. It binds source provenance and ordered source programme slots; no guessed exercise matches.
+- Async guide UI shows loading, awaits registry/manifest/validation, fails closed, and drops stale results through a request-generation gate. Closing the dialog invalidates pending requests. Registry fetch retries after failure and is available through offline shell cache.
+- Browser scripts now load crypto/digest/registry/runtime modules. Service-worker shell cache version bumped v26→v27 and includes runtime assets and registry. Bundle parity and runtime tests added; browser test now waits for the resolved unavailable state.
+- No guide content or approvals; no canonical identity decisions; no merge/deployment.
+- Validation status to be recorded after workflows complete on exact final SHA.
