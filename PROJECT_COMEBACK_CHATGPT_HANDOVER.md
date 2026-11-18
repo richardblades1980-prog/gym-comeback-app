@@ -1475,3 +1475,36 @@ The earlier missing preflight input is now answered: the current source is `main
 For rollback, restore the Pages source selection to `main / (root)`. Before any approved switch, re-check and record the exact current `main` SHA and verify the actual Pages deployment/build identity; the screenshot only establishes the selected source, not the precise last-published commit.
 
 This update is documentation-only. It does not change the Pages setting, deploy, merge, alter live V21.1 records or access browser data.
+
+---
+
+# Gym Comeback V21.2 — GitHub Pages candidate publication completed (2026-11-19)
+
+## Source switch and deployment
+
+The user confirmed that Settings → Pages now selects **Deploy from a branch → `V21.2-pages-release-candidate / (root)`** (previously `main / (root)`).
+
+- Candidate SHA deployed: `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`.
+- GitHub Pages build/deploy [#44418334493 — SUCCESS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44418334493). Build, report status and deploy jobs all completed successfully.
+- Candidate browser validation [#44413382202 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44413382202), exact same SHA.
+- Artifact ID `14480412194`, `github-pages`, SHA-256 `3799bf16b6bb8c3c0654ed5c2c7f878a94e198a91f018aa1bbb767a20859262b`.
+
+## Deployed artifact inspection
+
+The downloaded artifact was inspected:
+- 212 files total, including all 77 V21.2 app files; hidden validation files were excluded from the public Pages artifact.
+- Root V21.1 `index.html` and manifest retain their exact protected-main Git blob SHAs (`e3eb0093648cc6c5d706bb5b1008b58ec01a5576` and `85944d49035521961509c6dce6ead097f5294535`).
+- Root `sw.js` is the reviewed coexistence worker blob `df0181306af833d0760e9d749e06e60c5421b92f`.
+- V21.2 entry page, service worker and manifest are present. Manifest identity/start/scope are relative to `./`; icon files were verified at 192×192, 512×512, maskable 512×512 and Apple touch 180×180.
+
+## Remaining live-device checks / boundaries
+
+Public routes:
+- V21.1: `https://richardblades1980-prog.github.io/gym-comeback-app/`
+- V21.2: `https://richardblades1980-prog.github.io/gym-comeback-app/v21.2/`
+
+Assistant-runtime requests to the public host could not be completed (web fetch reported inaccessible; container DNS did not resolve the host). This does not demonstrate a Pages failure. The exact HTTP headers/MIME, rendered browser page, actual service-worker controller scope and phone installation therefore still need user-side confirmation.
+
+Next: user opens both URLs and confirms V21.1 root and V21.2 subpath. Then test V21.2 Home Screen icon/standalone launch, disposable Gym/Hiking/Schedule data, backup download, reload and cold offline launch on the available phone. Record exact device/browser. Do not migrate or change existing V21.1 data. No production records or user data were accessed or modified.
+
+Protected `main` remains unchanged at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. The Pages source is now the candidate branch; no merge to main occurred.
