@@ -1244,3 +1244,12 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Enforces exact slot/source snapshot, guide/version, separate human guide and assignment review, digest bindings, explicit exercise/variation/equipment/context scope, required content and verified manifest assets. Conflicts, stale/unknown refs, invalid statuses, digest/scope mismatches and inheritance fail closed. Any registry error downgrades complete resolutions. Missing/withdrawn assignments are unavailable.
 - Digest verifier is injected; no cryptographic SHA-256 implementation here. Tests use deterministic placeholder digest function. Production digest integration and renderer hookup remain later gates.
 - Browser validation workflow adds registry tests and source/offline parity. No guide population/review, DB/backup/history, identity/catalogue, programme, UI, artwork/cache, protected root, merge or deployment changes. Validation pending exact final SHA.
+
+
+### G3.7.2b implementation validation closure (2026-11-18)
+
+- Final implementation SHA: `68564e39062b0ccd00310a9dcebaa3f31bdcf27b`.
+- Browser validation [#44262108917 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44262108917); registry validation tests, source/offline parity and browser/offline suite all passed.
+- Backup validation [#44262109060 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44262109060).
+- Development branch verified at the implementation SHA; protected main remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No merge or deployment.
+- Next: separate design/review for the production cryptographic digest implementation and runtime integration. Registry remains empty; no human reviews/approvals were created.
