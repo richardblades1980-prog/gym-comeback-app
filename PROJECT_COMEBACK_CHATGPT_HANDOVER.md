@@ -6,7 +6,7 @@
 - Optional references are not automatically errors; warnings and errors are distinguished. Incoming backup and live database reports are separate in restore preview.
 - Added `ProjectComebackIntegrity.diagnoseData`, `diagnoseLiveDatabase`, and `ProjectComebackBackup.validateBackupIntegrity`. Restore preview exposes `integrityDiagnostics.incoming` and `.live`.
 - Added integrity test suite, offline mirror, bundle parity, script loading, shell cache v25 and validation workflow coverage.
-- Exact-SHA browser and backup validation are pending. Do not merge to main or deploy.
+- Implementation exact SHA `36b60b491ff4ed469e5511a079e8a65120272bb5` passed browser [#44249644375](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44249644375) and backup [#44249644637](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44249644637). The documentation checkpoint is separately validated on its exact final branch head. Do not merge to main or deploy.
 
 
 # Project Comeback — G3.5 programme progression and Gym history checkpoint (2026-11-18)
