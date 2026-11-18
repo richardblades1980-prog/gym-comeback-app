@@ -1,18 +1,20 @@
-# Project Comeback — G3.4a smart rest timer implementation checkpoint (2026-11-18)
+# Project Comeback — G3.4a smart rest timer code validation checkpoint (2026-11-18)
 
-- **Active branch:** `V21.2-development`; main remains untouched.
+- **Active branch:** `V21.2-development`; `main` remains untouched.
 - **Previous validated milestone:** G3.3 timed-set stopwatch exact SHA `44de75d192ae39aa771f73f3fe1c2b923eb79dfc`; browser run #44201664330 and backup run #44201664306 both passed.
-- **Current work:** G3.4a smart rest timer, source-grounded against legacy `README-V17-SMART-REST-TIMER.txt`.
+- **Current milestone:** G3.4a smart rest timer, source-grounded against legacy `docs/archive/README-V17-SMART-REST-TIMER.txt`.
 - **Implemented:** default 90-second rest, presets 45/60/75/90/120/150/180, per-exercise rest settings, automatic rest after a completed set when another set follows, timestamp recovery after reload, +15 seconds, Skip rest and Cancel rest, progress display and contextual label.
-- **Persistence:** rest state stored on the existing session record using absolute `restEndAt` and context fields. Set completion and timer start save atomically through the existing workout transaction. No DB version/store/index or backup-format change.
-- **Follow-up correction:** browser cache assertion was updated from shell v19 to v20 to match the current service worker.
-- **Files changed so far:** `src/modules/gym-workout.js`, identical `v21.2/assets/gym-workout.js`, `v21.2/app.js`, `v21.2/index.html`, `v21.2/app.css`, `v21.2/sw.js` (shell cache v20), `tests/gym-workout.test.js`, `tests/browser-validation.js`, roadmap.
-- **Alert modes implemented:** selectable sound+vibration, sound-only, vibration-only, and visual-only. Visual notice always appears; audio and vibration are attempted with device/browser fallback. Preference is stored in localStorage on this device.
-- **Validation:** pending. Do not close G3.4a until both browser and backup workflows pass on the final documentation SHA and offline/cache regression is confirmed.
-- **Scope:** celebration/save-before-celebration remains G3.4b; no artwork refresh, schema migration, main merge, or deployment.
-- **Next:** verify current branch head, inspect exact workflow runs, resolve issues from logs, update the manual with validation links, then rerun both workflows on final handover commit.
+- **Persistence:** rest state is stored on the existing session record using absolute `restEndAt` and context fields. Set completion and timer start save atomically through the existing workout transaction. No DB version/store/index or backup-format change.
+- **Follow-up fixes:** the End alert preference selector now remains available when the timer panel is hidden; undoing the set that owns the active rest period clears the matching rest state and atomically saves the affected session/exercise/set records. Regression tests cover both behaviours.
+- **Offline delivery:** canonical `src/modules/gym-workout.js` and `v21.2/assets/gym-workout.js` are byte-identical. Service-worker shell cache is `v21` to ensure existing installations fetch the corrected offline bundle. Guide and celebration assets remain in their separate verified cache.
+- **Alert modes:** sound + vibration, sound-only, vibration-only and visual-only. Preferences are stored in localStorage. A visible notice is always provided; audio/vibration are attempted subject to browser/device support and permissions.
+- **Code validation on exact SHA `7b7f77dd19d0a8ec65a99d3bd0f283713e11090c`:**
+  - Browser/Chromium [#44224944486 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44224944486).
+  - Backup validation [#44224944615 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44224944615).
+  - Browser coverage passed rest countdown persistence/recovery, +15, skip/cancel, undo cleanup, per-exercise override, workout reload/resume, app offline cold start and verified guide/celebration cache checks. Bundle parity, syntax and workout engine tests passed.
+- **Final sign-off:** rerun both workflows on the exact final documentation commit SHA after this handover/roadmap update. G3.4a is not fully closed until both final-SHA checks pass. Do not merge to `main` or deploy.
+- **Next milestone:** G3.4b save-before-celebration; use existing verified celebration GIFs, show for six seconds with Skip/Dismiss, and ensure the saved workout remains completed regardless of dismissal. No artwork refresh is needed.
 
----
 
 # Project Comeback — G3.3 timed-set stopwatch implementation checkpoint (2026-11-18)
 
