@@ -316,13 +316,14 @@ function server() {
     }
     console.log("[browser] Smart rest timer recovery and controls");
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
+    const initialEnd = await app.evaluate(async () => (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"])).find(item => item.status === "in-progress")?.restEndAt);
     await app.locator('[data-gym-action="rest-add"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden === false);
     const extendedEnd = await app.evaluate(async () => {
       const session = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"]);
       return session.find(item => item.status === "in-progress")?.restEndAt;
     });
-    if (!Number.isFinite(extendedEnd)) throw new Error("Rest timer end timestamp was not persisted after +15.");
+    if (!Number.isFinite(extendedEnd) || extendedEnd < initialEnd + 15000) throw new Error("Rest timer end timestamp was not extended and persisted after +15: "+JSON.stringify({initialEnd,extendedEnd}));
     await app.locator('[data-gym-action="rest-skip"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
     const restPreset = app.locator('[data-gym-field="restSeconds"]').first();
