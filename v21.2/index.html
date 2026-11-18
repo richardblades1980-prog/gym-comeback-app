@@ -64,6 +64,7 @@
         <div class="section-heading"><div><p class="eyebrow">GYM COMEBACK</p><h2>Your gym training</h2><p class="muted">Start or resume a session from your five-day base programme. Your entries save as you go.</p></div></div>
         <div class="panel gym-workout-launch">
           <div class="form-grid">
+            <label>Programme week<select id="gym-workout-week"></select></label>
             <label>Programme day<select id="gym-workout-day">
               <option value="1">Day 1 — Chest, Back &amp; Quads</option>
               <option value="2">Day 2 — Shoulders, Arms &amp; Hamstrings</option>
@@ -72,8 +73,11 @@
               <option value="5">Day 5 — Lower Body &amp; Core</option>
             </select></label>
             <label>Workout date<input id="gym-workout-date" type="date" required></label>
+            <label>Programme length<select id="gym-programme-weeks"><option value="4">4 weeks</option><option value="8">8 weeks</option><option value="12">12 weeks</option></select></label>
+            <label>Planned days per week<select id="gym-days-per-week"><option value="2">2 days</option><option value="3">3 days</option><option value="4">4 days</option><option value="5">5 days</option></select></label>
           </div>
-          <div class="form-actions gym-launch-actions"><button id="gym-workout-start" class="primary" type="button">Start / resume workout</button><span id="gym-workout-status" class="subtle" role="status" aria-live="polite">Choose a day to begin.</span></div>
+          <div class="gym-progression-panel" aria-live="polite"><strong id="gym-progression-title">Workout sequence</strong><p id="gym-progression-message" class="muted">Week 1, Day 1 starts your programme.</p><button id="gym-progression-override" class="secondary" type="button">Manually unlock selected workout</button></div>
+          <div class="form-actions gym-launch-actions"><button id="gym-workout-start" class="primary" type="button">Start / resume workout</button><span id="gym-workout-status" class="subtle" role="status" aria-live="polite">Choose your week and day to begin.</span></div>
         </div>
         <div id="gym-workout-active" class="gym-workout-active" hidden>
           <div class="panel"><div class="section-heading"><div><p class="eyebrow">WORKOUT IN PROGRESS</p><h2 id="gym-workout-title">—</h2><p id="gym-workout-progress" class="muted"></p></div><button id="gym-workout-finish" class="primary" type="button" disabled>Finish workout</button></div><label class="gym-rest-alert-setting">End alert<select id="gym-rest-alert-mode"><option value="both">Sound + vibration</option><option value="sound">Sound only</option><option value="vibrate">Vibration only</option><option value="visual">Visual only</option></select></label><div id="gym-rest-timer" class="gym-rest-timer" hidden><p class="eyebrow">REST TIMER</p><strong id="gym-rest-countdown">01:30</strong><div class="gym-rest-progress"><span id="gym-rest-progress-bar"></span></div><p id="gym-rest-label" class="muted"></p><div class="gym-rest-actions"><button class="secondary" type="button" data-gym-action="rest-add">+15 seconds</button><button class="secondary" type="button" data-gym-action="rest-skip">Skip rest</button><button class="secondary" type="button" data-gym-action="rest-cancel">Cancel rest</button></div></div><div id="gym-workout-exercises" class="gym-workout-exercises"></div></div>
