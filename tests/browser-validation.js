@@ -265,11 +265,13 @@ function server() {
       title: document.querySelector("#gym-workout-title").textContent,
       week: document.querySelector("#gym-workout-week").value,
       storedWeek: (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(session => session.status === "in-progress")?.week,
+      historyText: document.querySelector("#gym-records .gym-history-entry")?.textContent || "",
+      historyResumeButtons: document.querySelectorAll("#gym-records [data-history-resume]").length,
       exercises: document.querySelectorAll("#gym-workout-exercises .gym-exercise-card").length,
       sets: document.querySelectorAll("#gym-workout-exercises .gym-set-row").length,
       firstName: document.querySelector("#gym-workout-exercises .gym-exercise-card h3").textContent
     }), testDates.today);
-    if (workoutGraph.week !== "1" || workoutGraph.storedWeek !== 1 || workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
+    if (workoutGraph.week !== "1" || workoutGraph.storedWeek !== 1 || !workoutGraph.historyText.includes("Week 1 · Day 1") || !workoutGraph.historyText.includes("In progress") || workoutGraph.historyResumeButtons !== 1 || workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
     // Exercise the timed-repetition UI against the real IndexedDB-backed workout record.
@@ -504,12 +506,13 @@ function server() {
     const firstCelebration = await app.evaluate(async date => {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 1);
       const image = document.querySelector("#gym-celebration-image");
-      return { sessionStatus: session.status, completedAt: session.completedAt, image: image.getAttribute("src"), alt: image.alt };
+      const historyEntry = [...document.querySelectorAll("#gym-records .gym-history-entry")].find(item => item.textContent.includes("Week 1 · Day 1"));
+      return { sessionStatus: session.status, completedAt: session.completedAt, image: image.getAttribute("src"), alt: image.alt, historyStatus: historyEntry?.textContent || "" };
     }, testDates.celebrationDay1);
     if (firstCelebrationFixture.exerciseCount !== 7 || firstCelebrationFixture.setCount !== 21 ||
         firstCelebration.sessionStatus !== "completed" || !firstCelebration.completedAt ||
         firstCelebration.image !== "./assets/celebrations/v1/celebration-day1.gif" ||
-        !firstCelebration.alt.includes("hero")) {
+        !firstCelebration.alt.includes("hero") || !firstCelebration.historyStatus.includes("Completed")) {
       throw new Error("Day 1 celebration opened before its session was saved or selected the wrong verified GIF: " + JSON.stringify({ firstCelebrationFixture, firstCelebration }));
     }
     const firstSavedState = await savedCelebrationState(1, testDates.celebrationDay1);
