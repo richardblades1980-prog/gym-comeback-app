@@ -427,6 +427,32 @@ function server() {
     }, { day, date });
 
     const firstCelebrationFixture = await seedCompletedWorkoutForCelebration(1, testDates.today);
+    await app.evaluate(() => {
+      const original = window.ProjectComebackDB;
+      window.__gymCelebrationOriginalDb = original;
+      window.ProjectComebackDB = Object.assign({}, original, {
+        updateGymWorkoutBundle: async bundle => {
+          if (bundle.session && bundle.session.status === "completed") {
+            throw new Error("Intentional browser finish write failure");
+          }
+          return original.updateGymWorkoutBundle(bundle);
+        }
+      });
+    });
+    await app.locator("#gym-workout-finish").click();
+    await app.waitForFunction(() => document.querySelector("#notice").textContent.includes("Intentional browser finish write failure"));
+    const failedFinishState = await app.evaluate(async date => {
+      const session = (await window.__gymCelebrationOriginalDb.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 1);
+      return { dialogOpen: document.querySelector("#gym-celebration-dialog").open,
+        workoutVisible: !document.querySelector("#gym-workout-active").hidden,
+        finishEnabled: !document.querySelector("#gym-workout-finish").disabled,
+        sessionStatus: session.status, completedAt: session.completedAt };
+    }, testDates.today);
+    if (failedFinishState.dialogOpen || !failedFinishState.workoutVisible || !failedFinishState.finishEnabled ||
+        failedFinishState.sessionStatus !== "in-progress" || failedFinishState.completedAt !== undefined) {
+      throw new Error("A failed finish write opened the celebration or stranded the live workout: " + JSON.stringify(failedFinishState));
+    }
+    await app.evaluate(() => { window.ProjectComebackDB = window.__gymCelebrationOriginalDb; delete window.__gymCelebrationOriginalDb; });
     await app.locator("#gym-workout-finish").click();
     await app.waitForFunction(() => document.querySelector("#gym-celebration-dialog").open);
     await app.waitForFunction(() => {
