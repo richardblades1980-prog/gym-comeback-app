@@ -59,14 +59,16 @@
     };
   }
 
-  async function findInProgress(day, date) {
+  async function findInProgress(day, date, week) {
     if (!Number.isInteger(day) || day < 1 || day > 5) throw new Error("Choose a programme day from 1 to 5.");
     if (!dateIsValid(date)) throw new Error("Workout date must be a valid YYYY-MM-DD date.");
+    week = week === undefined ? 1 : week;
+    if (!Number.isInteger(week) || week < 1) throw new Error("Programme week must be a positive integer.");
     const db = dbService();
     const sessions = await db.getAllByIndex("sessions", "by_module_date", ["gym", date]);
     const existing = sessions
       .filter(item => item.moduleId === "gym" && item.status === "in-progress" &&
-        item.day === day && item.programmeSourceId === PROGRAMME_ID)
+        item.day === day && Number(item.week || 1) === week && item.programmeSourceId === PROGRAMME_ID)
       .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
     return existing.length ? loadSession(existing[0].id) : null;
   }
@@ -75,8 +77,10 @@
     options = options || {};
     const programme = programmeService();
     const sourceDay = programme.getDay(day);
+    const week = options.week === undefined ? 1 : options.week;
+    if (!Number.isInteger(week) || week < 1) throw new Error("Programme week must be a positive integer.");
     if (!dateIsValid(date)) throw new Error("Workout date must be a valid YYYY-MM-DD date.");
-    const existing = await findInProgress(day, date);
+    const existing = await findInProgress(day, date, week);
     if (existing) return { created: false, resumed: true, workout: existing };
 
     const sessionId = makeId("gym-session");
@@ -90,6 +94,7 @@
       status: "in-progress",
       date,
       day,
+      week,
       title: sourceDay.title,
       programmeSourceId: PROGRAMME_ID,
       programmeSourceStatus: programme.source.status,
