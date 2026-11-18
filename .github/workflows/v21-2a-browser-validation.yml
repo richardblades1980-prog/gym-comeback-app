@@ -31,6 +31,8 @@ jobs:
         run: node --test tests/gym-base-programme.test.js
       - name: Run persisted Gym workout engine tests
         run: node --test tests/gym-workout.test.js
+      - name: Run Gym progression and history service tests
+        run: node --test tests/gym-progression.test.js
       - name: Run catalogue delivery and offline design contract
         run: node --test tests/catalogue-delivery-contract.test.js
       - name: Run guide artwork manifest integrity contract
