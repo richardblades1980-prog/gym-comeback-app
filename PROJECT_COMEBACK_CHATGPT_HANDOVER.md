@@ -1057,3 +1057,18 @@ A browser regression exposed a race when a stale asynchronous workout lookup com
 Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`:
 - Browser/Chromium [#44236590997 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236590997).
 - Backup validation [#44236591011 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236591011).
+
+
+## G3.6a handover — manual exercise substitutions (2026-11-18)
+
+**Current implementation:** G3.6a manual exercise substitution foundation is implemented on `V21.2-development`. The live development branch must be inspected before continuing; no work should be assumed beyond its actual head.
+
+- Manual free-text performed exercise label saved in `performedExerciseName`; substitution metadata stores source label, performed label, equipment status (`unknown` / `available` / `unavailable`), selection timestamp and `selectionMode: "manual"`.
+- Immutable source identity: database `name`, `sourceExerciseLabel`, `sourceDescription`, `programmeSlotId` and programme lineage remain original. Do not mutate source `name`; DB integrity validation rejected the first attempt that did.
+- Repeated swaps update the same exercise record. Restore the original by selecting its source label, which clears substitution metadata. No chained substitutions or new exercise records.
+- Changes are blocked after a set has started/completed or contains recorded values. Sets, set IDs, values, statuses, recording mode, progression focus, targets and rest are retained; nothing auto-adjusts.
+- Equipment availability is only a manual advisory, not catalogue matching or proof of exercise equivalence. UI warns that substitution details are unverified and targets remain unchanged. History shows performed label; progression history still groups on original source identity until G3.6b design.
+- No DB migration/store/index or backup schema changes. Canonical service and offline bundle must stay identical. Added unit and browser tests.
+- First validation attempt failed due to the DB source-name guard; this was corrected. Validation passed on exact code checkpoint `d125620592b49bc04d47351cd60885481c561617`: Browser [#44241216450](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241216450) and Backup [#44241216719](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241216719), both PASS. Follow-up UI clarity and handover/roadmap commits require final exact-SHA re-validation.
+
+**Next step:** inspect the live branch head, verify canonical/offline bundle parity, and check both validation workflows for the final documentation checkpoint. Only close G3.6a after both pass on the exact final SHA. Then proceed to G3.6b progression summaries, design-first. `main` and deployment remain untouched.
