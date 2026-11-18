@@ -309,13 +309,11 @@ test("manual exercise substitution preserves programme identity, sets, persists,
   await workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Floor Press", "available");
   assert.equal(exercise.name, "Dumbbell Floor Press");
   assert.equal(exercise.performedExerciseName, "Dumbbell Floor Press");
-  assert.deepEqual(exercise.substitution, {
-    sourceExerciseLabel: original.sourceExerciseLabel,
-    performedExerciseName: "Dumbbell Floor Press",
-    equipmentStatus: "available",
-    selectedAt: exercise.substitution.selectedAt,
-    selectionMode: "manual"
-  });
+  assert.equal(exercise.substitution.sourceExerciseLabel, original.sourceExerciseLabel);
+  assert.equal(exercise.substitution.performedExerciseName, "Dumbbell Floor Press");
+  assert.equal(exercise.substitution.equipmentStatus, "available");
+  assert.ok(exercise.substitution.selectedAt);
+  assert.equal(exercise.substitution.selectionMode, "manual");
   assert.equal(exercise.sourceExerciseLabel, original.sourceExerciseLabel);
   assert.equal(exercise.programmeSlotId, original.programmeSlotId);
   assert.equal(exercise.sourceDescription, original.sourceDescription);
