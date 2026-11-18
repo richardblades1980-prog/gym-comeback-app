@@ -552,7 +552,7 @@ function server() {
         JSON.stringify({ autoCloseElapsed, thirdSavedState, afterAutoClose }));
     }
 
-    await app.evaluate(async sessionSpecs => {
+    await app.evaluate(async ({ sessionSpecs, originalProfile }) => {
       for (const spec of sessionSpecs) {
         const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", spec.date]);
         const session = sessions.find(item => item.day === spec.day);
@@ -563,13 +563,16 @@ function server() {
         for (const record of exercises) await ProjectComebackDB.remove("exerciseRecords", record.id);
         await ProjectComebackDB.remove("sessions", session.id);
       }
-      if (originalCelebrationProfile) await ProjectComebackDB.put("profile", originalCelebrationProfile);
+      if (originalProfile) await ProjectComebackDB.put("profile", originalProfile);
       else await ProjectComebackDB.remove("profile", "gym-profile");
-    }, [
-      { day: 1, date: testDates.celebrationDay1 },
-      { day: 2, date: testDates.celebrationDay2 },
-      { day: 3, date: testDates.celebrationDay3 }
-    ]);
+    }, {
+      sessionSpecs: [
+        { day: 1, date: testDates.celebrationDay1 },
+        { day: 2, date: testDates.celebrationDay2 },
+        { day: 3, date: testDates.celebrationDay3 }
+      ],
+      originalProfile: originalCelebrationProfile
+    });
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     console.log("PASS saved state is committed before celebration, Day 1/Day 2/female hero selection, Skip/Dismiss, six-second auto-close, and no post-close data mutation");
