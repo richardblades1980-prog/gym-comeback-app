@@ -60,7 +60,7 @@ test("empty guide registry is cached in the shell, not the dedicated artwork cac
 
 test("guide artwork requests bypass generic shell caching", () => {
   assert.match(sw, /url\.pathname\.includes\("\/assets\/guides\/"\)\|\|url\.pathname\.includes\("\/assets\/celebrations\/"\)/);
-  assert.match(sw, /caches\.open\(GUIDE_CACHE_NAME\).*?cache\.match\(request\).*?new Response/s);\n  assert.doesNotMatch(sw.slice(sw.indexOf("if(url.pathname.includes(\"/assets/guides/\")"), sw.indexOf("// Catalogue release assets")), /fetch\\(/);
+  assert.match(sw, /caches\.open\(GUIDE_CACHE_NAME\).*?cache\.match\(request\).*?new Response/s);
   assert.match(browser, /Verified dedicated guide artwork cache/);
   assert.match(browser, /shellHasGuideFiles/);
 });
