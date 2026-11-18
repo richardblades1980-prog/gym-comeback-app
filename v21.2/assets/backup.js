@@ -276,7 +276,17 @@
     return stableJson(value);
   }
 
+  async function validateBackupIntegrity(input) {
+    const parsed = await parseBackup(input);
+    if (!global.ProjectComebackIntegrity) throw new Error("Load integrity.js before cross-store diagnostics.");
+    return global.ProjectComebackIntegrity.diagnoseData(parsed.data.data);
+  }
+
   async function previewRestore(input) {
+    const integrityDiagnostics = global.ProjectComebackIntegrity ? {
+      incoming: await validateBackupIntegrity(input),
+      live: await global.ProjectComebackIntegrity.diagnoseLiveDatabase()
+    } : null;
     const parsed = await parseBackup(input);
     const dbApi = global.ProjectComebackDB;
     if (!dbApi) throw new Error("Load database.js before backup.js.");
@@ -339,6 +349,7 @@
       includedModules: Array.isArray(parsed.data.includedModules) ? parsed.data.includedModules.slice() : [],
       backupScope: parsed.data.backupScope || "full", totalIncomingRecords: parsed.validation.totalRecords,
       restoreSafetySnapshotRetention: RESTORE_SNAPSHOT_RETENTION,
+      integrityDiagnostics,
       stores, preservedStores: preservedStores.map(store => store.name), preservedStoreDetails: preservedStores,
       warning: parsed.sourceFormatVersion === 1
         ? "V1 restore replaces only the original V1 stores. Where V6 identity stores exist, they are preserved untouched. Restore safety snapshots are bounded to the newest three and do not recursively contain prior restore snapshots."
@@ -521,6 +532,7 @@
     parseBackup,
     previewRestore,
     validateBackup: validateEnvelope,
+    validateBackupIntegrity,
     restoreBackup,
     verifyIdentityUpgradeRoundTrip
   });
