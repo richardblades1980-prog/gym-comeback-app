@@ -274,6 +274,28 @@ function server() {
     if (workoutGraph.week !== "1" || workoutGraph.storedWeek !== 1 || !workoutGraph.historyText.includes("Week 1 · Day 1") || !workoutGraph.historyText.includes("In progress") || workoutGraph.historyResumeButtons !== 1 || workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
+    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
+    const firstCard = app.locator("#gym-workout-exercises .gym-exercise-card").first();
+    await firstCard.locator("[data-gym-swap-name]").fill("Dumbbell Floor Press");
+    await firstCard.locator("[data-gym-swap-equipment]").selectOption("available");
+    await firstCard.locator('[data-gym-action="swap-save"]').click();
+    await app.waitForFunction(() => document.querySelector("#gym-workout-exercises .gym-exercise-card h3").textContent === "Dumbbell Floor Press");
+    const swapPersisted = await app.evaluate(async () => {
+      const id = document.querySelector("[data-gym-swap-name]").dataset.exerciseId;
+      const exercise = await ProjectComebackDB.get("exerciseRecords", id);
+      return { name: exercise.name, performed: exercise.performedExerciseName, source: exercise.sourceExerciseLabel,
+        slot: exercise.programmeSlotId, equipment: exercise.substitution && exercise.substitution.equipmentStatus,
+        setCount: await ProjectComebackDB.getAllByIndex("setRecords", "by_exercise", id).then(items => items.length) };
+    });
+    if (swapPersisted.name !== "Dumbbell Floor Press" || swapPersisted.performed !== "Dumbbell Floor Press" ||
+        swapPersisted.source !== "Chest Press Machine" || swapPersisted.slot !== "legacy-base-day-01-slot-01" ||
+        swapPersisted.equipment !== "available" || swapPersisted.setCount !== 3) {
+      throw new Error("Manual swap changed source identity or failed to persist: " + JSON.stringify(swapPersisted));
+    }
+    await firstCard.locator('[data-gym-action="swap-restore"]').click();
+    await app.waitForFunction(() => document.querySelector("#gym-workout-exercises .gym-exercise-card h3").textContent === "Chest Press Machine");
+    console.log("PASS swap persisted as performed exercise, original source slot remained intact, and restore worked");
+
     // Exercise the timed-repetition UI against the real IndexedDB-backed workout record.
     await app.evaluate(async () => {
       const exerciseId = document.querySelector('[data-gym-field="weight"]').dataset.exerciseId;
