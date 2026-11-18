@@ -31,7 +31,7 @@ test("default and configurable plan preserve legacy 4/8/12 week and 2-5 day opti
 });
 
 test("sequential progression unlocks next day/week only after completion", async () => {
-  const { db, progression } = setup();
+  const { db, progression } = await setup();
   const plan = { weeks: 4, daysPerWeek: 3 };
   assert.equal(await progression.isUnlocked(1, 1, plan), true);
   assert.equal(await progression.isUnlocked(1, 2, plan), false);
@@ -48,7 +48,7 @@ test("sequential progression unlocks next day/week only after completion", async
 });
 
 test("manual unlock/relock override; planned-frequency limit still applies", async () => {
-  const { progression } = setup(), plan = { weeks: 4, daysPerWeek: 2 };
+  const { progression } = await setup(), plan = { weeks: 4, daysPerWeek: 2 };
   assert.equal(await progression.isUnlocked(1, 2, plan), false);
   await progression.setManualUnlock(1, 2, true);
   assert.equal(await progression.isUnlocked(1, 2, plan), true);
