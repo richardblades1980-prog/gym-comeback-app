@@ -1,3 +1,12 @@
+# Project Comeback — G3.7.6 service-worker cache reliability checkpoint (2026-11-18)
+
+- Active development branch: `V21.2-development`; `main` unchanged, no deployment.
+- Source audit found unhandled background CacheStorage write promises in root and V21.2 service workers. Added best-effort helper `cacheResponseBestEffort()` to explicitly catch cache open/put failures while preserving network response.
+- Added 8 tests (root and V21.2 workers × asset/navigation × CacheStorage open/put failure); all pass. Updated catalogue-delivery contract for helper.
+- `check.js` and duplicated root/V21.2 assets retained pending source/history confirmation; no deletion or cleanup by assumption.
+- Implementation SHA `88678a7143b07b6f777ba5dc442acdef10fe6b54`: backup [#44253049985 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44253049985), browser [#44253050110 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44253050110). Exact final documentation SHA validation pending.
+- Do not merge to main or deploy.
+
 # Project Comeback — G3.7.5 failure-path validation checkpoint (2026-11-18)
 
 - Live branch: `V21.2-development`. `main` remains unchanged; no deployment.
