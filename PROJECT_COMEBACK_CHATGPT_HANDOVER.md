@@ -1072,3 +1072,8 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - First validation attempt failed due to the DB source-name guard; this was corrected. Validation passed on exact code checkpoint `d125620592b49bc04d47351cd60885481c561617`: Browser [#44241216450](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241216450) and Backup [#44241216719](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241216719), both PASS. Follow-up UI clarity and handover/roadmap commits require final exact-SHA re-validation.
 
 **Next step:** inspect the live branch head, verify canonical/offline bundle parity, and check both validation workflows for the final documentation checkpoint. Only close G3.6a after both pass on the exact final SHA. Then proceed to G3.6b progression summaries, design-first. `main` and deployment remain untouched.
+
+
+**Final implementation checkpoint validation:** exact checkpoint `3457832d5ddf79ba77192d7bc0ee8abb6b7d937e` passed after the UI clarification and handover/roadmap update:
+- Browser/Chromium [#44241412680 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241412680).
+- Backup [#44241412714 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241412714).
