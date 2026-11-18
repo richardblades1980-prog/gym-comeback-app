@@ -153,7 +153,14 @@
     };
   }
 
+  function assertWorkoutInProgress(workout) {
+    if (!workout || !workout.session || workout.session.moduleId !== "gym" || workout.session.status !== "in-progress") {
+      throw new Error("Workout changes are only allowed while the Gym workout is in progress.");
+    }
+  }
+
   async function saveChanges(workout, changedExerciseIds, changedSetIds) {
+    assertWorkoutInProgress(workout);
     const db = dbService();
     const exerciseIds = new Set(changedExerciseIds || []);
     const setIds = new Set(changedSetIds || []);
@@ -187,6 +194,7 @@
   }
 
   async function setExerciseSubstitution(workout, exerciseId, replacementName, equipmentStatus) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     if (!workout || !workout.session || workout.session.status !== "in-progress") {
       throw new Error("Exercise changes are only allowed in an in-progress workout.");
@@ -223,6 +231,7 @@
   }
 
   async function updateSetValues(workout, exerciseId, setNumber, values) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before editing this set.");
@@ -243,6 +252,7 @@
   }
 
   async function startSet(workout, exerciseId, setNumber) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before starting this set.");
@@ -261,6 +271,7 @@
   }
 
   async function startStopwatch(workout, exerciseId, setNumber) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before timing this set.");
@@ -276,6 +287,7 @@
   }
 
   async function stopStopwatch(workout, exerciseId, setNumber) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before timing this set.");
@@ -287,6 +299,7 @@
   }
 
   async function resetStopwatch(workout, exerciseId, setNumber) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before timing this set.");
@@ -298,6 +311,7 @@
   }
 
   async function completeSet(workout, exerciseId, setNumber) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before completing this set.");
@@ -325,6 +339,7 @@
   function clearRest(session) { delete session.restEndAt; delete session.restDurationSeconds; delete session.restExerciseId; delete session.restSetNumber; }
 
   async function setExerciseRest(workout, exerciseId, seconds) {
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     if (!REST_PRESETS.includes(seconds)) throw new Error("Choose a supported rest duration.");
     exercise.restSeconds = seconds;
@@ -332,6 +347,7 @@
     return exercise;
   }
   async function adjustRest(workout, seconds) {
+    assertWorkoutInProgress(workout);
     if (!workout.session.restEndAt) throw new Error("No active rest timer.");
     if (!Number.isInteger(seconds) || seconds !== 15) throw new Error("Only +15 seconds is supported.");
     workout.session.restEndAt += seconds * 1000;
@@ -343,6 +359,9 @@
   async function cancelRest(workout) { return skipRest(workout); }
 
   async function undoSet(workout, exerciseId, setNumber) {
+    assertWorkoutInProgress(workout);
+    assertWorkoutInProgress(workout);
+    assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
     set.status = "in-progress";

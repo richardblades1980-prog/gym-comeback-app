@@ -495,6 +495,10 @@
           fail("Gym workout session no longer exists.");
           return;
         }
+        if (existing.status !== "in-progress") {
+          fail("Completed Gym workout history is immutable; changes were not saved.");
+          return;
+        }
         if (validated.session) {
           const updated = Object.assign({}, validated.session, {
             createdAt: existing.createdAt || validated.session.createdAt || now,

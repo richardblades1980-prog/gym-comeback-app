@@ -1077,3 +1077,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 **Final implementation checkpoint validation:** exact checkpoint `3457832d5ddf79ba77192d7bc0ee8abb6b7d937e` passed after the UI clarification and handover/roadmap update:
 - Browser/Chromium [#44241412680 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241412680).
 - Backup [#44241412714 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44241412714).
+
+
+## G3.7.1 — Completed Gym workout immutability (2026-11-18)
+
+- Completed workout records are read-only through the Gym workout service. All mutation operations require an in-progress session, including set entry/start/complete/undo, stopwatch stop/reset, substitution, rest settings and rest controls.
+- The IndexedDB updateGymWorkoutBundle boundary independently checks the stored session lifecycle within the same transaction and aborts any attempt to update a session that is already completed. This prevents stale in-memory objects and direct service/database calls from modifying completed history.
+- Completion remains the one allowed lifecycle transition from in-progress to completed, and remains transactionally saved before in-memory state changes.
+- Added service/API regression coverage that completes a workout, attempts the mutation surface, attempts a direct bundle update, and confirms stored session/exercise/set records remain unchanged.
+- No schema/store/index or backup-format changes. Canonical service/database and offline mirrors remain identical. Shell cache advanced to v24.
+- Exact-SHA browser and backup validation are required before closure; main and deployment remain untouched.

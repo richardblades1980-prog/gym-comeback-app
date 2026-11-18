@@ -357,3 +357,47 @@ test("manual exercise substitution rejects invalid input, unsupported equipment 
   await workout.startSet(created.workout, exercise.id, 1);
   await assert.rejects(() => workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Press", "available"), /after any set has started or recorded/);
 });
+
+
+test("completed workout history is immutable through service APIs and database update boundary", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18", { setCount: 1 });
+  for (const exercise of created.workout.exerciseRecords) {
+    await workout.startSet(created.workout, exercise.id, 1);
+    await workout.completeSet(created.workout, exercise.id, 1);
+  }
+  await workout.finishSession(created.workout);
+  const sessionId = created.workout.session.id;
+  const completed = await workout.loadSession(sessionId);
+  const exercise = completed.exerciseRecords[0];
+  const set = exercise.sets[0];
+  const before = {
+    session: await db.get("sessions", sessionId),
+    exercise: await db.get("exerciseRecords", exercise.id),
+    set: await db.get("setRecords", set.id)
+  };
+  const rejectCompleted = /only allowed while the Gym workout is in progress|Completed Gym workout history is immutable/;
+  await assert.rejects(() => workout.updateSetValues(completed, exercise.id, 1, { reps: "99" }), rejectCompleted);
+  await assert.rejects(() => workout.startSet(completed, exercise.id, 1), rejectCompleted);
+  await assert.rejects(() => workout.startStopwatch(completed, exercise.id, 1), rejectCompleted);
+  await assert.rejects(() => workout.stopStopwatch(completed, exercise.id, 1), rejectCompleted);
+  await assert.rejects(() => workout.resetStopwatch(completed, exercise.id, 1), rejectCompleted);
+  await assert.rejects(() => workout.completeSet(completed, exercise.id, 1), rejectCompleted);
+  await assert.rejects(() => workout.undoSet(completed, exercise.id, 1), rejectCompleted);
+  await assert.rejects(() => workout.setExerciseSubstitution(completed, exercise.id, "Replacement", "available"), rejectCompleted);
+  await assert.rejects(() => workout.setExerciseRest(completed, exercise.id, 120), rejectCompleted);
+  await assert.rejects(() => workout.adjustRest(completed, 15), rejectCompleted);
+  await assert.rejects(() => workout.skipRest(completed), rejectCompleted);
+  await assert.rejects(() => workout.cancelRest(completed), rejectCompleted);
+  await assert.rejects(() => workout.finishSession(completed), /not in progress/);
+
+  const alteredSession = Object.assign({}, before.session, { title: "Tampered title" });
+  const alteredExercise = Object.assign({}, before.exercise, { restSeconds: 120 });
+  const alteredSet = Object.assign({}, before.set, { reps: "99" });
+  await assert.rejects(() => db.updateGymWorkoutBundle({
+    sessionId, session: alteredSession, exerciseRecords: [alteredExercise], setRecords: [alteredSet]
+  }), /Completed Gym workout history is immutable/);
+  assert.deepEqual(await db.get("sessions", sessionId), before.session);
+  assert.deepEqual(await db.get("exerciseRecords", exercise.id), before.exercise);
+  assert.deepEqual(await db.get("setRecords", set.id), before.set);
+});
