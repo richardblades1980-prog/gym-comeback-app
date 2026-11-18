@@ -1,0 +1,29 @@
+name: V21.2 Pages release-candidate validation
+
+on:
+  push:
+    branches:
+      - V21.2-pages-release-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  release-candidate-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out release-candidate artifact
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install isolated Playwright dependency
+        run: npm install --prefix .release-validation --no-package-lock
+      - name: Install Chromium
+        run: cd .release-validation && npx playwright install chromium
+      - name: Validate PWA icons and manifest in assembled artifact
+        run: node --test .release-validation/pwa-installability-contract.test.js
+      - name: Run full dual-app browser validation against assembled artifact
+        run: node .release-validation/browser-validation.js

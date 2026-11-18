@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>V21.2A browser migration fixture</title></head>
+<body><main id="result">ready</main>
+<script src="/src/data/database.js"></script>
+<script src="/src/data/gym-migration.js"></script>
+<script src="/src/data/shared-migration.js"></script>
+<script src="/src/data/migration.js"></script>
+<script>
+(async function () {
+  try {
+    const first = await ProjectComebackMigration.migrateAndVerify();
+    const sessions = await ProjectComebackDB.getAll("sessions");
+    const profile = await ProjectComebackDB.getAll("profile");
+    const raw = await ProjectComebackDB.getAll("legacyRecords");
+    const marker = await ProjectComebackDB.getMeta("migration-v21.2a-typed-projection-v1");
+    const second = await ProjectComebackMigration.migrateAndVerify();
+    document.querySelector("#result").textContent = JSON.stringify({
+      firstStatus: first.status, secondStatus: second.status,
+      sessions: sessions.length, profile: profile.length, raw: raw.length,
+      markerStatus: marker.value.status,
+      originalWorkout: localStorage.getItem("gym-comeback-w1-d1"),
+      originalProfile: localStorage.getItem("gym-comeback-profile")
+    });
+  } catch (error) {
+    document.querySelector("#result").textContent = JSON.stringify({ error: error.message, stack: error.stack });
+  }
+})();
+</script></body></html>
