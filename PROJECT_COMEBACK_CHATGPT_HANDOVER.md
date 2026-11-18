@@ -1,3 +1,20 @@
+# Current handover — branch-based GitHub Pages release candidate (2026-11-19)
+
+- User confirmed GitHub Pages source mode: **Deploy from a branch**. The selected source branch and folder remain to be confirmed from Settings → Pages.
+- Dedicated candidate branch: V21.2-pages-release-candidate, created from protected main SHA 0d0527a6463c3cfd0fbb54d69123316c9a384b42.
+- Exact candidate head: a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd.
+- Candidate contains unchanged V21.1 root site, reviewed root dual-app service-worker fix, and all 77 V21.2 files. Root index.html SHA remains e3eb0093648cc6c5d706bb5b1008b58ec01a5576.
+- Candidate-only hidden validation workflow [#44413382202 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44413382202), exact candidate SHA. Full Chromium log confirms V21.1/V21.2 same-origin worker/cache isolation, V21.1 root update cleanup, byte-for-byte V21.1 localStorage preservation, empty V21.2 user stores, both offline cold starts, V21.2 Gym/Hiking/schedule, backup/restore and IndexedDB process-restart persistence.
+- PWA icon/manifest contract also passed in the candidate workflow. This is validation against an assembled artifact served by the local GitHub Pages-style path simulation; it is not a live-host acceptance test.
+- Candidate is **not** selected as Pages source, not published, and has no Pages deploy workflow. Hidden validation support is in dot-prefixed paths, separate from the V21.2 app directory.
+- main remains 0d0527a6463c3cfd0fbb54d69123316c9a384b42; no Pages setting, live root site or user data has changed.
+
+## Next required input
+
+Check the exact selected branch and folder in repository Settings → Pages and report them. Then review whether the candidate root is the right source. Do not switch Pages settings or publish until separately approved.
+
+---
+
 # Current handover — V21.2 PWA assets and Pages trial planning (2026-11-19)
 
 - Active branch: `V21.2-development`.
