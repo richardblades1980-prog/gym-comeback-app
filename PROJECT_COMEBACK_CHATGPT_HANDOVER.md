@@ -1,3 +1,11 @@
+## G3.6b validation correction — browser assertion alignment (2026-11-18)
+
+- Implementation SHA `1ac54be10aa9e4b00f1061e33e6002561e8712f5`: backup validation [#44255446595 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44255446595). Browser [#44255446714 — FAIL] (https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44255446714) at the existing Gym Journey assertion, which expected pre-change wording rather than the new approved summary labels. The browser run reached Gym Journey and showed the updated summary, recorded sets, and trends; failure was the test's string contract.
+- Updated browser assertions for the G3.6b labels and “recorded change” wording, retaining the same data assertions and edge-case checks.
+- Corrected final SHA must pass both workflows before milestone closure. No main merge or deployment.
+
+---
+
 # G3.6b — Progression summaries implementation checkpoint (2026-11-18)
 
 - Implemented descriptive Gym exercise summaries in `ProjectComebackGymProgression.summariseExerciseHistory()` and mirrored the progression service byte-for-byte into `v21.2/assets/gym-progression.js`.

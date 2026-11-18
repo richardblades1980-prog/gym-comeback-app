@@ -1105,7 +1105,7 @@ function server() {
     const gymJourneyCheck = await app.locator("#gym-journey").textContent();
     if (!gymJourneyCheck.includes("Completed sessions9") || !gymJourneyCheck.includes("24") ||
         !gymJourneyCheck.includes("3 of 14 sets include a numeric repetition count") ||
-        !gymJourneyCheck.includes("Weight entries below are shown exactly as saved")) {
+        !gymJourneyCheck.includes("Manual substitutions are displayed with the performed label and recorded values") || !gymJourneyCheck.includes("excluded from the original programme exercise progression trend")) {
       throw new Error("Gym journey did not summarize completed-session set data or exclude missing repetitions: " + gymJourneyCheck);
     }
     const gymHistoryCheck = await app.locator("#gym-journey").textContent();
@@ -1118,9 +1118,9 @@ function server() {
     if (!gymHistoryCheck.includes("Recorded exercise history") || !gymHistoryCheck.includes("Test squat") ||
         !gymHistoryCheck.includes("15") || !gymHistoryCheck.includes("6 reps") ||
         !gymHistoryCheck.includes("20") || !gymHistoryCheck.includes("10 reps") ||
-        !gymHistoryCheck.includes("2 completed sessions recorded") ||
+        !gymHistoryCheck.includes("2 original-exercise sessions") ||
         !gymHistoryCheck.includes("first 15 kg") || !gymHistoryCheck.includes("latest 20 kg") ||
-        !gymHistoryCheck.includes("change +5 kg") || !gymHistoryCheck.includes("not a one-rep maximum")) {
+        !gymHistoryCheck.includes("recorded change +5 kg") || !gymHistoryCheck.includes("not a one-rep maximum")) {
       throw new Error("Gym exercise history did not show dated saved set entries: " + gymHistoryCheck);
     }
     const loadEdgeChecks = await app.evaluate(() => {
@@ -1136,7 +1136,7 @@ function server() {
     if (!loadEdgeChecks.sameDay.includes("2 dated sessions") ||
         !loadEdgeChecks.sameDay.includes("first 15 kg") ||
         !loadEdgeChecks.sameDay.includes("latest 12 kg") ||
-        !loadEdgeChecks.sameDay.includes("change -3 kg")) {
+        !loadEdgeChecks.sameDay.includes("recorded change -3 kg")) {
       throw new Error("Same-day loads were not consolidated to the heaviest value before dated comparison: " + JSON.stringify(loadEdgeChecks));
     }
     if (!loadEdgeChecks.single.includes("One dated heaviest recorded load: 7.5 kg") ||
