@@ -202,6 +202,16 @@ function server() {
     sharedOriginContext = await browser.newContext();
     sharedOriginContext.setDefaultTimeout(STEP_TIMEOUT_MS);
     sharedOriginContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
+    await sharedOriginContext.addInitScript(() => {
+      localStorage.setItem("gym-comeback-profile", JSON.stringify({ goal: "strength", age: 45 }));
+      localStorage.setItem("gym-comeback-w1-d1", JSON.stringify({
+        date: "2026-11-15", sessionTime: "42", exercises: [
+          { name: "Goblet squat", setCount: 1, sets: [{ weight: "12", reps: "10" }] }
+        ]
+      }));
+      localStorage.setItem("gym-comeback-set-status-v1-1-1-2026-11-15-sessionA",
+        JSON.stringify({ "Goblet squat::1": "complete" }));
+    });
     const legacyPage = await sharedOriginContext.newPage();
     await legacyPage.goto(base + "/gym-comeback-app/");
     await legacyPage.waitForFunction(() => {
@@ -220,6 +230,18 @@ function server() {
       throw new Error("V21.1 did not establish its expected GitHub Pages project-path origin and root worker: " + JSON.stringify(legacyInitial));
     }
 
+    const legacySnapshotBeforeV21_2 = await legacyPage.evaluate(() => {
+      const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+        .filter(key => key && key.startsWith("gym-comeback-")).sort();
+      return Object.fromEntries(keys.map(key => [key, localStorage.getItem(key)]));
+    });
+    if (!legacySnapshotBeforeV21_2["gym-comeback-profile"] ||
+        !legacySnapshotBeforeV21_2["gym-comeback-w1-d1"] ||
+        !legacySnapshotBeforeV21_2["gym-comeback-set-status-v1-1-1-2026-11-15-sessionA"]) {
+      throw new Error("The existing V21.1 data fixture was not established: " +
+        JSON.stringify(legacySnapshotBeforeV21_2));
+    }
+
     const v21Page = await sharedOriginContext.newPage();
     await v21Page.goto(base + "/gym-comeback-app/v21.2/");
     await v21Page.waitForFunction(() =>
@@ -227,6 +249,38 @@ function server() {
       Boolean(navigator.serviceWorker.controller) &&
       new URL(navigator.serviceWorker.controller.scriptURL).pathname.endsWith("/gym-comeback-app/v21.2/sw.js"),
       null, { timeout: 30000 });
+    const noMigrationWithExistingData = await v21Page.evaluate(async () => ({
+      migration: await ProjectComebackMigration.inspect(),
+      profile: await ProjectComebackDB.count("profile"),
+      sessions: await ProjectComebackDB.count("sessions"),
+      exerciseRecords: await ProjectComebackDB.count("exerciseRecords"),
+      setRecords: await ProjectComebackDB.count("setRecords"),
+      hikingRecords: await ProjectComebackDB.count("hikingRecords"),
+      legacyRecords: await ProjectComebackDB.count("legacyRecords"),
+      runDisabled: document.querySelector("#migration-run").disabled,
+      confirmDisabled: document.querySelector("#migration-confirm").disabled,
+      originalLegacyKeys: Object.fromEntries(
+        Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+          .filter(key => key && key.startsWith("gym-comeback-"))
+          .sort()
+          .map(key => [key, localStorage.getItem(key)])
+      )
+    }));
+    const noV21UserRecords = [
+      noMigrationWithExistingData.profile, noMigrationWithExistingData.sessions,
+      noMigrationWithExistingData.exerciseRecords, noMigrationWithExistingData.setRecords,
+      noMigrationWithExistingData.hikingRecords, noMigrationWithExistingData.legacyRecords
+    ].every(count => count === 0);
+    if (!noV21UserRecords ||
+        noMigrationWithExistingData.migration.legacyKeyCount !== Object.keys(legacySnapshotBeforeV21_2).length ||
+        noMigrationWithExistingData.migration.marker !== null ||
+        !noMigrationWithExistingData.runDisabled || !noMigrationWithExistingData.confirmDisabled ||
+        JSON.stringify(noMigrationWithExistingData.originalLegacyKeys) !== JSON.stringify(legacySnapshotBeforeV21_2)) {
+      throw new Error("V21.2 did not start with empty user stores while preserving existing V21.1 records exactly: " +
+        JSON.stringify({ noMigrationWithExistingData, legacySnapshotBeforeV21_2 }));
+    }
+    console.log("PASS same-origin clean start leaves existing V21.1 localStorage byte-for-byte intact and starts V21.2 user stores empty without an import marker");
+
     const coexistence = await legacyPage.evaluate(async () => {
       const rootCacheName = "gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset";
       const rootCache = await caches.open(rootCacheName);
