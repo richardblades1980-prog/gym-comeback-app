@@ -284,6 +284,7 @@ function server() {
     const guideButton=firstCard.locator("[data-guide-open]");
     await guideButton.click();
     if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Exercise guide dialog did not open from its explicit button.");
+    await app.locator("#gym-exercise-guide-content").getByText("Guide unavailable",{exact:true}).waitFor({timeout:5000});
     const guideState=await app.locator("#gym-exercise-guide-content").innerText();
     if(!guideState.includes("Guide unavailable")||!guideState.includes("Draft instructions are not displayed"))throw new Error("Guide unavailable state is not honest or visible: "+guideState);
     if(await app.evaluate(()=>document.activeElement.id)!=="gym-exercise-guide-close")throw new Error("Guide open did not move focus to the close control.");
