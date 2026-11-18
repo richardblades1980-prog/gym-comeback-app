@@ -186,6 +186,43 @@
       exercise.sets.some(item => item.status === "in-progress" || item.status === "completed") ? "in-progress" : "not-started";
   }
 
+  async function setExerciseSubstitution(workout, exerciseId, replacementName, equipmentStatus) {
+    const exercise = getExercise(workout, exerciseId);
+    if (!workout || !workout.session || workout.session.status !== "in-progress") {
+      throw new Error("Exercise changes are only allowed in an in-progress workout.");
+    }
+    const label = requiredString(replacementName, "Replacement exercise name").trim();
+    if (label.length > 120) throw new Error("Replacement exercise name must be 120 characters or fewer.");
+    const allowedEquipmentStatuses = ["unknown", "available", "unavailable"];
+    if (!allowedEquipmentStatuses.includes(equipmentStatus || "unknown")) {
+      throw new Error("Equipment status must be unknown, available, or unavailable.");
+    }
+    const hasStartedSet = (exercise.sets || []).some(set =>
+      set.status === "in-progress" || set.status === "completed" || set.startedAt || set.completedAt ||
+      [set.weight, set.reps, set.duration, set.targetDuration].some(value => value !== undefined && value !== null && String(value).trim() !== "")
+    );
+    if (hasStartedSet || exercise.status !== "not-started") {
+      throw new Error("An exercise cannot be changed after any set has started or recorded.");
+    }
+    if (label === exercise.sourceExerciseLabel) {
+      delete exercise.substitution;
+      delete exercise.performedExerciseName;
+      exercise.name = exercise.sourceExerciseLabel;
+    } else {
+      exercise.name = label;
+      exercise.performedExerciseName = label;
+      exercise.substitution = {
+        sourceExerciseLabel: exercise.sourceExerciseLabel,
+        performedExerciseName: label,
+        equipmentStatus: equipmentStatus || "unknown",
+        selectedAt: new Date().toISOString(),
+        selectionMode: "manual"
+      };
+    }
+    await saveChanges(workout, [exercise.id], []);
+    return exercise;
+  }
+
   async function updateSetValues(workout, exerciseId, setNumber, values) {
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
@@ -363,6 +400,7 @@
     loadSession,
     findInProgress,
     startSession,
+    setExerciseSubstitution,
     updateSetValues,
     startSet,
     completeSet,
