@@ -137,3 +137,17 @@ test("current schema has session-scoped exercise records but no canonical exerci
     connection.close();
   }
 });
+
+test("real IndexedDB aborts migration on structured-clone failure without partial records or marker", async () => {
+  await deleteDatabase();
+  const db = loadDatabase();
+  const data = projection();
+  data.equipment[0].items = [{ name: "Uncloneable", invalid: () => "not cloneable" }];
+  const summary = { sourceKeyCount: 5, counts: Object.fromEntries(Object.entries(data).map(([key, records]) => [key, records.length])) };
+
+  await assert.rejects(() => db.commitLegacyMigration(data, markerId, summary));
+  assert.equal(await db.count("profile"), 0, "earlier queued profile write must roll back");
+  assert.equal(await db.count("equipment"), 0, "failed equipment write must not persist");
+  assert.equal(await db.count("sessions"), 0);
+  assert.equal(await db.getMeta(markerId), undefined, "completion marker must not be committed");
+});
