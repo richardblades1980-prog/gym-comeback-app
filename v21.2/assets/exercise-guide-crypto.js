@@ -20,7 +20,7 @@ function concatBytes(a,b){const out=new Uint8Array(a.length+b.length);out.set(a,
 function hex(bytes){return Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");}
 function validateDomain(domain){if(!DOMAINS.includes(domain))throw new TypeError("Unsupported digest domain.");return domain;}
 async function sha256Bytes(bytes,cryptoProvider){const c=cryptoProvider||(typeof crypto!=="undefined"?crypto:null);if(!c||!c.subtle||typeof c.subtle.digest!=="function")throw new Error("Web Crypto SHA-256 unavailable; verification fails closed.");const input=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);const result=await c.subtle.digest("SHA-256",input);return "sha256:"+hex(new Uint8Array(result));}
-async function digestCanonical(value,domain,cryptoProvider){validateDomain(domain);const canonical=utf8(canonicalize(value));const prefix=utf8(domain+"\\0");return sha256Bytes(concatBytes(prefix,canonical),cryptoProvider);}
+async function digestCanonical(value,domain,cryptoProvider){validateDomain(domain);const canonical=utf8(canonicalize(value));const prefix=utf8(domain+"\0");return sha256Bytes(concatBytes(prefix,canonical),cryptoProvider);}
 async function verifyDigest(value,expected,domain,cryptoProvider){if(typeof expected!=="string"||!/^sha256:[0-9a-f]{64}$/.test(expected))return false;return (await digestCanonical(value,domain,cryptoProvider))===expected;}
 g.ProjectComebackExerciseGuideCrypto=Object.freeze({DOMAINS,canonicalize,sha256Bytes,digestCanonical,verifyDigest});
 })(typeof window!=="undefined"?window:globalThis);
