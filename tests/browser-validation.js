@@ -1106,7 +1106,7 @@ function server() {
       const manifest = await manifestResponse.json();
       const assets = await Promise.all(manifest.assets.map(asset =>
         cache.match(new URL(asset.path, location.href).href)));
-      const shellCache = await caches.open("project-comeback-v21-2a-shell-v20");
+      const shellCache = await caches.open("project-comeback-v21-2a-shell-v21");
       const shellKeys = await shellCache.keys();
       const names = await caches.keys();
       return { manifestId: manifest.manifestId, count: assets.filter(Boolean).length,
