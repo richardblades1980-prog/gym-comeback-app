@@ -1,6 +1,6 @@
 "use strict";
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm"),{webcrypto}=require("node:crypto");
-const root=require("node:path").resolve(__dirname,".."),s={TextEncoder,crypto:webcrypto};s.window=s;
+const root=require("node:path").resolve(__dirname,".."),s={TextEncoder,URL,crypto:webcrypto};s.window=s;
 for(const f of ["exercise-guide-crypto.js","exercise-guide-digests.js","exercise-guide-registry.js","exercise-guide-runtime.js","../data/gym-base-programme.js"])vm.runInNewContext(fs.readFileSync(root+"/src/modules/"+f,"utf8"),s);
 const runtime=s.ProjectComebackExerciseGuideRuntime,base=s.ProjectComebackGymBaseProgramme,registry=JSON.parse(fs.readFileSync(root+"/v21.2/assets/exercise-guide-registry.v2.json","utf8")),manifest=JSON.parse(fs.readFileSync(root+"/v21.2/assets/guides/manifest.v1.json","utf8"));
 test("production empty registry validates and every source slot resolves unavailable",async()=>{const result=await runtime.validate(base,manifest,registry,webcrypto);assert.equal(result.valid,true);const slots=base.listDays().flatMap(d=>d.slots);assert.equal(Object.keys(result.resolutions).length,slots.length);assert.ok(slots.every(slot=>result.resolutions[slot.slotId].status==="unavailable"));});
