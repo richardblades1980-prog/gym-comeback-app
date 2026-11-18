@@ -1294,3 +1294,6 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 
 
 G3.7.2f hardening: asset-set human reviews bind `manifestId@release` and schema version, avoiding review ambiguity between releases of the same manifest.
+
+
+G3.7.2f integrity amendment: guide content digest now also binds the exact unique ordered `assetIds` references. Validator requires each selected ID to exist in the guide's exact bound asset-set release and be locally verified. This closes the gap where the asset-set digest was valid but a guide's selected-artwork list could be altered independently.
