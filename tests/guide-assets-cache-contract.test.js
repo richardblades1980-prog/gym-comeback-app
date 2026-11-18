@@ -25,7 +25,7 @@ test("manifest and every exact asset byte, MIME and checksum are verified before
   assert.match(sw, /asset\.byteLength/);
   assert.match(sw, /asset\.mimeType!==guideMime\(asset\.path\)/);
   assert.match(sw, /guideDigest\(bytes\)/);
-  assert.match(sw, /verifyGuideResponse\(cached,item\.asset\)/);
+  assert.match(sw, /verifyGuideResponse\(cached,asset\)/);
   assert.match(sw, /GUIDE_TOTAL_BYTES=2984584/);
   assert.match(sw, /await installGuideAssets\(\)/);
   assert.match(sw, /GUIDE_ASSET_COUNT\+1/);
@@ -60,7 +60,7 @@ test("empty guide registry is cached in the shell, not the dedicated artwork cac
 
 test("guide artwork requests bypass generic shell caching", () => {
   assert.match(sw, /url\.pathname\.includes\("\/assets\/guides\/"\)\|\|url\.pathname\.includes\("\/assets\/celebrations\/"\)/);
-  assert.match(sw, /caches\.open\(GUIDE_CACHE_NAME\).*?cache\.match\(request\).*?fetch\(request\)/s);
+  assert.match(sw, /caches\.open\(GUIDE_CACHE_NAME\).*?cache\.match\(request\).*?new Response/s);\n  assert.doesNotMatch(sw.slice(sw.indexOf("if(url.pathname.includes(\"/assets/guides/\")"), sw.indexOf("// Catalogue release assets")), /fetch\\(/);
   assert.match(browser, /Verified dedicated guide artwork cache/);
   assert.match(browser, /shellHasGuideFiles/);
 });
