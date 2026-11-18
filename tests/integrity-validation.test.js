@@ -41,7 +41,7 @@ test("reports orphaned identity and programme references",()=>{
  const d=data();
  d.exerciseAliases.push({id:"alias1",exerciseDefinitionId:"missing-def"});
  d.programmeSlots[0].programmeDayId="missing-day";
- d.programmeSlots[0].programmeVersionId="other-version";
+ d.programmeSlots.push({id:"slot2",programmeDayId:"day1",programmeVersionId:"other-version"});
  const codes=integrity.diagnoseData(d).findings.map(f=>f.code);
  assert.ok(codes.includes("ALIAS_DEFINITION_MISSING"));
  assert.ok(codes.includes("PROGRAMME_SLOT_DAY_MISSING"));
