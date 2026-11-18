@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymWorkoutRefreshToken=0,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -13,7 +13,7 @@ function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v
 function item(title,meta,tag){return '<div class="record-item"><div><strong>'+esc(title)+'</strong><small>'+esc(meta)+'</small></div><small>'+esc(tag||"")+'</small></div>';}
 
 let gymProgressionPlan={weeks:4,daysPerWeek:2};
-async function refreshGymProgressionControls(){
+async function refreshGymProgressionControls(requestToken){
  const progression=ProjectComebackGymProgression;
  gymProgressionPlan=await progression.getPlan();
  const weekSelect=$("gym-workout-week"),daySelect=$("gym-workout-day");
@@ -44,6 +44,7 @@ async function refreshGymProgressionControls(){
  button.disabled=unlocked&&!manual;
  const startButton=$("gym-workout-start"),selectedDate=$("gym-workout-date").value||today;
  const resumable=await ProjectComebackGymWorkout.findInProgress(day,selectedDate,week);
+ if(requestToken!==undefined&&requestToken!==gymWorkoutRefreshToken)return unlocked;
  startButton.disabled=!unlocked&&!resumable;
  startButton.textContent=resumable?"Resume workout":"Start / resume workout";
  button.onclick=async()=>{
@@ -53,12 +54,16 @@ async function refreshGymProgressionControls(){
  return unlocked;
 }
 async function refreshGymWorkout(){
+ const requestToken=++gymWorkoutRefreshToken;
  const week=Number($("gym-workout-week").value)||1,day=Number($("gym-workout-day").value),date=$("gym-workout-date").value||today;
+ activeGymWorkout=null;
+ $("gym-workout-active").hidden=true;
  const workout=await ProjectComebackGymWorkout.findInProgress(day,date,week);
+ if(requestToken!==gymWorkoutRefreshToken)return;
  activeGymWorkout=workout;
  if(workout){renderGymWorkout();$("gym-workout-status").textContent="An in-progress session for this programme week, day and date is ready to resume.";}
  else{$("gym-workout-active").hidden=true;$("gym-workout-status").textContent="No in-progress session for this week, day and date. Start a new workout when ready.";}
- await refreshGymProgressionControls();
+ await refreshGymProgressionControls(requestToken);
 }
 function formatStopwatchElapsed(set){
  const base=Math.max(0,Number(set.stopwatchElapsedMs)||0);
