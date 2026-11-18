@@ -88,7 +88,7 @@ test("source characterization: production service worker precaches shell, not ca
   assert.match(shell,/assets\/exercise-identity\.js/);
   assert.doesNotMatch(shell,/catalogues\/exercise/i);
   assert.match(swSource,/key\.startsWith\(CACHE_PREFIX\)&&key!==CACHE_NAME/);
-  assert.match(swSource,/caches\.open\(CACHE_NAME\)\.then\(cache=>cache\.put\(request,copy\)\)/);
+  assert.match(swSource,/cacheResponseBestEffort\(CACHE_NAME,request,copy\)/);\n  assert.match(swSource,/function cacheResponseBestEffort\(cacheName,request,response\).*\.catch\(\(\)=>undefined\)/);
   assert.match(swSource,/catalogues\/exercise/);
   assert.match(swSource,/if\(url\.pathname\.includes\("\/catalogues\/exercise\/"\)\)return/);
 });
