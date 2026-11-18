@@ -384,6 +384,7 @@ function server() {
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
 
     console.log("[browser] Save-first six-second celebration, Skip/Dismiss and saved-record preservation");
+    const originalCelebrationProfile = await app.evaluate(() => ProjectComebackDB.get("profile", "gym-profile"));
     const seedCompletedWorkoutForCelebration = async (day, date) => {
       const fixture = await app.evaluate(async ({ day, date }) => {
         const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]);
@@ -471,7 +472,7 @@ function server() {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 1);
       const image = document.querySelector("#gym-celebration-image");
       return { sessionStatus: session.status, completedAt: session.completedAt, image: image.getAttribute("src"), alt: image.alt };
-    }, testDates.today);
+    }, testDates.celebrationDay1);
     if (firstCelebrationFixture.exerciseCount !== 7 || firstCelebrationFixture.setCount !== 21 ||
         firstCelebration.sessionStatus !== "completed" || !firstCelebration.completedAt ||
         firstCelebration.image !== "./assets/celebrations/v1/celebration-day1.gif" ||
@@ -481,7 +482,7 @@ function server() {
     const firstSavedState = await savedCelebrationState(1, testDates.celebrationDay1);
     await app.locator("#gym-celebration-skip").click();
     await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open);
-    const afterSkip = await savedCelebrationState(1, testDates.today);
+    const afterSkip = await savedCelebrationState(1, testDates.celebrationDay1);
     if (!afterSkip || afterSkip.status !== "completed" || afterSkip.completedAt !== firstSavedState.completedAt ||
         afterSkip.updatedAt !== firstSavedState.updatedAt) {
       throw new Error("Skipping the celebration changed the already-saved Day 1 workout: " + JSON.stringify({ firstSavedState, afterSkip }));
@@ -511,7 +512,7 @@ function server() {
     const secondSavedState = await savedCelebrationState(2, testDates.celebrationDay2);
     await app.locator("#gym-celebration-dismiss").click();
     await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open);
-    const afterDismiss = await savedCelebrationState(2, testDates.future);
+    const afterDismiss = await savedCelebrationState(2, testDates.celebrationDay2);
     if (!afterDismiss || afterDismiss.status !== "completed" || afterDismiss.completedAt !== secondSavedState.completedAt ||
         afterDismiss.updatedAt !== secondSavedState.updatedAt) {
       throw new Error("Dismissing the celebration changed the already-saved Day 2 workout: " + JSON.stringify({ secondSavedState, afterDismiss }));
@@ -542,7 +543,7 @@ function server() {
     const autoCloseStarted = Date.now();
     await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open, null, { timeout: 10000 });
     const autoCloseElapsed = Date.now() - autoCloseStarted;
-    const afterAutoClose = await savedCelebrationState(3, testDates.afterTomorrow);
+    const afterAutoClose = await savedCelebrationState(3, testDates.celebrationDay3);
     if (autoCloseElapsed < 5500 || autoCloseElapsed > 8500 ||
         !afterAutoClose || afterAutoClose.status !== "completed" ||
         afterAutoClose.completedAt !== thirdSavedState.completedAt || afterAutoClose.updatedAt !== thirdSavedState.updatedAt) {
@@ -561,7 +562,8 @@ function server() {
         for (const record of exercises) await ProjectComebackDB.remove("exerciseRecords", record.id);
         await ProjectComebackDB.remove("sessions", session.id);
       }
-      await ProjectComebackDB.remove("profile", "gym-profile");
+      if (originalCelebrationProfile) await ProjectComebackDB.put("profile", originalCelebrationProfile);
+      else await ProjectComebackDB.remove("profile", "gym-profile");
     }, [
       { day: 1, date: testDates.celebrationDay1 },
       { day: 2, date: testDates.celebrationDay2 },
