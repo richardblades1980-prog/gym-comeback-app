@@ -284,6 +284,8 @@ function server() {
     const guideState=await app.locator("#gym-exercise-guide-content").innerText();
     if(!guideState.includes("Guide unavailable")||!guideState.includes("Draft instructions are not displayed"))throw new Error("Guide unavailable state is not honest or visible: "+guideState);
     if(await app.evaluate(()=>document.activeElement.id)!=="gym-exercise-guide-close")throw new Error("Guide open did not move focus to the close control.");
+    await app.keyboard.press("Tab");if(await app.evaluate(()=>document.activeElement.id)!=="gym-exercise-guide-close")throw new Error("Tab escaped the exercise guide dialog.");
+    await app.keyboard.press("Shift+Tab");if(await app.evaluate(()=>document.activeElement.id)!=="gym-exercise-guide-close")throw new Error("Shift+Tab escaped the exercise guide dialog.");
     await app.locator("#gym-exercise-guide-close").click();
     if(await app.evaluate(()=>document.activeElement.hasAttribute("data-guide-open"))===false)throw new Error("Guide close did not restore focus to its invoking button.");
     const heading=firstCard.locator("[data-guide-heading]");
@@ -294,6 +296,8 @@ function server() {
     if(await app.evaluate(()=>document.activeElement.hasAttribute("data-guide-heading"))!==true)throw new Error("Escape close did not restore focus to the exercise heading.");
     const headingBox=await heading.boundingBox();await app.mouse.move(headingBox.x+10,headingBox.y+10);await app.mouse.down();await app.waitForTimeout(120);await app.mouse.move(headingBox.x+35,headingBox.y+22);await app.mouse.up();await app.waitForTimeout(500);
     if(await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Movement-cancelled hold unexpectedly opened the guide.");
+    await heading.hover();await app.mouse.down();await app.waitForTimeout(120);await app.mouse.up();await app.waitForTimeout(500);
+    if(await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Pointer-release-cancelled hold unexpectedly opened the guide.");
     const holdBox=await heading.boundingBox();await app.mouse.move(holdBox.x+10,holdBox.y+10);await app.mouse.down();await app.waitForTimeout(500);
     if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("450ms hold did not open the guide.");
     await app.mouse.up();await app.locator("#gym-exercise-guide-close").click();
