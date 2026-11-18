@@ -298,7 +298,8 @@ function server() {
     if(await firstCard.locator('[data-gym-action="start"]').first().count()!==1)throw new Error("Guide interactions changed workout set actions.");
     const firstSetStateAfterGuide=await firstCard.locator(".gym-set-row").first().locator(".gym-set-state").textContent();if(firstSetStateAfterGuide!==firstSetStateBeforeGuide)throw new Error("Guide interaction changed a workout set state.");
     console.log("PASS explicit Guide button, unavailable state, keyboard, Escape, focus restoration, hold and cancellation");
-\n    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
+
+    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
     const firstCard = app.locator("#gym-workout-exercises .gym-exercise-card").first();
     await firstCard.locator("[data-gym-swap-name]").fill("Dumbbell Floor Press");
     await firstCard.locator("[data-gym-swap-equipment]").selectOption("available");

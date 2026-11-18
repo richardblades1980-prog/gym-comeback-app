@@ -611,7 +611,8 @@ document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click
 $("gym-workout-start").addEventListener("click",startGymWorkout);
 $("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
 $("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
-$("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);\nbindExerciseGuideInteractions();
+$("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
+bindExerciseGuideInteractions();
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
 $("gym-celebration-skip").addEventListener("click",closeGymCelebration);
 $("gym-celebration-dismiss").addEventListener("click",closeGymCelebration);
