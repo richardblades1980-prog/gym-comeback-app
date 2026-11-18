@@ -1253,3 +1253,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Backup validation [#44262109060 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44262109060).
 - Development branch verified at the implementation SHA; protected main remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No merge or deployment.
 - Next: separate design/review for the production cryptographic digest implementation and runtime integration. Registry remains empty; no human reviews/approvals were created.
+
+
+## G3.7.2c — Cryptographic integrity design checkpoint (2026-11-18)
+
+- Inspected live branch `V21.2-development` at `33128054fc266a74b31b259f005f438609773d3c`; protected main unchanged at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`.
+- Design-only doc created: `docs/V21.2-EXERCISE-GUIDE-CRYPTO-INTEGRITY-DESIGN.md`. Defines canonical schema payloads, domain-separated SHA-256, guide content/asset set/assignment/review digest contracts, immutable lifecycle, tests and fail-closed behavior.
+- Existing artwork manifest already contains per-asset SHA-256 and byte lengths; service worker verifies actual asset bytes before cache publication.
+- Current validator is synchronous; Web Crypto is async. Production validation/resolution must become async. Missing/rejected crypto cannot fall back or pass.
+- Hashes are integrity checks, not authenticated reviewer signatures. No implementation, runtime wiring, registry records, approvals, DB/backup/history, identity/catalogue, programme, UI, artwork/cache, merge or deployment changes.
+- Exact final-SHA browser and backup validations required before closure.
