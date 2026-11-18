@@ -159,7 +159,8 @@ async function openExerciseGuide(exerciseId,trigger){
  if(!dialog.open)dialog.showModal();$("gym-exercise-guide-close").focus({preventScroll:true});
  try{
   const [registry,manifest]=await Promise.all([ProjectComebackExerciseGuideRuntime.loadRegistry(),guideAssetManifest()]);
-  const result=await ProjectComebackExerciseGuideRuntime.validate(ProjectComebackGymBaseProgramme,manifest,registry);
+  const verifiedAssetIds=await ProjectComebackExerciseGuideRuntime.verifyLocalAssets(manifest,caches,location.href);
+  const result=await ProjectComebackExerciseGuideRuntime.validate(ProjectComebackGymBaseProgramme,manifest,registry,undefined,verifiedAssetIds);
   if(!exerciseGuideRequestGate.isCurrent(token)||!dialog.open)return;
   const resolution=result.resolutions[exercise.programmeSlotId]||{status:"unavailable",reason:"No exact programme-slot guide resolution exists."};
   renderExerciseGuideContent(exercise,null,{status:resolution.status,reason:resolution.reason},manifest);
