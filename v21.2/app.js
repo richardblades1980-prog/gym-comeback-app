@@ -12,12 +12,49 @@ function setBusy(button,busy,label){button.disabled=busy;if(busy)button.dataset.
 function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="view-"+name);document.querySelectorAll(".tab").forEach(b=>{const active=b.dataset.view===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});hideNotice();if(name==="gym")refreshGymWorkout().catch(error=>notice(error.message,true));}
 function item(title,meta,tag){return '<div class="record-item"><div><strong>'+esc(title)+'</strong><small>'+esc(meta)+'</small></div><small>'+esc(tag||"")+'</small></div>';}
 
+let gymProgressionPlan={weeks:4,daysPerWeek:2};
+async function refreshGymProgressionControls(){
+ const progression=ProjectComebackGymProgression;
+ gymProgressionPlan=await progression.getPlan();
+ const weekSelect=$("gym-workout-week"),daySelect=$("gym-workout-day");
+ const oldWeek=Number(weekSelect.value)||1,oldDay=Number(daySelect.value)||1;
+ weekSelect.innerHTML=Array.from({length:gymProgressionPlan.weeks},(_,i)=>'<option value="'+(i+1)+'">Week '+(i+1)+'</option>').join("");
+ weekSelect.value=String(Math.min(oldWeek,gymProgressionPlan.weeks));
+ $("gym-programme-weeks").value=String(gymProgressionPlan.weeks);
+ $("gym-days-per-week").value=String(gymProgressionPlan.daysPerWeek);
+ daySelect.value=String(oldDay);
+ Array.from(daySelect.options).forEach(option=>{option.disabled=Number(option.value)>gymProgressionPlan.daysPerWeek;});
+ if(daySelect.selectedOptions[0]?.disabled)daySelect.value="1";
+ const week=Number(weekSelect.value),day=Number(daySelect.value);
+ const unlocked=await progression.isUnlocked(week,day,gymProgressionPlan);
+ const overrides=await progression.getManualUnlocks();
+ const manual=overrides.some(item=>item.week===week&&item.day===day);
+ const title=$("gym-progression-title"),message=$("gym-progression-message"),button=$("gym-progression-override");
+ title.textContent=(unlocked?"Unlocked":"Locked")+" · Week "+week+" / Day "+day;
+ if(unlocked&&!manual){
+  const next=await progression.nextWorkout(week,day,gymProgressionPlan);
+  message.textContent=next?("Available in sequence. Complete every set and save to unlock Week "+next.week+", Day "+next.day+"."):"Final workout of the programme is available.";
+ }else if(manual){
+  message.textContent="Manual beta unlock is active for this workout. You can relock it at any time.";
+ }else{
+  const required=day>1?{week,day:day-1}:{week:week-1,day:gymProgressionPlan.daysPerWeek};
+  message.textContent=day>1?("Complete Week "+week+", Day "+(day-1)+" to unlock this workout, or manually unlock for testing."):(week>1?("Complete Week "+(week-1)+", Day "+gymProgressionPlan.daysPerWeek+" to unlock this week, or manually unlock for testing."):"Week 1, Day 1 starts your programme.");
+ }
+ button.textContent=manual?"Relock selected workout":unlocked?"Unlocked by sequence":"Manually unlock selected workout";
+ button.disabled=unlocked&&!manual;
+ button.onclick=async()=>{
+  try{await progression.setManualUnlock(week,day,!manual);await refreshGymProgressionControls();notice(manual?"Manual unlock removed.":"Selected workout manually unlocked for testing.");}
+  catch(error){notice(error.message,true);}
+ };
+ return unlocked;
+}
 async function refreshGymWorkout(){
- const day=Number($("gym-workout-day").value),date=$("gym-workout-date").value||today;
- const workout=await ProjectComebackGymWorkout.findInProgress(day,date);
+ const week=Number($("gym-workout-week").value)||1,day=Number($("gym-workout-day").value),date=$("gym-workout-date").value||today;
+ const workout=await ProjectComebackGymWorkout.findInProgress(day,date,week);
  activeGymWorkout=workout;
- if(workout){renderGymWorkout();$("gym-workout-status").textContent="An in-progress session for this day and date is ready to resume.";}
- else{$("gym-workout-active").hidden=true;$("gym-workout-status").textContent="No in-progress session for this day and date. Start a new workout when ready.";}
+ if(workout){renderGymWorkout();$("gym-workout-status").textContent="An in-progress session for this programme week, day and date is ready to resume.";}
+ else{$("gym-workout-active").hidden=true;$("gym-workout-status").textContent="No in-progress session for this week, day and date. Start a new workout when ready.";}
+ await refreshGymProgressionControls();
 }
 function formatStopwatchElapsed(set){
  const base=Math.max(0,Number(set.stopwatchElapsedMs)||0);
@@ -76,13 +113,18 @@ function renderGymWorkout(){
  gymRestRenderInterval=setInterval(updateGymRestDisplay,250);
 }
 async function startGymWorkout(){
- const button=$("gym-workout-start"),day=Number($("gym-workout-day").value),date=$("gym-workout-date").value;
+ const button=$("gym-workout-start"),week=Number($("gym-workout-week").value)||1,day=Number($("gym-workout-day").value),date=$("gym-workout-date").value;
  try{
   setBusy(button,true);
-  const result=await ProjectComebackGymWorkout.startSession(day,date);
+  const existing=await ProjectComebackGymWorkout.findInProgress(day,date,week);
+  if(!existing&&!await ProjectComebackGymProgression.isUnlocked(week,day,gymProgressionPlan)){
+   await refreshGymProgressionControls();
+   throw new Error("This workout is locked by the programme sequence. Complete the previous planned workout or use the manual beta unlock.");
+  }
+  const result=await ProjectComebackGymWorkout.startSession(day,date,{week});
   activeGymWorkout=result.workout;
   renderGymWorkout();
-  $("gym-workout-status").textContent=result.resumed?"Resumed your saved in-progress workout.":"New workout started. Your session and sets are saved.";
+  $("gym-workout-status").textContent=result.resumed?"Resumed your saved Week "+week+" Day "+day+" workout.":"Week "+week+" Day "+day+" started. Your session and sets are saved.";
   await refresh();
  }catch(error){notice(error.message,true);}
  finally{setBusy(button,false,"Start / resume workout");}
@@ -231,7 +273,7 @@ async function refresh(){
  $("schedule-form").querySelector('button[type="submit"]').disabled=available.length===0;
  const recent=[...gym.map(x=>({...x,_kind:"Gym"})),...hikes.map(x=>({...x,_kind:"Hiking"}))].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,6);
  $("recent-records").innerHTML=recent.length?recent.map(x=>item(x.title||x.name||x.id,x.date||"Date not recorded",x._kind)).join(""):'<div class="empty-state">No records yet. Add a hike or bring across your existing Gym history.</div>';
- $("gym-records").innerHTML=gym.length?gym.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).map(x=>item(x.title||("Week "+(x.week||"")+" · Day "+(x.day||"")),x.date||"Date not recorded",(x.status||"incomplete")+" · "+(x.durationMinutes??"—")+" min")).join(""):'<div class="empty-state">No migrated Gym sessions found. Use Data &amp; backup to inspect and safely migrate V21.1 data.</div>';
+ renderGymHistory(gym,gymExercises,gymSets);
  $("hiking-records").innerHTML=hikes.length?hikes.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>item(x.title,x.date,(x.distanceKm!==undefined?x.distanceKm+" km":"Distance not recorded"))).join(""):'<div class="empty-state">No hikes recorded yet.</div>';
  renderHikingJourney(hikes);
  renderGymJourney(gym,gymExercises,gymSets);
@@ -241,6 +283,33 @@ async function refresh(){
 }
 
 
+
+function renderGymHistory(sessions,exercises,sets){
+ const target=$("gym-records");
+ if(!sessions.length){target.innerHTML='<div class="empty-state">No Gym sessions recorded yet. Start your first workout to build history.</div>';return;}
+ const rows=sessions.slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||Number(b.week||1)-Number(a.week||1)||Number(b.day||0)-Number(a.day||0)).map(session=>{
+  const week=Number(session.week)||1,day=Number(session.day)||0,date=session.date?formatDate(session.date):"Date not recorded";
+  const sessionExercises=exercises.filter(item=>item.sessionId===session.id).sort((a,b)=>Number(a.position)-Number(b.position));
+  const sessionSets=sets.filter(item=>item.sessionId===session.id);
+  const completed=sessionSets.filter(item=>item.status==="completed").length;
+  const status=session.status==="completed"?"Completed":"In progress";
+  const detail=sessionExercises.map(exercise=>{
+   const exSets=sessionSets.filter(item=>item.exerciseRecordId===exercise.id).sort((a,b)=>Number(a.setNumber)-Number(b.setNumber));
+   const setDetail=exSets.map(set=>{
+    const parts=[];
+    if(String(set.weight??"").trim()!=="")parts.push(set.weight+" kg");
+    if(String(set.reps??"").trim()!=="")parts.push(set.reps+" reps");
+    if(String(set.duration??"").trim()!=="")parts.push(set.duration+" sec");
+    return "Set "+set.setNumber+(parts.length?": "+parts.join(" · "):": no values recorded");
+   }).join("; ");
+   return "<li><strong>"+esc(exercise.name||"Exercise")+"</strong><small>"+esc(setDetail||"No sets recorded")+"</small></li>";
+  }).join("");
+  const resume=session.status==="in-progress"?'<button class="secondary" type="button" data-history-resume data-week="'+week+'" data-day="'+day+'" data-date="'+esc(session.date||today)+'">Resume this workout</button>':"";
+  const progress=session.status==="completed"?(Number(session.durationMinutes)>=0?session.durationMinutes+" min recorded":"Duration not recorded"):(completed+" of "+sessionSets.length+" sets completed");
+  return '<article class="gym-history-entry"><div class="gym-history-heading"><div><strong>Week '+week+' · Day '+day+' — '+esc(session.title||"Gym workout")+'</strong><small>'+esc(date)+'</small></div><span class="gym-history-status '+(session.status==="completed"?"completed":"progress")+'">'+status+'</span></div><p class="gym-history-summary">'+esc(progress)+" · "+sessionExercises.length+" exercises</p>"+resume+'<details><summary>Workout details</summary><ol class="gym-history-exercises">'+detail+'</ol></details></article>';
+ }).join("");
+ target.innerHTML=rows;
+}
 
 function renderGymJourney(sessions,exercises,sets){
  const target=$("gym-journey");
@@ -497,8 +566,12 @@ $("gym-celebration-dialog").addEventListener("close",()=>{
  const returnFocus=$("gym-workout-start");
  if(returnFocus)returnFocus.focus({preventScroll:true});
 });
+$("gym-workout-week").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
 $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
 $("gym-workout-date").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
+$("gym-programme-weeks").addEventListener("change",async event=>{try{await ProjectComebackGymProgression.savePlan({weeks:Number(event.target.value),daysPerWeek:Number($("gym-days-per-week").value)});await refreshGymProgressionControls();await refreshGymWorkout();notice("Programme length saved. Existing workout history remains unchanged.");}catch(error){notice(error.message,true);}});
+$("gym-days-per-week").addEventListener("change",async event=>{try{await ProjectComebackGymProgression.savePlan({weeks:Number($("gym-programme-weeks").value),daysPerWeek:Number(event.target.value)});await refreshGymProgressionControls();await refreshGymWorkout();notice("Planned training frequency saved. Days beyond this frequency are unavailable.");}catch(error){notice(error.message,true);}});
+$("gym-records").addEventListener("click",event=>{const button=event.target.closest("[data-history-resume]");if(!button)return;$("gym-workout-week").value=button.dataset.week;$("gym-workout-day").value=button.dataset.day;$("gym-workout-date").value=button.dataset.date;showView("gym");refreshGymWorkout().then(startGymWorkout).catch(error=>notice(error.message,true));});
  $("module-cards").addEventListener("click",async event=>{const button=event.target.closest("[data-module-id]");if(!button)return;const id=button.dataset.moduleId;try{button.disabled=true;const current=await ProjectComebackModules.get(id);await ProjectComebackModules.setEnabled(id,!current.enabled);await refresh();notice(current.enabled?"Module paused. Existing records have been kept.":"Module enabled. You can add and schedule activities again.");}catch(error){notice(error.message,true);}finally{button.disabled=false;}});
 $("today-date").textContent=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
 $("hiking-form").elements.date.value=today;$("schedule-form").elements.date.value=today;$("gym-workout-date").value=today;
@@ -572,7 +645,7 @@ $("restore-apply").addEventListener("click",async event=>{
  try{setBusy(b,true);const result=await ProjectComebackBackup.restoreBackup(restorePayload,{confirmed:true});restorePayload=null;$("restore-preview").hidden=true;$("restore-confirm-wrap").hidden=true;$("restore-file").value="";$("restore-confirm").checked=false;await refresh();await refreshAssessments();notice("Restore completed. A pre-restore safety snapshot was saved in the database.");}catch(error){notice(error.message,true);}finally{setBusy(b,false,"Confirm restore");b.disabled=true;}
 });
 async function start(){
- try{const initialConnection=await ProjectComebackDB.open();initialConnection.close();await refreshIdentityUpgradePanel();const result=await ProjectComebackModules.initialise();await refresh();await refreshAssessments();await inspectMigration();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
+ try{const initialConnection=await ProjectComebackDB.open();initialConnection.close();await refreshIdentityUpgradePanel();const result=await ProjectComebackModules.initialise();await refreshGymProgressionControls();await refresh();await refreshAssessments();await inspectMigration();$("connection-state").textContent="Local database ready";$("connection-state").classList.add("online");if(result.created.length)notice("V21.2 local data space initialised. Your existing V21.1 data has not been changed.");}
  catch(error){$("connection-state").textContent="Storage unavailable";notice("Could not initialise local storage: "+error.message,true);}
 }
 start();
