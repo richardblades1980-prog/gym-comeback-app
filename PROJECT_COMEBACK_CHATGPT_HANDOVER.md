@@ -1281,3 +1281,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Asset tuples canonicalize by asset ID and duplicate IDs reject. Unknown fields and malformed schema values fail closed.
 - Contract tests cover positive digest verification, tampering, cross-target/snapshot/version changes, asset tuple changes, deterministic output, nonmutation, schema rejection and unavailable/rejected crypto.
 - Still isolated: no registry validator, runtime, renderer or registry records changed. Exact-final-SHA validations required before PASS.
+
+
+## G3.7.2f — Async registry validation implementation
+
+- Registry validator now uses async real SHA-256 contracts; injectable synchronous digest callbacks removed.
+- Registry schema v2 requires guides, assetSets, reviews and assignments.
+- Validation binds assignment to current source snapshot ID + digest, exact programme slot, guide version/content digest, scope/substitution; guide to asset-set release/digest; asset-set to manifest tuples and local assets; review records to exact target digests.
+- Complete resolution requires approved assignment, guide and asset set plus exact-digest approve reviews. Conflicts, stale bindings, tampering, unapproved states, invalid scope and crypto failure fail closed.
+- Tests cover empty registry/unavailable state, complete fixture, missing/rejected crypto, guide/asset/assignment/review tampering, snapshot and target mismatch, approval states, conflicts, withdrawn assignment, determinism and nonmutation.
+- Registry remains empty; no human approvals or runtime wiring. Exact-final-SHA browser and backup validations required.

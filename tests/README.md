@@ -50,3 +50,6 @@ Both workflows run on pushes and pull requests targeting `V21.2-development`. A 
 
 
 - **Exercise-guide digest contracts:** `node --test tests/exercise-guide-digests.test.js` validates the async guide-content, asset-set, assignment and review digest payload contracts, including tamper/cross-binding checks and fail-closed crypto behavior. These contracts are not yet wired to production registry validation.
+
+
+- **Async guide registry validation:** `node --test tests/exercise-guide-registry.test.js` covers schema v2 and cryptographic verification using the digest contracts. Registry is empty; production resolution integration is still a separate gate.
