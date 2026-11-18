@@ -1235,3 +1235,12 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - This increment is documentation/design only. No runtime implementation, registry population, guide publication, review/approval, exercise identity, artwork, DB/backup/history/catalogue change, merge or deployment.
 - Next: G3.7.2b pure registry/assignment validation module and tests; registry stays empty.
 - Exact final-SHA browser and backup workflows must pass before this documentation checkpoint is closed.
+
+
+## G3.7.2b — Registry validation implementation checkpoint (2026-11-18)
+
+- Live development branch inspected at `1c81bb7fc5a151382114c9bb15014013cec484cb`; protected main unchanged at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`.
+- Added pure validation module `src/modules/exercise-guide-registry.js`, matching offline mirror and 12 tests. Not loaded by production UI; registry remains empty.
+- Enforces exact slot/source snapshot, guide/version, separate human guide and assignment review, digest bindings, explicit exercise/variation/equipment/context scope, required content and verified manifest assets. Conflicts, stale/unknown refs, invalid statuses, digest/scope mismatches and inheritance fail closed. Any registry error downgrades complete resolutions. Missing/withdrawn assignments are unavailable.
+- Digest verifier is injected; no cryptographic SHA-256 implementation here. Tests use deterministic placeholder digest function. Production digest integration and renderer hookup remain later gates.
+- Browser validation workflow adds registry tests and source/offline parity. No guide population/review, DB/backup/history, identity/catalogue, programme, UI, artwork/cache, protected root, merge or deployment changes. Validation pending exact final SHA.

@@ -41,6 +41,8 @@ jobs:
         run: node --test tests/catalogue-delivery-contract.test.js
       - name: Run exercise guide state tests
         run: node --test tests/exercise-guide.test.js
+      - name: Run exercise guide registry validation tests
+        run: node --test tests/exercise-guide-registry.test.js
       - name: Run guide artwork manifest integrity contract
         run: node --test tests/guide-assets-contract.test.js
       - name: Run guide artwork service-worker cache contract
