@@ -316,8 +316,6 @@ function server() {
     }
     console.log("[browser] Smart rest timer recovery and controls");
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
-    const restBefore = await app.evaluate(() => ProjectComebackDB.get("sessions", document.querySelector("#gym-workout-title").dataset.sessionId));
-    const endBefore = await app.evaluate(() => ProjectComebackGymWorkout && document.querySelector("#gym-rest-countdown").textContent);
     await app.locator('[data-gym-action="rest-add"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden === false);
     const extendedEnd = await app.evaluate(async () => {
