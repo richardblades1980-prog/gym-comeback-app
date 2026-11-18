@@ -586,7 +586,7 @@ function server() {
         JSON.stringify({ autoCloseElapsed, thirdSavedState, afterAutoClose }));
     }
 
-    await app.evaluate(async ({ sessionSpecs, originalProfile }) => {
+    await app.evaluate(async ({ sessionSpecs, originalProfile, originalPlan }) => {
       for (const spec of sessionSpecs) {
         const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", spec.date]);
         const session = sessions.find(item => item.day === spec.day);
