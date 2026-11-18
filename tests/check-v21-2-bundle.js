@@ -4,6 +4,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const pairs = [
   ["src/data/database.js","v21.2/assets/database.js"],
+  ["src/data/integrity.js","v21.2/assets/integrity.js"],
   ["src/data/exercise-identity.js","v21.2/assets/exercise-identity.js"],
   ["src/data/gym-base-programme.js","v21.2/assets/gym-base-programme.js"],
   ["src/modules/gym-workout.js","v21.2/assets/gym-workout.js"],
