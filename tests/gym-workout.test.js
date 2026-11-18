@@ -198,6 +198,12 @@ test("smart rest starts on set completion, persists absolute end time, supports 
   await workout.startSet(loaded, exercise.id, 2);
   await workout.completeSet(loaded, exercise.id, 2);
   assert.ok(loaded.session.restEndAt);
+  await workout.undoSet(loaded, exercise.id, 2);
+  assert.equal(loaded.session.restEndAt, undefined, "undoing the set that started rest also clears that rest timer");
+  assert.equal((await db.get("sessions", loaded.session.id)).restEndAt, undefined);
+  await workout.startSet(loaded, exercise.id, 2);
+  await workout.completeSet(loaded, exercise.id, 2);
+  assert.ok(loaded.session.restEndAt);
   await workout.cancelRest(loaded);
   assert.equal(loaded.session.restEndAt, undefined);
   await assert.rejects(() => workout.setExerciseRest(loaded, exercise.id, 80), /supported rest duration/);
