@@ -1,3 +1,12 @@
+# Project Comeback — G3.7.5 failure-path validation checkpoint (2026-11-18)
+
+- Live branch: `V21.2-development`. `main` remains unchanged; no deployment.
+- Added tests for malformed JSON, incomplete backup envelopes and duplicate record IDs rejected before writes.
+- Added V2 restore rollback test where duplicate alias unique-index values fail after replace writes are queued. Existing data is preserved, incoming writes and safety snapshot are absent; corrected backup retry succeeds.
+- Added migration structured-clone failure test. It uncovered a real atomicity defect: a synchronous write exception could reject migration while earlier queued writes committed. `commitLegacyMigration` now aborts and awaits the transaction on any transaction-body exception. Canonical and offline database service mirrors match.
+- Implementation exact SHA `59a0353f4a33d80c015e7c298140f0c48e0cd9eb`: backup [#44251671946 PASS — 140 tests, 0 failed](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44251671946); browser [#44251672108 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44251672108).
+- Documentation checkpoint validation pending. Do not merge to main or deploy.
+
 # Project Comeback — G3.7.4 cross-store integrity diagnostics checkpoint (2026-11-18)
 
 - Active branch: `V21.2-development`; `main` remains untouched. No merge or deployment.
