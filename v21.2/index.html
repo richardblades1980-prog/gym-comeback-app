@@ -183,6 +183,27 @@
       <footer><span>PROJECT COMEBACK V21.2A</span><span>Local-first · Your data stays yours</span></footer>
     </main>
   </div>
+  <dialog id="gym-celebration-dialog" class="gym-celebration-dialog"
+          aria-labelledby="gym-celebration-title" aria-describedby="gym-celebration-description">
+    <div class="gym-celebration-card">
+      <div class="gym-celebration-heading">
+        <div>
+          <p class="eyebrow">SESSION COMPLETE · GYM COMEBACK</p>
+          <h2 id="gym-celebration-title">THAT'S A COMEBACK!</h2>
+        </div>
+        <button id="gym-celebration-dismiss" class="secondary gym-celebration-dismiss"
+                type="button" aria-label="Dismiss celebration">×</button>
+      </div>
+      <p id="gym-celebration-description" class="muted">Your workout has been saved. Take a moment to enjoy the win.</p>
+      <img id="gym-celebration-image" class="gym-celebration-image" alt="" hidden>
+      <p id="gym-celebration-session" class="gym-celebration-session"></p>
+      <div class="gym-celebration-progress" aria-hidden="true"><span></span></div>
+      <div class="gym-celebration-actions">
+        <button id="gym-celebration-skip" class="primary" type="button">Skip celebration</button>
+      </div>
+      <p class="gym-celebration-note">This closes automatically after six seconds. Your saved workout is already complete.</p>
+    </div>
+  </dialog>
   <script src="./assets/database.js"></script>
   <script src="./assets/exercise-identity.js"></script>
   <script src="./assets/gym-base-programme.js"></script>
