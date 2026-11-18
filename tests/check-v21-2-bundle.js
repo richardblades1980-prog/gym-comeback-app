@@ -9,6 +9,7 @@ const pairs = [
   ["src/data/gym-base-programme.js","v21.2/assets/gym-base-programme.js"],
   ["src/modules/gym-workout.js","v21.2/assets/gym-workout.js"],
   ["src/modules/gym-progression.js","v21.2/assets/gym-progression.js"],
+  ["src/modules/exercise-guide-runtime.js","v21.2/assets/exercise-guide-runtime.js"],
   ["src/modules/exercise-guide.js","v21.2/assets/exercise-guide.js"],
   ["src/modules/exercise-guide-registry.js","v21.2/assets/exercise-guide-registry.js"],
   ["src/modules/exercise-guide-crypto.js","v21.2/assets/exercise-guide-crypto.js"],
