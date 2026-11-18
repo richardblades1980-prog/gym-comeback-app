@@ -209,7 +209,6 @@
       delete exercise.performedExerciseName;
       exercise.name = exercise.sourceExerciseLabel;
     } else {
-      exercise.name = label;
       exercise.performedExerciseName = label;
       exercise.substitution = {
         sourceExerciseLabel: exercise.sourceExerciseLabel,
