@@ -407,9 +407,9 @@ function server() {
       }, { day, date });
       await app.reload();
       await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+      await app.locator('[data-view="gym"]').click();
       await app.locator("#gym-workout-day").selectOption(String(day));
       await app.locator("#gym-workout-date").fill(date);
-      await app.locator('[data-view="gym"]').click();
       await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden &&
         !document.querySelector("#gym-workout-finish").disabled);
       return fixture;
