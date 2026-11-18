@@ -1198,3 +1198,15 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 
 - Corrected the browser assertion from “performed label” to the actual approved interface wording “performed exercise”. The prior run again stopped at this assertion before the remaining Gym-history checks. The backup validation passed on the preceding SHA.
 - Validation is pending on the corrected commit. Continue until both workflows pass on the exact final SHA; do not touch main or deploy.
+
+
+## G3.6b — final validation checkpoint (2026-11-18)
+
+- Implementation: descriptive Gym progression summary service and UI, substitution separation, test coverage and source/offline parity. The browser assertions were corrected to reflect the new descriptive labels and substitution-transparency note without weakening recorded-value/load/date/repetition checks.
+- Final validated SHA before this documentation closure: `befeb442164e519ed02c6b52e834b3d5285879ff`.
+- Backup validation [#44255883725 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44255883725).
+- Browser validation [#44255883740 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44255883740).
+- Main remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge or deployment.
+- Next roadmap gate is G3.7 exercise guide: design-first source audit of current guide delivery, access/hold/keyboard interaction, honest draft/unavailable states and offline behaviour. Do not create/revise guide artwork or reviewed instructions as part of the initial design audit.
+
+---
