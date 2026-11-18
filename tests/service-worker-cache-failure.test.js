@@ -31,9 +31,14 @@ async function runFetchWithCacheFailure(worker, failure, mode) {
     skipWaiting: async () => undefined,
     clients: { claim: async () => undefined }
   };
+  class TestResponse {
+    constructor(body, options) { this.body = body; this.status = options.status; this.ok = this.status >= 200 && this.status < 300; this.type = options.type || "basic"; }
+    clone() { return new TestResponse(this.body, { status: this.status, type: this.type }); }
+    async text() { return this.body; }
+  }
   const context = {
-    self, caches, URL, Response,
-    fetch: async request => new Response("network-response", { status: 200, headers: { "content-type": "text/plain" } }),
+    self, caches, URL, Response: TestResponse,
+    fetch: async request => new TestResponse("network-response", { status: 200, type: "basic" }),
     console
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, worker.path), "utf8"), context);
