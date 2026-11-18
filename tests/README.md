@@ -44,3 +44,6 @@ node tests/browser-validation.js
 - [V21.2A backup validation](../.github/workflows/v21-2a-backup-validation.yml): backup, persistence, programme-manager, workload, migration, IndexedDB, integrity, identity/catalogue and Gym service suites.
 
 Both workflows run on pushes and pull requests targeting `V21.2-development`. A result is a pass only when its completed run's `head_sha` matches the exact commit being validated. Earlier commits' results do not validate a later commit.
+
+
+- **Exercise-guide cryptographic helpers:** `node --test tests/exercise-guide-crypto.test.js` tests canonicalisation, SHA-256 vectors, domain separation and fail-closed behavior. The helper source/offline mirror is included in the bundle parity check. This helper is not yet wired into production registry validation.

@@ -1263,3 +1263,12 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Current validator is synchronous; Web Crypto is async. Production validation/resolution must become async. Missing/rejected crypto cannot fall back or pass.
 - Hashes are integrity checks, not authenticated reviewer signatures. No implementation, runtime wiring, registry records, approvals, DB/backup/history, identity/catalogue, programme, UI, artwork/cache, merge or deployment changes.
 - Exact final-SHA browser and backup validations required before closure.
+
+
+## G3.7.2d — Canonicalisation/SHA-256 implementation checkpoint
+
+- Implemented isolated module `src/modules/exercise-guide-crypto.js` and exact offline mirror `v21.2/assets/exercise-guide-crypto.js`; bundle parity check updated.
+- Provides strict canonical JSON, SHA-256 byte hashing via Web Crypto only, allowlisted domain-separated canonical digest, and digest comparison. Fail closed when Web Crypto is absent/rejects.
+- Tests cover known SHA-256 empty/`abc` vectors; key ordering/array order/Unicode/number formatting; rejection of non-finite/unsupported/cyclic/sparse/non-plain/accessor/symbol/extra-array-property/unpaired-surrogate inputs; domain separation, mismatch, deterministic results and error propagation.
+- Not connected to guide registry, renderer or production app. Registry remains empty; no approvals.
+- Exact-final-SHA browser and backup workflows required before PASS.
