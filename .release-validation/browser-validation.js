@@ -45,13 +45,15 @@ function server() {
       res.writeHead(503, { "content-type": "text/plain", "cache-control": "no-store" }).end("Intentional failed-update fixture");
       return;
     }
-    const fixturePrefix = "/tests/fixtures/";
-    const fixtureRoot = path.resolve(__dirname, "fixtures");
-    const fixtureRequest = routePath.startsWith(fixturePrefix);
-    const file = fixtureRequest
-      ? path.resolve(fixtureRoot, "." + routePath.slice(fixturePrefix.length))
+    const hiddenRoutes = [
+      { prefix: "/tests/fixtures/", root: path.resolve(__dirname, "fixtures") },
+      { prefix: "/src/data/", root: path.resolve(__dirname, "src/data") }
+    ];
+    const hiddenRoute = hiddenRoutes.find(item => routePath.startsWith(item.prefix));
+    const file = hiddenRoute
+      ? path.resolve(hiddenRoute.root, "." + routePath.slice(hiddenRoute.prefix.length))
       : path.resolve(root, "." + routePath);
-    const allowedRoot = fixtureRequest ? fixtureRoot : root;
+    const allowedRoot = hiddenRoute ? hiddenRoute.root : root;
     if (!file.startsWith(allowedRoot + path.sep) && file !== allowedRoot) { res.writeHead(403).end(); return; }
     fs.stat(file, (err, stat) => {
       const target = !err && stat.isDirectory() ? path.join(file, "index.html") : file;
