@@ -2,7 +2,7 @@
 # Project Comeback — G3.5 programme progression and Gym history checkpoint (2026-11-18)
 
 - **Active branch:** `V21.2-development`; `main` remains untouched. No merge or deployment.
-- **Latest code milestone:** G3.5 programme week/day progression and Gym history implemented. Code SHA `147e115b36ca6488543e6d986f8afc8ace9a7385`; browser [#44236214382 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236214382), backup [#44236214450 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236214450).
+- **Latest code milestone:** G3.5 programme week/day progression and Gym history implemented. Code SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`; browser [#44236214382 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236214382), backup [#44236214450 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236214450).
 - Legacy plan choices restored: 4/8/12 weeks, 2–5 planned days/week, defaults 4 weeks and 2 days. Sequential unlock rules are preserved: Week1 Day1, then prior planned day, then previous week's final planned day to unlock next-week Day1. Manual unlock/relock stored in preferences and cannot bypass days-per-week limits.
 - Added `src/modules/gym-progression.js` with offline mirror. Preferences and sessions use existing stores; no schema/store/index/backup-format changes. Session `week` is saved, and resume matching includes week/day/date.
 - Gym history shows completed and in-progress sessions with Week/Day, date, status, progress/duration, exercise/set details and Resume action. Browser test verifies in-progress and completed history.
@@ -1049,3 +1049,11 @@ Implemented first G3.2 slice:
 The follow-up run found and corrected test-fixture isolation: celebration sessions use dates 20–22 days ahead, the setup waits for the workout panel to clear before starting a new fixture, and cleanup asserts that the pre-existing Gym session count is unchanged. The browser test preserves the original profile record and removes only its dedicated fixtures. The complete browser suite and backup check passed on exact SHA `9d72d43b5b263221b2d5879648c9ffa65e897420`:
 - Browser [#44234292910 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234292910)
 - Backup [#44234292767 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234292767)
+
+### Final refresh-race correction and validation — 2026-11-18
+
+A browser regression exposed a race when a stale asynchronous workout lookup completed after the user changed the selected week/day/date. Refresh now invalidates older requests, hides the previous workout immediately while the new selection loads, and only applies the newest lookup/progression result. This protects the visible session and controls from stale results.
+
+Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`:
+- Browser/Chromium [#44236590997 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236590997).
+- Backup validation [#44236591011 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236591011).
