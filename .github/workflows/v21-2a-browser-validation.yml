@@ -21,6 +21,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install --no-package-lock
+      - name: Run service-worker cache failure tests
+        run: node --test tests/service-worker-cache-failure.test.js
       - name: Run cross-store integrity diagnostics tests
         run: node --test tests/integrity-validation.test.js
       - name: Verify V21.2 browser bundle matches canonical services
