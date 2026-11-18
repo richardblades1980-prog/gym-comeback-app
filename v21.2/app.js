@@ -115,7 +115,9 @@ function renderGymWorkout(){
    return '<div class="gym-set-row"><div class="gym-set-heading"><strong>Set '+set.setNumber+'</strong><span class="gym-set-state">'+esc(set.status.replace("-"," "))+'</span></div><div class="gym-set-fields">'+weightField+repField+durationField+'</div><div class="gym-set-action">'+action+'</div></div>';
   }).join("");
   const restOptions=ProjectComebackGymWorkout.restPresets.map(seconds=>'<option value="'+seconds+'"'+(Number(exercise.restSeconds||90)===seconds?' selected':'')+'>'+seconds+' sec</option>').join("");
-  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+sets+'</article>';
+  const swapDisabled=exercise.status!=="not-started"||exercise.sets.some(set=>set.status==="in-progress"||set.status==="completed"||set.startedAt||set.completedAt||[set.weight,set.reps,set.duration,set.targetDuration].some(value=>value!==undefined&&value!==null&&String(value).trim()!==""));
+  const swapPanel='<div class="gym-exercise-swap"><p class="subtle">Programme exercise: '+esc(exercise.sourceExerciseLabel||exercise.name)+'</p><label>Manual exercise change<input type="text" maxlength="120" value="'+esc(exercise.performedExerciseName||exercise.sourceExerciseLabel||exercise.name)+'" data-gym-swap-name data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'></label><label>Equipment status<select data-gym-swap-equipment data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'><option value="unknown"'+((exercise.substitution&&exercise.substitution.equipmentStatus==="unknown")||!exercise.substitution?' selected':'')+'>Not checked</option><option value="available"'+(exercise.substitution&&exercise.substitution.equipmentStatus==="available"?' selected':'')+'>Available</option><option value="unavailable"'+(exercise.substitution&&exercise.substitution.equipmentStatus==="unavailable"?' selected':'')+'>Unavailable</option></select></label><button class="secondary" type="button" data-gym-action="swap-save" data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'>Save exercise change</button>'+(exercise.substitution?'<button class="secondary" type="button" data-gym-action="swap-restore" data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'>Restore programme exercise</button>':'')+'</div>';
+  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+swapPanel+sets+'</article>';
  }).join("");
  if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
  if(gymRestRenderInterval)clearInterval(gymRestRenderInterval);
@@ -158,6 +160,16 @@ async function handleGymWorkoutAction(event){
   else if(action==="rest-add")await ProjectComebackGymWorkout.adjustRest(activeGymWorkout,15);
   else if(action==="rest-skip")await ProjectComebackGymWorkout.skipRest(activeGymWorkout);
   else if(action==="rest-cancel")await ProjectComebackGymWorkout.cancelRest(activeGymWorkout);
+  else if(action==="swap-save"){
+   const card=button.closest(".gym-exercise-card");
+   const name=card.querySelector("[data-gym-swap-name]").value;
+   const equipment=card.querySelector("[data-gym-swap-equipment]").value;
+   await ProjectComebackGymWorkout.setExerciseSubstitution(activeGymWorkout,exerciseId,name,equipment);
+  }
+  else if(action==="swap-restore"){
+   const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===exerciseId);
+   await ProjectComebackGymWorkout.setExerciseSubstitution(activeGymWorkout,exerciseId,exercise.sourceExerciseLabel,"unknown");
+  }
   renderGymWorkout();
  }catch(error){notice(error.message,true);renderGymWorkout();}
 }
