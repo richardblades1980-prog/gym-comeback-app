@@ -319,8 +319,8 @@ function server() {
     await app.locator('[data-gym-action="rest-add"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden === false);
     const extendedEnd = await app.evaluate(async () => {
-      const session = await ProjectComebackDB.getAll("sessions");
-      return session.find(item => item.moduleId === "gym" && item.date === "2026-11-18" && item.status === "in-progress")?.restEndAt;
+      const session = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", "2026-11-18"]);
+      return session.find(item => item.status === "in-progress")?.restEndAt;
     });
     if (!Number.isFinite(extendedEnd)) throw new Error("Rest timer end timestamp was not persisted after +15.");
     await app.locator('[data-gym-action="rest-skip"]').click();
