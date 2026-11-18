@@ -423,47 +423,53 @@
         throw new Error(message);
       };
 
-      for (const name of restoreStores) {
-        if (!HISTORY_MERGE_STORES.has(name)) tx.objectStore(name).clear();
-      }
-      for (const name of restoreStores) {
-        const store = tx.objectStore(name);
-        for (const record of parsed.data.data[name]) {
-          if (!HISTORY_MERGE_STORES.has(name)) {
-            store.put(record);
-            continue;
-          }
-          const existingById = await requestResult(store.get(record.id));
-          if (existingById) {
-            if (stableJson(existingById) !== stableJson(record)) {
-              await failTransaction("Restore stopped: immutable " + name + " record " + record.id + " conflicts with existing history.");
+      try {
+        for (const name of restoreStores) {
+          if (!HISTORY_MERGE_STORES.has(name)) tx.objectStore(name).clear();
+        }
+        for (const name of restoreStores) {
+          const store = tx.objectStore(name);
+          for (const record of parsed.data.data[name]) {
+            if (!HISTORY_MERGE_STORES.has(name)) {
+              if (name === "metadata" && isRestoreSafetySnapshot(record)) continue;
+              store.put(record);
+              continue;
             }
-            continue;
-          }
-          if (name === "identityReviewEvents") {
-            const existingByKey = await requestResult(store.index("by_profile_idempotency").get([record.profileId, record.idempotencyKey]));
-            if (existingByKey) {
-              if (eventComparable(existingByKey) !== eventComparable(record)) {
-                await failTransaction("Restore stopped: profile-scoped review idempotency key conflicts with existing audit history.");
+            const existingById = await requestResult(store.get(record.id));
+            if (existingById) {
+              if (stableJson(existingById) !== stableJson(record)) {
+                await failTransaction("Restore stopped: immutable " + name + " record " + record.id + " conflicts with existing history.");
               }
               continue;
             }
+            if (name === "identityReviewEvents") {
+              const existingByKey = await requestResult(store.index("by_profile_idempotency").get([record.profileId, record.idempotencyKey]));
+              if (existingByKey) {
+                if (eventComparable(existingByKey) !== eventComparable(record)) {
+                  await failTransaction("Restore stopped: profile-scoped review idempotency key conflicts with existing audit history.");
+                }
+                continue;
+              }
+            }
+            store.add(record);
           }
-          store.add(record);
         }
-      }
-      const metadataStore = tx.objectStore("metadata");
-      const incomingMetadata = parsed.data.data.metadata || [];
-      // Retain the pre-identity-upgrade snapshot if an incoming restore omits it.
-      const currentUpgradeSnapshot = current.metadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
-      const incomingUpgradeSnapshot = incomingMetadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
-      if (!incomingUpgradeSnapshot && currentUpgradeSnapshot) metadataStore.put(currentUpgradeSnapshot);
+        const metadataStore = tx.objectStore("metadata");
+        const incomingMetadata = parsed.data.data.metadata || [];
+        // Preserve the current pre-identity-upgrade snapshot if present.
+        const currentUpgradeSnapshot = current.metadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
+        if (currentUpgradeSnapshot) metadataStore.put(currentUpgradeSnapshot);
 
-      // Preserve restore-snapshot history across restores, but cap it at the newest three.
-      const retainedSnapshots = retainedRestoreSnapshots(current.metadata, incomingMetadata, safetyRecord);
-      for (const snapshot of retainedSnapshots) metadataStore.put(snapshot);
-      metadataStore.put(safetyRecord);
-      await done;
+        // Preserve restore-snapshot history across restores, but cap it at the newest three.
+        const retainedSnapshots = retainedRestoreSnapshots(current.metadata, incomingMetadata, safetyRecord);
+        for (const snapshot of retainedSnapshots) metadataStore.put(snapshot);
+        metadataStore.put(safetyRecord);
+        await done;
+      } catch (error) {
+        try { tx.abort(); } catch (ignored) {}
+        try { await done; } catch (ignored) {}
+        throw new Error("Restore stopped; existing data remains unchanged. " + (error && error.message ? error.message : String(error)));
+      }
       return {
         restored: true,
         restoreId,
