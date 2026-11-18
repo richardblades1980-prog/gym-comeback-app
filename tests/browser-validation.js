@@ -64,6 +64,7 @@ function server() {
   const browser = await chromium.launch({ headless: true });
   browser.on("disconnected", () => console.error("[browser] Chromium disconnected"));
   let appContext = null;
+  let cleanStartContext = null;
   let sharedOriginContext = null;
   let phoneProfile = null;
   try {
@@ -134,6 +135,68 @@ function server() {
     }
 
     console.log("PASS offline app shell served from /tests/fixtures/offline/ service-worker scope");
+
+    console.log("[browser] Clean-start V21.2 first run without V21.1 migration");
+    cleanStartContext = await browser.newContext();
+    cleanStartContext.setDefaultTimeout(STEP_TIMEOUT_MS);
+    cleanStartContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
+    const cleanStartPage = await cleanStartContext.newPage();
+    cleanStartPage.on("pageerror", error => console.error("CLEAN-START PAGE ERROR:", error.message));
+    await cleanStartPage.goto(base + "/gym-comeback-app/v21.2/");
+    await cleanStartPage.waitForFunction(() =>
+      document.querySelector("#connection-state")?.textContent === "Local database ready" &&
+      Boolean(navigator.serviceWorker.controller) &&
+      new URL(navigator.serviceWorker.controller.scriptURL).pathname.endsWith("/gym-comeback-app/v21.2/sw.js"),
+      null, { timeout: 30000 });
+    const cleanStartState = await cleanStartPage.evaluate(async () => {
+      const stores = [
+        "profile", "objectives", "equipment", "readiness", "weighIns", "assessments",
+        "programmes", "sessions", "exerciseRecords", "setRecords", "hikingRecords",
+        "schedules", "progression", "preferences", "legacyRecords"
+      ];
+      const counts = {};
+      for (const store of stores) counts[store] = await ProjectComebackDB.count(store);
+      const migration = await ProjectComebackMigration.inspect();
+      return {
+        title: document.title,
+        legacyKeysInBrowser: Object.keys(localStorage).filter(key => key.startsWith("gym-comeback-")),
+        migration,
+        counts,
+        modules: (await ProjectComebackModules.list()).map(module => module.id).sort(),
+        runDisabled: document.querySelector("#migration-run").disabled,
+        confirmDisabled: document.querySelector("#migration-confirm").disabled,
+        resultHidden: document.querySelector("#migration-result").hidden
+      };
+    });
+    const nonEmptyStores = Object.entries(cleanStartState.counts).filter(([, count]) => count !== 0);
+    if (!cleanStartState.title.includes("V21.2") ||
+        cleanStartState.legacyKeysInBrowser.length !== 0 ||
+        cleanStartState.migration.legacyKeyCount !== 0 ||
+        cleanStartState.migration.status !== "ready-to-import" ||
+        cleanStartState.migration.marker !== null ||
+        nonEmptyStores.length !== 0 ||
+        cleanStartState.modules.join(",") !== "gym,hiking" ||
+        !cleanStartState.runDisabled || !cleanStartState.confirmDisabled ||
+        !cleanStartState.resultHidden) {
+      throw new Error("V21.2 fresh-start initialisation imported data, changed legacy storage or enabled migration unexpectedly: " +
+        JSON.stringify({ cleanStartState, nonEmptyStores }));
+    }
+    await cleanStartPage.reload();
+    await cleanStartPage.waitForFunction(() => document.querySelector("#connection-state")?.textContent === "Local database ready");
+    const cleanStartReload = await cleanStartPage.evaluate(async () => ({
+      gym: await ProjectComebackDB.count("sessions"),
+      hikes: await ProjectComebackDB.count("hikingRecords"),
+      legacy: await ProjectComebackDB.count("legacyRecords"),
+      marker: await ProjectComebackMigration.inspect()
+    }));
+    if (cleanStartReload.gym !== 0 || cleanStartReload.hikes !== 0 ||
+        cleanStartReload.legacy !== 0 || cleanStartReload.marker.legacyKeyCount !== 0 ||
+        cleanStartReload.marker.marker !== null) {
+      throw new Error("Fresh V21.2 first run did not remain clean after reload: " + JSON.stringify(cleanStartReload));
+    }
+    console.log("PASS clean V21.2 start: all user-data stores empty, default modules only, migration untouched and original localStorage untouched");
+    await cleanStartContext.close();
+    cleanStartContext = null;
 
     console.log("[browser] Same-origin V21.1 and V21.2 service-worker isolation");
     sharedOriginContext = await browser.newContext();
@@ -1713,6 +1776,10 @@ function server() {
     if (appContext) {
       try { await appContext.close(); }
       catch (error) { console.error("[browser] Persistent context cleanup failed:", error.message); }
+    }
+    if (cleanStartContext) {
+      try { await cleanStartContext.close(); }
+      catch (error) { console.error("[browser] Clean-start context cleanup failed:", error.message); }
     }
     if (sharedOriginContext) {
       try { await sharedOriginContext.close(); }
