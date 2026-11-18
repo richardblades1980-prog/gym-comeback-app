@@ -340,12 +340,12 @@ function server() {
       const exerciseId = document.querySelector('[data-gym-field="restSeconds"]').dataset.exerciseId;
       return (await ProjectComebackDB.get("exerciseRecords", exerciseId)).restSeconds === 120;
     });
-    await app.locator('[data-gym-action="start"]').first().click();
-    await app.locator('[data-gym-action="complete"]').first().click();
+    await secondSetRow.locator('[data-gym-action="complete"]').click();
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
     const timerLabel = await app.locator("#gym-rest-label").textContent();
     if (!timerLabel.includes("after set 2")) throw new Error("Rest timer did not identify the completed set: " + timerLabel);
-    await app.locator('[data-gym-action="undo"]').first().click();
+    const secondSetRow = firstExercise.locator(".gym-set-row").nth(1);
+    await secondSetRow.locator('[data-gym-action="undo"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
     const undoRestState = await app.evaluate(async date => {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress");
