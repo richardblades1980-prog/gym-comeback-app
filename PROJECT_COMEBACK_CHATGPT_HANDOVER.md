@@ -1291,3 +1291,6 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Complete resolution requires approved assignment, guide and asset set plus exact-digest approve reviews. Conflicts, stale bindings, tampering, unapproved states, invalid scope and crypto failure fail closed.
 - Tests cover empty registry/unavailable state, complete fixture, missing/rejected crypto, guide/asset/assignment/review tampering, snapshot and target mismatch, approval states, conflicts, withdrawn assignment, determinism and nonmutation.
 - Registry remains empty; no human approvals or runtime wiring. Exact-final-SHA browser and backup validations required.
+
+
+G3.7.2f hardening: asset-set human reviews bind `manifestId@release` and schema version, avoiding review ambiguity between releases of the same manifest.
