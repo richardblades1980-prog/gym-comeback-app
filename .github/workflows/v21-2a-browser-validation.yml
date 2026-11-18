@@ -53,6 +53,8 @@ jobs:
         run: node --test tests/guide-assets-contract.test.js
       - name: Run guide artwork service-worker cache contract
         run: node --test tests/guide-assets-cache-contract.test.js
+      - name: Run PWA installability metadata and icon contract
+        run: node --test tests/pwa-installability-contract.test.js
       - name: Run review-only artwork sample contract
         run: node --test tests/artwork-samples-contract.test.js
       - name: Run real IndexedDB identity persistence and backup compatibility tests

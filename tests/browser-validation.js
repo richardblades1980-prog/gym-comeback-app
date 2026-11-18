@@ -7,7 +7,7 @@ const { chromium } = require("playwright");
 const root = path.resolve(__dirname, "..");
 const STEP_TIMEOUT_MS = 20000;
 console.log("[browser] Starting Chromium validation");
-const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif" };
+const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif" };
 const testServerState = { serveGuideWorkerV2: false, failGuideAsset: false, serveRootWorkerV2: false };
 function server() {
   return http.createServer((req, res) => {
@@ -303,7 +303,7 @@ function server() {
         !coexistence.rootIndexIsLegacy || !coexistence.v21IndexWasNotStoredAsRootIndex ||
         coexistence.sentinel !== "preserve-me" ||
         !v21Controller.endsWith("/gym-comeback-app/v21.2/sw.js") ||
-        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v27") ||
+        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v28") ||
         !coexistenceCacheNames.includes("project-comeback-v21-2a-guides-v1")) {
       throw new Error("V21.1 and V21.2 workers/caches did not coexist without intercepting or overwriting one another: " +
         JSON.stringify({ coexistence, v21Controller, coexistenceCacheNames }));
@@ -340,7 +340,7 @@ function server() {
     if (rootUpdate.state !== "activated" ||
         !rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset-v2") ||
         rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset") ||
-        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v27") ||
+        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v28") ||
         !rootUpdate.cacheNames.includes("project-comeback-v21-2a-guides-v1") ||
         rootUpdate.sentinel !== "preserve-me" ||
         !v21ControllerAfterRootUpdate.endsWith("/gym-comeback-app/v21.2/sw.js")) {
@@ -1271,8 +1271,41 @@ function server() {
     if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
       throw new Error("Navigation did not restore the Overview active state.");
     }
-    const manifest = await app.evaluate(async () => { const link = document.querySelector('link[rel="manifest"]'); const response = await fetch(link.href); return response.json(); });
-    if (!manifest.icons || !manifest.icons.some(icon => icon.src === "./icon.svg" && icon.purpose.includes("maskable"))) throw new Error("PWA manifest icon metadata is missing.");
+    const pwaMetadata = await app.evaluate(async () => {
+      const link = document.querySelector('link[rel="manifest"]');
+      const response = await fetch(link.href);
+      const manifest = await response.json();
+      const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+      const iconSources = manifest.icons.map(icon => icon.src);
+      const iconResponses = await Promise.all([
+        ...manifest.icons.filter(icon => icon.type === "image/png").map(async icon => {
+          const result = await fetch(new URL(icon.src, link.href));
+          return { src: icon.src, ok: result.ok, type: result.headers.get("content-type") };
+        }),
+        (async () => {
+          const result = await fetch(new URL(appleIcon.href));
+          return { src: "apple-touch-icon", ok: result.ok, type: result.headers.get("content-type") };
+        })()
+      ]);
+      return {
+        manifest,
+        manifestContentType: response.headers.get("content-type"),
+        appleIconHref: appleIcon?.getAttribute("href"),
+        appleCapable: document.querySelector('meta[name="apple-mobile-web-app-capable"]')?.content,
+        iconSources,
+        iconResponses
+      };
+    });
+    const manifest = pwaMetadata.manifest;
+    const requiredPngIcons = ["./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
+    if (manifest.id !== "./" || manifest.start_url !== "./" || manifest.scope !== "./" ||
+        !requiredPngIcons.every(src => pwaMetadata.iconSources.includes(src)) ||
+        !pwaMetadata.iconSources.includes("./icon.svg") ||
+        pwaMetadata.appleIconHref !== "./apple-touch-icon.png" ||
+        pwaMetadata.appleCapable !== "yes" ||
+        pwaMetadata.iconResponses.some(icon => !icon.ok || icon.type.split(";")[0].trim() !== "image/png")) {
+      throw new Error("PWA install metadata or app icon delivery is incomplete: " + JSON.stringify(pwaMetadata));
+    }
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     const localDateCheck = await app.evaluate(() => {
       const now = new Date();
