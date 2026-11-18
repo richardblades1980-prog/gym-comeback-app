@@ -1308,4 +1308,4 @@ Checkpoint based on the verified G3.7.2f SHA `8da7c28be06db8b319e3f83499d878a3d8
 - Async guide UI shows loading, awaits registry/manifest/validation, fails closed, and drops stale results through a request-generation gate. Closing the dialog invalidates pending requests. Registry fetch retries after failure and is available through offline shell cache.
 - Browser scripts now load crypto/digest/registry/runtime modules. Service-worker shell cache version bumped v26→v27 and includes runtime assets and registry. Bundle parity and runtime tests added; browser test now waits for the resolved unavailable state.
 - No guide content or approvals; no canonical identity decisions; no merge/deployment.
-- Validation status to be recorded after workflows complete on exact final SHA.
+- Exact code SHA `7b9ec437de5e1f100425fb8dfab6ddb8c084cce9` passed browser validation #44273437234 and backup validation #44273437105. These workflows validated the exact code checkpoint; documentation is being finalized separately and its resulting SHA must be revalidated before declaring G3.7.2g PASS.
