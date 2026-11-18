@@ -176,16 +176,19 @@ function server() {
     const identityOfflineAsset = await app.evaluate(async () => {
       await navigator.serviceWorker.ready;
       const assetUrl = new URL("./assets/exercise-identity.js", location.href).href;
+      const guideUrl = new URL("./assets/exercise-guide.js", location.href).href;
       const names = await caches.keys();
-      let cached = false;
+      let cached = false, guideCached = false;
       for (const name of names) {
-        const response = await (await caches.open(name)).match(assetUrl);
-        if (response) { cached = true; break; }
+        const cache = await caches.open(name);
+        if (await cache.match(assetUrl)) cached = true;
+        if (await cache.match(guideUrl)) guideCached = true;
       }
-      return { loaded: typeof ProjectComebackIdentity === "object", cached };
+      return { loaded: typeof ProjectComebackIdentity === "object", cached,
+        guideLoaded: typeof ProjectComebackExerciseGuide === "object", guideCached };
     });
-    if (!identityOfflineAsset.loaded || !identityOfflineAsset.cached) {
-      throw new Error("Canonical identity service was not loaded and retained in the real V21.2 offline app shell: " + JSON.stringify(identityOfflineAsset));
+    if (!identityOfflineAsset.loaded || !identityOfflineAsset.cached || !identityOfflineAsset.guideLoaded || !identityOfflineAsset.guideCached) {
+      throw new Error("Canonical identity and exercise-guide services were not loaded and retained in the real V21.2 offline app shell: " + JSON.stringify(identityOfflineAsset));
     }
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
