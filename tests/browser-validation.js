@@ -406,6 +406,7 @@ function server() {
 
     console.log("[browser] Save-first six-second celebration, Skip/Dismiss and saved-record preservation");
     const originalCelebrationProfile = await app.evaluate(() => ProjectComebackDB.get("profile", "gym-profile"));
+    const originalGymPlanBeforeCelebration = await app.evaluate(() => ProjectComebackGymProgression.getPlan());
     const originalGymCountBeforeCelebration = await app.evaluate(() => ProjectComebackDB.count("sessions"));
     const seedCompletedWorkoutForCelebration = async (day, date) => {
       const fixture = await app.evaluate(async ({ day, date }) => {
@@ -554,6 +555,8 @@ function server() {
       id: "gym-profile", value: { gender: "male" }, legacyKey: "browser-celebration-profile",
       legacyRawValue: JSON.stringify({ gender: "male" })
     }));
+    await app.locator("#gym-days-per-week").selectOption("5");
+    await app.waitForFunction(() => !document.querySelector("#gym-workout-day option[value=\"3\"]").disabled);
     await startCelebrationWorkout(3, testDates.celebrationDay3);
     const thirdCelebrationFixture = await seedCompletedWorkoutForCelebration(3, testDates.celebrationDay3);
     await app.locator("#gym-workout-finish").click();
@@ -596,13 +599,15 @@ function server() {
       }
       if (originalProfile) await ProjectComebackDB.put("profile", originalProfile);
       else await ProjectComebackDB.remove("profile", "gym-profile");
+      await ProjectComebackGymProgression.savePlan(originalPlan);
     }, {
       sessionSpecs: [
         { day: 1, date: testDates.celebrationDay1 },
         { day: 2, date: testDates.celebrationDay2 },
         { day: 3, date: testDates.celebrationDay3 }
       ],
-      originalProfile: originalCelebrationProfile
+      originalProfile: originalCelebrationProfile,
+      originalPlan: originalGymPlanBeforeCelebration
     });
     const gymCountAfterCelebrationCleanup = await app.evaluate(() => ProjectComebackDB.count("sessions"));
     if (gymCountAfterCelebrationCleanup !== originalGymCountBeforeCelebration) {
