@@ -125,7 +125,7 @@ function server() {
     appContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
     const app = await appContext.newPage();
     const appPageErrors = [];
-    app.on("pageerror", error => { appPageErrors.push(error.message); console.error("V21.2 APP PAGE ERROR:", error.message); });
+    app.on("pageerror", error => { appPageErrors.push(error.message); console.error("V21.2 APP PAGE ERROR:", error.stack || error.message); });
     app.on("console", message => { if (message.type() === "error") console.error("V21.2 CONSOLE:", message.text()); });
     await app.addInitScript(() => {
       localStorage.setItem("gym-comeback-profile", JSON.stringify({ goal: "strength", age: 45 }));
