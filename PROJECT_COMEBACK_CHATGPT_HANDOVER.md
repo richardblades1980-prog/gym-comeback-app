@@ -1508,3 +1508,25 @@ Assistant-runtime requests to the public host could not be completed (web fetch 
 Next: user opens both URLs and confirms V21.1 root and V21.2 subpath. Then test V21.2 Home Screen icon/standalone launch, disposable Gym/Hiking/Schedule data, backup download, reload and cold offline launch on the available phone. Record exact device/browser. Do not migrate or change existing V21.1 data. No production records or user data were accessed or modified.
 
 Protected `main` remains unchanged at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. The Pages source is now the candidate branch; no merge to main occurred.
+
+
+---
+
+# Gym Comeback V21.2 — First live-host PC/mobile smoke check (2026-11-19)
+
+The user reports that:
+- Both the V21.1 root page and the V21.2 `/v21.2/` page loaded correctly on PC and mobile.
+- All dropdowns worked.
+- No records were saved during this smoke check.
+
+This is a **user-reported PASS for page loading and dropdown interaction only**. The user did not provide browser/OS/device versions. No claim is made yet for save/reload persistence, backup/restore, service-worker controller scope, Home Screen installation, standalone launch or offline cold start.
+
+Published host remains:
+- V21.1: `https://richardblades1980-prog.github.io/gym-comeback-app/`
+- V21.2: `https://richardblades1980-prog.github.io/gym-comeback-app/v21.2/`
+
+Pages source remains `V21.2-pages-release-candidate / (root)`; deployment workflow #44418334493 succeeded at candidate SHA `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`. The deployed artifact was inspected and all 77 V21.2 files were present; root V21.1 entry page and manifest remain byte-matched to protected main.
+
+**Next owner-trial step:** when ready, create one clearly disposable V21.2 test record, save it, reload and confirm it persists, then download a backup. Keep all V21.1 records/localStorage untouched and do not run migration. Home Screen/standalone and cold-offline checks remain separate.
+
+Protected `main` remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No V21.1 data was read, migrated, deleted or modified.
