@@ -1,7 +1,7 @@
 /* Project Comeback V21.2 — fail-closed async exercise guide runtime. */
 (function(g){
 "use strict";
-const REGISTRY_URL="./assets/guides/registry.v2.json";
+const REGISTRY_URL="./assets/exercise-guide-registry.v2.json";
 let registryPromise=null;
 function sourcePayload(base){
  const source=base.source,days=base.listDays();
