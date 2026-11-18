@@ -446,7 +446,7 @@ async function inspectMigration(){
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
 $("gym-workout-start").addEventListener("click",startGymWorkout);
-$("gym-workout-exercises").addEventListener("click",handleGymWorkoutAction);
+$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
 $("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
 $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
