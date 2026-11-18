@@ -1,3 +1,18 @@
+# Project Comeback — G3.4a smart rest timer implementation checkpoint (2026-11-18)
+
+- **Active branch:** `V21.2-development`; main remains untouched.
+- **Previous validated milestone:** G3.3 timed-set stopwatch exact SHA `44de75d192ae39aa771f73f3fe1c2b923eb79dfc`; browser run #44201664330 and backup run #44201664306 both passed.
+- **Current work:** G3.4a smart rest timer, source-grounded against legacy `README-V17-SMART-REST-TIMER.txt`.
+- **Implemented:** default 90-second rest, presets 45/60/75/90/120/150/180, per-exercise rest settings, automatic rest after a completed set when another set follows, timestamp recovery after reload, +15 seconds, Skip rest and Cancel rest, progress display and contextual label.
+- **Persistence:** rest state stored on the existing session record using absolute `restEndAt` and context fields. No DB version/store/index or backup-format change.
+- **Files changed so far:** `src/modules/gym-workout.js`, identical `v21.2/assets/gym-workout.js`, `v21.2/app.js`, `v21.2/index.html`, `v21.2/app.css`, `v21.2/sw.js` (shell cache v20), `tests/gym-workout.test.js`, `tests/browser-validation.js`, roadmap.
+- **Alert modes:** legacy supports sound+vibration, sound-only, vibration-only, and visual-only. Device/browser permissions and support affect audio/vibration. This behavior is not yet implemented in this increment; it remains an acceptance item pending design review.
+- **Validation:** pending. Do not close G3.4a until both browser and backup workflows pass on the final documentation SHA and offline/cache regression is confirmed.
+- **Scope:** celebration/save-before-celebration remains G3.4b; no artwork refresh, schema migration, main merge, or deployment.
+- **Next:** verify current branch head, inspect exact workflow runs, resolve issues from logs, update the manual with validation links, then rerun both workflows on final handover commit.
+
+---
+
 # Project Comeback — G3.3 timed-set stopwatch implementation checkpoint (2026-11-18)
 
 - **Active branch:** `V21.2-development`; implementation remains isolated from `main` and V21.1.
