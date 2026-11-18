@@ -312,7 +312,7 @@
             ? "Existing metadata is replaced. Restore also writes one pre-restore safety snapshot."
             : "Existing records are cleared and incoming records are written.",
         current: current.length, incoming: incoming.length, added, changed, unchanged, removed,
-        conflicts, idempotencySkipped, projected: merge ? current.length + added : incoming.length + (name === "metadata" ? 1 : 0)
+        conflicts, idempotencySkipped, projected: conflicts ? null : (merge ? current.length + added : incoming.length + (name === "metadata" ? 1 : 0))
       };
     }
     const preservedStores = parsed.sourceFormatVersion === 1 && currentVersion >= 6 ? await Promise.all(IDENTITY_STORE_NAMES.map(async name => ({

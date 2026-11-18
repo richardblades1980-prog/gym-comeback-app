@@ -152,11 +152,11 @@ test("V2 restore preview reports merge-preserve semantics and immutable conflict
   const preview = await backup.previewRestore(incoming);
   assert.equal(preview.stores.exerciseDefinitions.behavior, "merge-preserve");
   assert.equal(preview.stores.exerciseDefinitions.removed, 0);
-  assert.equal(preview.stores.exerciseDefinitions.projected, 3);
+  assert.equal(preview.stores.exerciseDefinitions.projected, null);
   assert.equal(preview.stores.exerciseDefinitions.conflicts, 1);
   assert.equal(preview.stores.catalogueReleases.removed, 0);
   assert.equal(preview.stores.catalogueReleases.conflicts, 1);
-  assert.equal(preview.stores.catalogueReleases.projected, 2);
+  assert.equal(preview.stores.catalogueReleases.projected, null);
   assert.match(preview.stores.catalogueReleases.action, /preserve existing history/i);
   delete sandbox.window.ProjectComebackDB;
 });
