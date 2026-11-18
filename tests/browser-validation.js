@@ -207,7 +207,7 @@ function server() {
       return results;
     });
     if (offlineGuideFetch.length !== 3 || offlineGuideFetch.slice(0,2).some(item => !item.ok || item.bytes < 1000) || !offlineGuideFetch[2].ok || offlineGuideFetch[2].registry.schemaVersion !== 2 || offlineGuideFetch[2].registry.guides.length !== 0) {
-      throw new Error("Guide artwork was not served from the dedicated cache while offline: " + JSON.stringify(offlineGuideFetch));
+      throw new Error("Guide artwork or the shell-cached empty registry was unavailable offline: " + JSON.stringify(offlineGuideFetch));
     }
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
