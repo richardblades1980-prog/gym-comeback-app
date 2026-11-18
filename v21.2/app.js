@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymWorkoutRefreshToken=0,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymWorkoutRefreshToken=0,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null,exerciseGuideTrigger=null,exerciseGuideHoldTimer=null,exerciseGuidePointer=null,exerciseGuideManifestPromise=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -118,7 +118,7 @@ function renderGymWorkout(){
   const restOptions=ProjectComebackGymWorkout.restPresets.map(seconds=>'<option value="'+seconds+'"'+(Number(exercise.restSeconds||90)===seconds?' selected':'')+'>'+seconds+' sec</option>').join("");
   const swapDisabled=exercise.status!=="not-started"||exercise.sets.some(set=>set.status==="in-progress"||set.status==="completed"||set.startedAt||set.completedAt||[set.weight,set.reps,set.duration,set.targetDuration].some(value=>value!==undefined&&value!==null&&String(value).trim()!==""));
   const swapPanel='<div class="gym-exercise-swap"><p class="subtle">Programme exercise: '+esc(exercise.sourceExerciseLabel||exercise.name)+'</p><p class="subtle">Manual swaps do not change sets or targets. Confirm the replacement is suitable before starting; details are not catalogue-verified.</p><label>Manual exercise change<input type="text" maxlength="120" value="'+esc(exercise.performedExerciseName||exercise.sourceExerciseLabel||exercise.name)+'" data-gym-swap-name data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'></label><label>Equipment status<select data-gym-swap-equipment data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'><option value="unknown"'+((exercise.substitution&&exercise.substitution.equipmentStatus==="unknown")||!exercise.substitution?' selected':'')+'>Not checked</option><option value="available"'+(exercise.substitution&&exercise.substitution.equipmentStatus==="available"?' selected':'')+'>Available</option><option value="unavailable"'+(exercise.substitution&&exercise.substitution.equipmentStatus==="unavailable"?' selected':'')+'>Unavailable</option></select></label><button class="secondary" type="button" data-gym-action="swap-save" data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'>Save exercise change</button>'+(exercise.substitution?'<button class="secondary" type="button" data-gym-action="swap-restore" data-exercise-id="'+esc(exercise.id)+'" '+(swapDisabled?'disabled':'')+'>Restore programme exercise</button>':'')+'</div>';
-  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exerciseDisplayName)+'</h3><p>'+esc(exercise.substitution?"Manual substitution — exercise details are not verified.":(exercise.description||""))+'</p></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+swapPanel+sets+'</article>';
+  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3 class="gym-guide-heading" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="gym-exercise-guide-dialog" data-guide-heading data-exercise-id="'+esc(exercise.id)+'">'+esc(exerciseDisplayName)+'</h3><p>'+esc(exercise.substitution?"Manual substitution — exercise details are not verified.":(exercise.description||""))+'</p><button class="secondary gym-guide-open" type="button" data-guide-open data-exercise-id="'+esc(exercise.id)+'">Exercise guide</button></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+swapPanel+sets+'</article>';
  }).join("");
  if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
  if(gymRestRenderInterval)clearInterval(gymRestRenderInterval);
@@ -128,6 +128,50 @@ function renderGymWorkout(){
  }
  updateGymStopwatchDisplays();
  gymRestRenderInterval=setInterval(updateGymRestDisplay,250);
+}
+
+const EXERCISE_GUIDE_RECORDS=Object.freeze({});
+function cancelExerciseGuideHold(){if(exerciseGuideHoldTimer!==null){clearTimeout(exerciseGuideHoldTimer);exerciseGuideHoldTimer=null;}exerciseGuidePointer=null;}
+function guideAssetManifest(){if(!exerciseGuideManifestPromise)exerciseGuideManifestPromise=fetch("./assets/guides/manifest.v1.json",{cache:"no-store"}).then(response=>{if(!response.ok)throw new Error("Guide asset manifest is unavailable.");return response.json();}).catch(error=>{exerciseGuideManifestPromise=null;throw error;});return exerciseGuideManifestPromise;}
+function guideAddText(parent,tag,text,className){const node=document.createElement(tag);if(className)node.className=className;node.textContent=String(text??"");parent.appendChild(node);return node;}
+function renderExerciseGuideContent(exercise,record,state,manifest){
+ const content=$("gym-exercise-guide-content");content.replaceChildren();
+ const status=guideAddText(content,"p",state.status==="incomplete"?"Guide being prepared":"Guide unavailable","gym-exercise-guide-status");status.setAttribute("role","status");
+ if(state.status!=="complete"){
+  guideAddText(content,"p",state.status==="incomplete"?"This guide is not ready for use. Required content or artwork is still being reviewed. Draft instructions are not displayed.":"There is no reviewed guide available for this programme exercise yet. Draft instructions are not displayed.","muted");
+  if(exercise.substitution)guideAddText(content,"p","This is the programme exercise guide status. Your manual substitution (“"+(exercise.performedExerciseName||exercise.name)+"”) has not been verified against this guide.","gym-exercise-guide-note");
+  return;
+ }
+ guideAddText(content,"h3",record.title);guideAddText(content,"h4","Setup");guideAddText(content,"p",record.setup);
+ guideAddText(content,"h4","Movement");const steps=document.createElement("ol");record.steps.forEach(step=>guideAddText(steps,"li",step));content.appendChild(steps);
+ const cues=document.createElement("section");guideAddText(cues,"h4","Coaching cues");record.cues.forEach(cue=>guideAddText(cues,"p",cue));content.appendChild(cues);
+ const safety=document.createElement("section");guideAddText(safety,"h4","Safety notes");record.safetyNotes.forEach(note=>guideAddText(safety,"p",note));content.appendChild(safety);
+ const assets=document.createElement("div");assets.className="gym-exercise-guide-assets";
+ record.assetIds.forEach(assetId=>{const asset=manifest.assets.find(item=>item.assetId===assetId);if(!asset)return;const figure=document.createElement("figure"),img=document.createElement("img");img.src=asset.path;img.alt=record.assetAlt&&record.assetAlt[assetId]||assetId.replace(/[._-]/g," ");img.loading="lazy";img.addEventListener("error",()=>{img.hidden=true;guideAddText(figure,"p","Illustration unavailable. Guide text remains available.","gym-exercise-guide-image-fallback");},{once:true});figure.appendChild(img);guideAddText(figure,"figcaption","Illustrative reference","muted");assets.appendChild(figure);});content.appendChild(assets);
+}
+async function openExerciseGuide(exerciseId,trigger){
+ if(!activeGymWorkout)return;
+ const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===exerciseId);if(!exercise)return;
+ cancelExerciseGuideHold();exerciseGuideTrigger=trigger||document.querySelector('[data-guide-heading][data-exercise-id="'+CSS.escape(exerciseId)+'"]');
+ const title=$("gym-exercise-guide-title"),dialog=$("gym-exercise-guide-dialog");const sourceName=exercise.sourceExerciseLabel||exercise.name||"Exercise";title.textContent=sourceName+" guide";
+ const record=EXERCISE_GUIDE_RECORDS[exercise.programmeSlotId]||null;let state=ProjectComebackExerciseGuide.resolveGuideState(record,new Set());let manifest=null;
+ if(record){try{manifest=await guideAssetManifest();state=ProjectComebackExerciseGuide.resolveGuideState(record,new Set(manifest.assets.map(asset=>asset.assetId)));}catch(_){state={status:"incomplete",reason:"Guide assets could not be verified."};}}
+ renderExerciseGuideContent(exercise,record,state,manifest);
+ $("gym-exercise-guide-subtitle").textContent=exercise.substitution?"Programme exercise: "+sourceName+". Manual substitution: "+(exercise.performedExerciseName||exercise.name)+". This guide is not a verified guide for the substituted movement.":"Guide reference for the original programme exercise. Opening this guide does not change your workout.";
+ if(!dialog.open)dialog.showModal();$("gym-exercise-guide-close").focus({preventScroll:true});
+}
+function closeExerciseGuide(){const dialog=$("gym-exercise-guide-dialog");if(dialog.open)dialog.close();}
+function handleExerciseGuideDialogClose(){cancelExerciseGuideHold();const trigger=exerciseGuideTrigger;exerciseGuideTrigger=null;if(trigger&&trigger.isConnected)trigger.focus({preventScroll:true});}
+function guideFocusTrap(event){if(event.key!=="Tab")return;const dialog=$("gym-exercise-guide-dialog"),items=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')].filter(item=>!item.hidden);if(!items.length){event.preventDefault();$("gym-exercise-guide-close").focus();return;}const first=items[0],last=items[items.length-1;if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}
+function bindExerciseGuideInteractions(){
+ const container=$("gym-workout-exercises");
+ container.addEventListener("click",event=>{const button=event.target.closest("[data-guide-open]");if(button)openExerciseGuide(button.dataset.exerciseId,button);});
+ container.addEventListener("keydown",event=>{const heading=event.target.closest("[data-guide-heading]");if(!heading)return;if(event.key==="Enter"||event.key===" "){event.preventDefault();openExerciseGuide(heading.dataset.exerciseId,heading);}});
+ container.addEventListener("pointerdown",event=>{const heading=event.target.closest("[data-guide-heading]");if(!heading||event.button!==0)return;cancelExerciseGuideHold();exerciseGuidePointer={id:event.pointerId,x:event.clientX,y:event.clientY,heading};exerciseGuideHoldTimer=window.setTimeout(()=>{if(exerciseGuidePointer&&exerciseGuidePointer.id===event.pointerId)openExerciseGuide(heading.dataset.exerciseId,heading);},450);});
+ container.addEventListener("pointermove",event=>{if(!exerciseGuidePointer||exerciseGuidePointer.id!==event.pointerId)return;if(Math.hypot(event.clientX-exerciseGuidePointer.x,event.clientY-exerciseGuidePointer.y)>10)cancelExerciseGuideHold();});
+ container.addEventListener("pointerout",event=>{if(!exerciseGuidePointer||exerciseGuidePointer.id!==event.pointerId)return;const heading=event.target.closest("[data-guide-heading]");if(heading&&event.relatedTarget&&!heading.contains(event.relatedTarget))cancelExerciseGuideHold();});
+ ["pointerup","pointerleave","pointercancel","lostpointercapture"].forEach(type=>container.addEventListener(type,event=>{if(exerciseGuidePointer&&(event.pointerId===undefined||exerciseGuidePointer.id===event.pointerId))cancelExerciseGuideHold();}));window.addEventListener("blur",cancelExerciseGuideHold);
+ const dialog=$("gym-exercise-guide-dialog");$("gym-exercise-guide-close").addEventListener("click",closeExerciseGuide);dialog.addEventListener("close",handleExerciseGuideDialogClose);dialog.addEventListener("keydown",guideFocusTrap);dialog.addEventListener("click",event=>{if(event.target===dialog)closeExerciseGuide();});
 }
 async function startGymWorkout(){
  const button=$("gym-workout-start"),week=Number($("gym-workout-week").value)||1,day=Number($("gym-workout-day").value),date=$("gym-workout-date").value;
@@ -567,7 +611,7 @@ document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click
 $("gym-workout-start").addEventListener("click",startGymWorkout);
 $("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
 $("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
-$("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
+$("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);\nbindExerciseGuideInteractions();
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
 $("gym-celebration-skip").addEventListener("click",closeGymCelebration);
 $("gym-celebration-dismiss").addEventListener("click",closeGymCelebration);

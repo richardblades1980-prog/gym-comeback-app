@@ -1,0 +1,17 @@
+"use strict";
+const test=require("node:test");
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const vm=require("node:vm");
+const root=path.resolve(__dirname,"..");
+const source=fs.readFileSync(path.join(root,"src/modules/exercise-guide.js"),"utf8");
+const sandbox={};vm.runInNewContext(source,sandbox);
+const resolve=sandbox.ProjectComebackExerciseGuide.resolveGuideState;
+const complete={status:"complete",reviewed:true,title:"Reviewed guide",setup:"Setup text",steps:["Step one"],cues:["Cue one"],safetyNotes:["Safety note"],assetIds:["equipment.one","muscle.one"]};
+test("no guide record is unavailable and does not imply exercise identity",()=>assert.equal(resolve(null,new Set()).status,"unavailable"));
+test("draft/unreviewed record is incomplete",()=>assert.equal(resolve({status:"draft",reviewed:false},new Set()).status,"incomplete"));
+test("complete status without human review remains incomplete",()=>assert.equal(resolve({...complete,reviewed:false},new Set(["equipment.one","muscle.one"])).status,"incomplete"));
+test("missing required fields keep guide incomplete",()=>assert.equal(resolve({...complete,steps:[]},new Set(["equipment.one","muscle.one"])).status,"incomplete"));
+test("missing local assets keep guide incomplete",()=>assert.equal(resolve(complete,new Set(["equipment.one"])).status,"incomplete"));
+test("fully reviewed content with all local assets resolves complete",()=>assert.equal(resolve(complete,new Set(["equipment.one","muscle.one"])).status,"complete"));

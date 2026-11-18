@@ -274,7 +274,29 @@ function server() {
     if (workoutGraph.week !== "1" || workoutGraph.storedWeek !== 1 || !workoutGraph.historyText.includes("Week 1 · Day 1") || !workoutGraph.historyText.includes("In progress") || workoutGraph.historyResumeButtons !== 1 || workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
-    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
+    console.log("[browser] Exercise guide dialog, unavailable state, focus and hold cancellation");
+    const guideButton=firstCard.locator("[data-guide-open]");
+    await guideButton.click();
+    if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Exercise guide dialog did not open from its explicit button.");
+    const guideState=await app.locator("#gym-exercise-guide-content").innerText();
+    if(!guideState.includes("Guide unavailable")||!guideState.includes("Draft instructions are not displayed"))throw new Error("Guide unavailable state is not honest or visible: "+guideState);
+    if(await app.evaluate(()=>document.activeElement.id)!=="gym-exercise-guide-close")throw new Error("Guide open did not move focus to the close control.");
+    await app.locator("#gym-exercise-guide-close").click();
+    if(await app.evaluate(()=>document.activeElement.hasAttribute("data-guide-open"))===false)throw new Error("Guide close did not restore focus to its invoking button.");
+    const heading=firstCard.locator("[data-guide-heading]");
+    await heading.focus();await app.keyboard.press("Enter");
+    if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Keyboard Enter did not open the exercise guide.");
+    await app.keyboard.press("Escape");
+    if(await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Escape did not close the exercise guide.");
+    if(await app.evaluate(()=>document.activeElement.hasAttribute("data-guide-heading"))!==true)throw new Error("Escape close did not restore focus to the exercise heading.");
+    const headingBox=await heading.boundingBox();await app.mouse.move(headingBox.x+10,headingBox.y+10);await app.mouse.down();await app.waitForTimeout(120);await app.mouse.move(headingBox.x+35,headingBox.y+22);await app.mouse.up();await app.waitForTimeout(500);
+    if(await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Movement-cancelled hold unexpectedly opened the guide.");
+    const holdBox=await heading.boundingBox();await app.mouse.move(holdBox.x+10,holdBox.y+10);await app.mouse.down();await app.waitForTimeout(500);
+    if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("450ms hold did not open the guide.");
+    await app.mouse.up();await app.locator("#gym-exercise-guide-close").click();
+    if(await firstCard.locator('[data-gym-action="start"]').first().count()!==1)throw new Error("Guide interactions changed workout set actions.");
+    console.log("PASS explicit Guide button, unavailable state, keyboard, Escape, focus restoration, hold and cancellation");
+\n    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
     const firstCard = app.locator("#gym-workout-exercises .gym-exercise-card").first();
     await firstCard.locator("[data-gym-swap-name]").fill("Dumbbell Floor Press");
     await firstCard.locator("[data-gym-swap-equipment]").selectOption("available");
