@@ -1316,3 +1316,12 @@ Checkpoint based on the verified G3.7.2f SHA `8da7c28be06db8b319e3f83499d878a3d8
 - Added an explicit trust boundary between manifest-listed artwork and artwork verified from the dedicated local cache. The app verifies every packaged asset's MIME, byte length and SHA-256 before passing verified asset IDs into registry validation. Missing or corrupted cache entries fail closed without network fallback.
 - Service-worker guide-artwork and celebration requests now return 404 when the dedicated verified cache lacks the requested entry. Install-time staging/publication verification remains unchanged.
 - Added tests for malformed manifest rejection, missing/corrupt cached artwork and verified asset-ID gating, plus cache-only route assertions. Registry remains empty; no content, reviews, assignments or approvals populated. Exact-SHA browser and backup validation pending. Main unchanged; no merge or deployment.
+
+
+## G3.7.2i — Artwork cache lifecycle and upgrade recovery (2026-11-19)
+
+- Service-worker installation now checks for the current immutable guide cache first. If present, it verifies the cached manifest, all 41 asset bytes/MIME types/SHA-256 values and exact 42-entry inventory locally, allowing shell-only worker upgrades without fetching artwork or requiring network access.
+- A genuinely new guide-cache namespace is still populated through staging and verified before publication. Failed publication deletes only that newly created namespace; the prior active cache remains untouched.
+- Activation now claims clients before retiring older shell/guide namespaces. Successful replacement and failed replacement have browser coverage; the browser suite also verifies offline artwork continuity after activation.
+- Guide registry remains empty. No guide content, assignments, reviews or approvals were added. No database, backup format, identity or programme changes. No merge or deployment.
+- Exact final development SHA and browser/backup validation links are recorded below after both workflows pass.
