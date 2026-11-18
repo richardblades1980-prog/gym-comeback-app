@@ -1210,3 +1210,18 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Next roadmap gate is G3.7 exercise guide: design-first source audit of current guide delivery, access/hold/keyboard interaction, honest draft/unavailable states and offline behaviour. Do not create/revise guide artwork or reviewed instructions as part of the initial design audit.
 
 ---
+
+
+# Project Comeback — G3.7.1 Exercise Guide access checkpoint (2026-11-18)
+
+- Live branch: `V21.2-development`; code checkpoint `d268ad338dc05c1613892542bce71b18246b7300` passed both workflows. Protected `main` remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; no merge/deployment.
+- Exercise cards now have an explicit Guide button. Heading supports 450 ms hold and Enter/Space; cancellation on movement/release/leave/cancel/lost capture/window blur. Touch vertical scroll is not prevented.
+- Added labelled native dialog, visible close, focus-in, Tab/Shift+Tab containment, Escape/backdrop closing and focus restoration.
+- Added `ProjectComebackExerciseGuide.resolveGuideState`: complete requires reviewed status, required setup/steps/cues/safety notes and verified local asset IDs. Draft/unreviewed/incomplete records are incomplete; absent records unavailable.
+- Guide registry remains empty, so the UI currently shows **Guide unavailable** for all programme exercises. The 27 drafts and 25 existing descriptions remain unpublished and unmapped. Manual substitutions are not represented as verified guide matches.
+- Complete-content renderer supports future explicit records and graceful image failure, but no production content exists yet. The next gate is a design-first explicit programme-slot registry and human review workflow.
+- Canonical source and offline module match; browser tests cover state resolver, button/keyboard, Escape, focus trap/restoration, 450 ms hold, movement/release cancellation and set-state preservation. Offline test confirms guide runtime script is loaded and shell-cached. Shell cache advanced v25→v26; dedicated guide artwork cache v1 remains unchanged.
+- Code SHA `d268ad338dc05c1613892542bce71b18246b7300`: browser [#44258944556 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44258944556); backup [#44258944562 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44258944562).
+- No DB/schema/store/index, backup, history, catalogue, protected root app, merge or deployment changes.
+
+---
