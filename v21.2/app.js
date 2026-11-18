@@ -34,7 +34,8 @@ function updateGymStopwatchDisplays(){
   display.textContent=String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
  });
 }
-function gymRestAlert(){const mode=localStorage.getItem("gym-comeback-rest-alert")||"both";if((mode==="both"||mode==="vibrate")&&"vibrate"in navigator){try{navigator.vibrate([250,100,250,100,500]);}catch(_){}}if(mode==="both"||mode==="sound"){try{const AudioContext=window.AudioContext||window.webkitAudioContext;if(AudioContext){const ctx=new AudioContext();[0,.22,.44].forEach((delay,index)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type="square";osc.frequency.value=index===2?880:660;gain.gain.setValueAtTime(.0001,ctx.currentTime+delay);gain.gain.exponentialRampToValueAtTime(.15,ctx.currentTime+delay+.02);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+delay+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+.2);});setTimeout(()=>ctx.close().catch(()=>{}),1200);}}catch(_){}}\nfunction gymRestRemainingMs(){return activeGymWorkout&&activeGymWorkout.session.restEndAt?Math.max(0,Number(activeGymWorkout.session.restEndAt)-Date.now()):0;}
+function gymRestAlert(){const mode=localStorage.getItem("gym-comeback-rest-alert")||"both";if((mode==="both"||mode==="vibrate")&&"vibrate"in navigator){try{navigator.vibrate([250,100,250,100,500]);}catch(_){}}if(mode==="both"||mode==="sound"){try{const AudioContext=window.AudioContext||window.webkitAudioContext;if(AudioContext){const ctx=new AudioContext();[0,.22,.44].forEach((delay,index)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type="square";osc.frequency.value=index===2?880:660;gain.gain.setValueAtTime(.0001,ctx.currentTime+delay);gain.gain.exponentialRampToValueAtTime(.15,ctx.currentTime+delay+.02);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+delay+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+.2);});setTimeout(()=>ctx.close().catch(()=>{}),1200);}}catch(_){}}
+function gymRestRemainingMs(){return activeGymWorkout&&activeGymWorkout.session.restEndAt?Math.max(0,Number(activeGymWorkout.session.restEndAt)-Date.now()):0;}
 function updateGymRestDisplay(){const session=activeGymWorkout&&activeGymWorkout.session,box=$("gym-rest-timer");if(!box)return;if(!session||!session.restEndAt){box.hidden=true;return;}box.hidden=false;const remaining=gymRestRemainingMs(),seconds=Math.ceil(remaining/1000),minutes=Math.floor(seconds/60),remainder=seconds%60;$("gym-rest-countdown").textContent=String(minutes).padStart(2,"0")+":"+String(remainder).padStart(2,"0");const duration=Math.max(1,Number(session.restDurationSeconds)||90);$("gym-rest-progress-bar").style.width=Math.max(0,Math.min(100,remaining/(duration*1000)*100))+"%";const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===session.restExerciseId);$("gym-rest-label").textContent=(exercise?exercise.name+" · after set "+session.restSetNumber:"Rest period")+" — "+(remaining?"Take your rest.":"Rest complete — ready for your next set.");if(!remaining&&gymRestAlertedEndAt!==session.restEndAt){gymRestAlertedEndAt=session.restEndAt;gymRestAlert();notice("Rest complete — ready for your next set.");}}
 function renderGymWorkout(){
  const workout=activeGymWorkout;
@@ -45,7 +46,9 @@ function renderGymWorkout(){
  const completed=allSets.filter(set=>set.status==="completed").length;
  $("gym-workout-progress").textContent=completed+" of "+allSets.length+" sets completed · Changes save automatically on each field edit.";
  $("gym-workout-finish").disabled=!allSets.length||completed!==allSets.length;
- const alertMode=$("gym-rest-alert-mode");if(alertMode)alertMode.value=localStorage.getItem("gym-comeback-rest-alert")||"both";\n updateGymRestDisplay();\n $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
+ const alertMode=$("gym-rest-alert-mode");if(alertMode)alertMode.value=localStorage.getItem("gym-comeback-rest-alert")||"both";
+ updateGymRestDisplay();
+ $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
   const sets=exercise.sets.map(set=>{
    const locked=set.status==="locked",done=set.status==="completed";
    const repField=exercise.recordingMode==="reps"||exercise.recordingMode==="timed-reps"
@@ -63,7 +66,8 @@ function renderGymWorkout(){
   const restOptions=ProjectComebackGymWorkout.restPresets.map(seconds=>'<option value="'+seconds+'"'+(Number(exercise.restSeconds||90)===seconds?' selected':'')+'>'+seconds+' sec</option>').join("");
   return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+sets+'</article>';
  }).join("");
- if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);\n if(gymRestRenderInterval)clearInterval(gymRestRenderInterval);
+ if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
+ if(gymRestRenderInterval)clearInterval(gymRestRenderInterval);
  gymStopwatchRenderInterval=null;
  if(workout.exerciseRecords.some(exercise=>(exercise.sets||[]).some(set=>Number.isFinite(Number(set.stopwatchStartedAt))&&Number(set.stopwatchStartedAt)>0))){
   gymStopwatchRenderInterval=setInterval(updateGymStopwatchDisplays,250);
@@ -94,7 +98,10 @@ async function handleGymWorkoutAction(event){
   else if(action==="undo")await ProjectComebackGymWorkout.undoSet(activeGymWorkout,exerciseId,setNumber);
   else if(action==="timer-start")await ProjectComebackGymWorkout.startStopwatch(activeGymWorkout,exerciseId,setNumber);
   else if(action==="timer-stop")await ProjectComebackGymWorkout.stopStopwatch(activeGymWorkout,exerciseId,setNumber);
-  else if(action==="timer-reset")await ProjectComebackGymWorkout.resetStopwatch(activeGymWorkout,exerciseId,setNumber);\n  else if(action==="rest-add")await ProjectComebackGymWorkout.adjustRest(activeGymWorkout,15);\n  else if(action==="rest-skip")await ProjectComebackGymWorkout.skipRest(activeGymWorkout);\n  else if(action==="rest-cancel")await ProjectComebackGymWorkout.cancelRest(activeGymWorkout);
+  else if(action==="timer-reset")await ProjectComebackGymWorkout.resetStopwatch(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="rest-add")await ProjectComebackGymWorkout.adjustRest(activeGymWorkout,15);
+  else if(action==="rest-skip")await ProjectComebackGymWorkout.skipRest(activeGymWorkout);
+  else if(action==="rest-cancel")await ProjectComebackGymWorkout.cancelRest(activeGymWorkout);
   renderGymWorkout();
  }catch(error){notice(error.message,true);renderGymWorkout();}
 }
@@ -103,7 +110,8 @@ async function handleGymWorkoutField(event){
  if(!input||!activeGymWorkout)return;
  try{
   input.disabled=true;
-  if(input.dataset.gymField==="restSeconds")await ProjectComebackGymWorkout.setExerciseRest(activeGymWorkout,input.dataset.exerciseId,Number(input.value));\n  else await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,input.dataset.exerciseId,Number(input.dataset.setNumber),{[input.dataset.gymField]:input.value});
+  if(input.dataset.gymField==="restSeconds")await ProjectComebackGymWorkout.setExerciseRest(activeGymWorkout,input.dataset.exerciseId,Number(input.value));
+  else await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,input.dataset.exerciseId,Number(input.dataset.setNumber),{[input.dataset.gymField]:input.value});
   $("gym-workout-status").textContent="Saved locally.";
  }catch(error){notice(error.message,true);}
  finally{input.disabled=false;}
@@ -446,7 +454,8 @@ async function inspectMigration(){
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
 $("gym-workout-start").addEventListener("click",startGymWorkout);
-$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);\n$("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
+$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
+$("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
 $("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
 $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
@@ -511,12 +520,22 @@ $("legacy-snapshot").addEventListener("click",async event=>{const b=event.curren
 $("migration-confirm").addEventListener("change",event=>{$("migration-run").disabled=!(event.target.checked&&safetySnapshotSaved);});
 $("migration-run").addEventListener("click",async event=>{
  const b=event.currentTarget;if(!safetySnapshotSaved||!$("migration-confirm").checked)return;
- try{setBusy(b,true);const result=await ProjectComebackMigration.migrateAndVerify();const verified=await ProjectComebackMigration.inspect();if(verified.status!=="complete")throw new Error("Migration returned without a verified completion marker.");$("migration-result").hidden=false;$("migration-result").textContent="Migration status: "+result.status+"\nSource keys: "+result.sourceKeyCount+"\nWarnings: "+result.warnings.length+"\n"+result.warnings.map(w=>w.key+": "+w.reason).join("\n");await refresh();await inspectMigration();notice("Migration completed and the typed completion marker is verified.");}catch(error){$("migration-result").hidden=false;$("migration-result").textContent="Migration did not complete: "+error.message;notice(error.message,true);}finally{setBusy(b,false,"Run migration");}
+ try{setBusy(b,true);const result=await ProjectComebackMigration.migrateAndVerify();const verified=await ProjectComebackMigration.inspect();if(verified.status!=="complete")throw new Error("Migration returned without a verified completion marker.");$("migration-result").hidden=false;$("migration-result").textContent="Migration status: "+result.status+"
+Source keys: "+result.sourceKeyCount+"
+Warnings: "+result.warnings.length+"
+"+result.warnings.map(w=>w.key+": "+w.reason).join("
+");await refresh();await inspectMigration();notice("Migration completed and the typed completion marker is verified.");}catch(error){$("migration-result").hidden=false;$("migration-result").textContent="Migration did not complete: "+error.message;notice(error.message,true);}finally{setBusy(b,false,"Run migration");}
 });
 $("restore-file").addEventListener("change",async event=>{
  restorePayload=null;$("restore-confirm").checked=false;$("restore-apply").disabled=true;$("restore-confirm-wrap").hidden=true;
  const file=event.target.files&&event.target.files[0];if(!file)return;
- try{const text=await file.text();const preview=await ProjectComebackBackup.previewRestore(text);restorePayload=text;$("restore-preview").hidden=false;$("restore-preview").textContent="Valid backup · "+preview.totalIncomingRecords+" incoming records\nExported: "+(preview.exportedAt||"unknown")+"\n\n"+Object.entries(preview.stores).filter(([,v])=>v.added||v.changed||v.removed).map(([name,v])=>name+": "+v.added+" added, "+v.changed+" changed, "+v.removed+" removed").join("\n")+"\n\n"+preview.warning;$("restore-confirm-wrap").hidden=false;notice("Backup validated. Review the restore preview carefully.");}catch(error){$("restore-preview").hidden=false;$("restore-preview").textContent=error.message;notice(error.message,true);}
+ try{const text=await file.text();const preview=await ProjectComebackBackup.previewRestore(text);restorePayload=text;$("restore-preview").hidden=false;$("restore-preview").textContent="Valid backup · "+preview.totalIncomingRecords+" incoming records
+Exported: "+(preview.exportedAt||"unknown")+"
+
+"+Object.entries(preview.stores).filter(([,v])=>v.added||v.changed||v.removed).map(([name,v])=>name+": "+v.added+" added, "+v.changed+" changed, "+v.removed+" removed").join("
+")+"
+
+"+preview.warning;$("restore-confirm-wrap").hidden=false;notice("Backup validated. Review the restore preview carefully.");}catch(error){$("restore-preview").hidden=false;$("restore-preview").textContent=error.message;notice(error.message,true);}
 });
 $("restore-confirm").addEventListener("change",event=>{$("restore-apply").disabled=!(event.target.checked&&restorePayload);});
 $("restore-apply").addEventListener("click",async event=>{
