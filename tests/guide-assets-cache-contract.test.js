@@ -77,8 +77,9 @@ test("browser validation confirms all 41 guide assets and serves guide artwork o
 });
 
 test("guide artwork fetch handler is cache-only and returns 404 when verified bytes are absent",()=>{
- assert.match(sw,/cached\|\|new Response/);
- assert.doesNotMatch(sw,/cached\|\|fetch\(request\)/);
+ const route=sw.slice(sw.indexOf('if(url.pathname.includes("/assets/guides/")'),sw.indexOf("// Catalogue release assets"));
+ assert.match(route,/cached\|\|new Response/);
+ assert.doesNotMatch(route,/fetch\(/);
 });
 test("app verifies exact cached artwork bytes before registry resolution",()=>{
  const app=fs.readFileSync(path.join(root,"v21.2/app.js"),"utf8");
