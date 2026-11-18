@@ -1309,3 +1309,10 @@ Checkpoint based on the verified G3.7.2f SHA `8da7c28be06db8b319e3f83499d878a3d8
 - Browser scripts now load crypto/digest/registry/runtime modules. Service-worker shell cache version bumped v26→v27 and includes runtime assets and registry. Bundle parity and runtime tests added; browser test now waits for the resolved unavailable state.
 - No guide content or approvals; no canonical identity decisions; no merge/deployment.
 - Exact code SHA `7b9ec437de5e1f100425fb8dfab6ddb8c084cce9` passed browser validation #44273437234 and backup validation #44273437105. These workflows validated the exact code checkpoint; documentation is being finalized separately and its resulting SHA must be revalidated before declaring G3.7.2g PASS.
+
+
+## G3.7.2h — Runtime resolver hardening implementation (2026-11-19)
+
+- Added an explicit trust boundary between manifest-listed artwork and artwork verified from the dedicated local cache. The app verifies every packaged asset's MIME, byte length and SHA-256 before passing verified asset IDs into registry validation. Missing or corrupted cache entries fail closed without network fallback.
+- Service-worker guide-artwork and celebration requests now return 404 when the dedicated verified cache lacks the requested entry. Install-time staging/publication verification remains unchanged.
+- Added tests for malformed manifest rejection, missing/corrupt cached artwork and verified asset-ID gating, plus cache-only route assertions. Registry remains empty; no content, reviews, assignments or approvals populated. Exact-SHA browser and backup validation pending. Main unchanged; no merge or deployment.
