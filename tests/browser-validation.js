@@ -426,7 +426,16 @@ function server() {
     const startCelebrationWorkout = async (day, date) => {
       await app.locator("#gym-workout-day").selectOption(String(day));
       await app.locator("#gym-workout-date").fill(date);
+      await app.waitForFunction(({ day, date }) =>
+        document.querySelector("#gym-workout-day").value === String(day) &&
+        document.querySelector("#gym-workout-date").value === date &&
+        document.querySelector("#gym-workout-status").textContent.includes("No in-progress session"),
+      { day, date });
       await app.locator("#gym-workout-start").click();
+      await app.waitForFunction(async ({ day, date }) => {
+        const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]);
+        return sessions.some(session => session.day === day && session.status === "in-progress");
+      }, { day, date });
       await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
     };
     const savedCelebrationState = async (day, date) => app.evaluate(async ({ day, date }) => {
