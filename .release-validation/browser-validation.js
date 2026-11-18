@@ -51,7 +51,7 @@ function server() {
     ];
     const hiddenRoute = hiddenRoutes.find(item => routePath.startsWith(item.prefix));
     const file = hiddenRoute
-      ? path.resolve(hiddenRoute.root, "." + routePath.slice(hiddenRoute.prefix.length))
+      ? path.resolve(hiddenRoute.root, routePath.slice(hiddenRoute.prefix.length))
       : path.resolve(root, "." + routePath);
     const allowedRoot = hiddenRoute ? hiddenRoute.root : root;
     if (!file.startsWith(allowedRoot + path.sep) && file !== allowedRoot) { res.writeHead(403).end(); return; }
