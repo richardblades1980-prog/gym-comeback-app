@@ -1,3 +1,25 @@
+# Current handover — V21.2 PWA assets and Pages trial planning (2026-11-19)
+
+- Active branch: `V21.2-development`.
+- PWA icon/manifest implementation and test commit: `c2ac43b6d23219b67396daf7cfa89578127f34eb`.
+- Exact-SHA Browser [#44408582101 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44408582101); Backup [#44408581904 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44408581904).
+- Added 192×192 and 512×512 PNG app icons, 512×512 maskable PNG, 180×180 Apple touch icon; retained the existing SVG. Manifest now has `id`, `start_url` and `scope` of `./`. V21.2 worker shell cache is v28 and precaches every app icon.
+- New `tests/pwa-installability-contract.test.js` checks PNG signature/dimensions, manifest icon metadata, iOS touch-icon declaration and offline shell inclusion. The Chromium suite fetches PNGs and verifies `image/png` response delivery.
+- This is development-side PWA metadata and asset verification. The actual GitHub Pages host has not served the V21.2 route; live MIME checks, install prompt, Home Screen install and standalone launch are outstanding.
+
+## Pages publishing source audit
+
+- Repository API metadata confirms Pages enabled and default branch `main`; it does not establish which branch/folder is configured for publication.
+- The GitHub Pages source endpoint was unavailable through the current repository connection. Inspect repository Settings → Pages before any release method is chosen.
+- `V21.2-development` currently contains only browser/backup validation workflows, not a Pages deployment workflow. Do not assume pushing the development branch publishes it.
+- Future release artifact must contain exact V21.1 root files from `main`, the reviewed dual-app root `sw.js` from development, and the complete `v21.2/` directory. Re-run the full dual-app browser scenario against that exact assembled artifact.
+- Branch-source publishing would require a separately approved release to its configured branch/folder. Actions-based publishing requires a separately approved Pages source-setting change to GitHub Actions and a controlled manual deploy workflow. Do not alter settings or publish without explicit approval.
+- After publication, verify HTTPS/manifest/icon content types, exact V21.2 worker scope, clean IndexedDB, absent migration marker, unchanged V21.1 localStorage, actual iOS/Android install behaviour, backup, reload and offline cold start. Keep V21.1 as fallback and record the deployment rollback commit.
+
+The prior clean-start decision remains in force: no V21.1 migration or record deletion. No Pages setting, main branch, live site or actual browser data has been changed.
+
+---
+
 # Current handover — clean-start V21.2 trial decision (2026-11-19)
 
 - Active branch: `V21.2-development`.
