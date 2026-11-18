@@ -1041,3 +1041,9 @@ Implemented first G3.2 slice:
 - Service-worker shell cache is v22. Existing celebration GIFs remain unchanged; no database schema or backup format changes.
 - Roadmap/handover documentation is being updated. Final validation must run on the exact documentation commit SHA before milestone closure. Do not merge/deploy.
 - Next: G3.5 day/week flow and history.
+
+### Final browser-fixture correction and validation — 2026-11-18
+
+The follow-up run found and corrected test-fixture isolation: celebration sessions use dates 20–22 days ahead, the setup waits for the workout panel to clear before starting a new fixture, and cleanup asserts that the pre-existing Gym session count is unchanged. The browser test preserves the original profile record and removes only its dedicated fixtures. The complete browser suite and backup check passed on exact SHA `9d72d43b5b263221b2d5879648c9ffa65e897420`:
+- Browser [#44234292910 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234292910)
+- Backup [#44234292767 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234292767)
