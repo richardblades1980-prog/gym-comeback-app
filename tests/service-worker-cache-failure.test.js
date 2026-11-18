@@ -37,9 +37,9 @@ async function runFetchWithCacheFailure(worker, failure, mode) {
     console
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, worker.path), "utf8"), context);
-  const requestUrl = worker.scope === "https://gym.example/"
-    ? "https://gym.example/assets/runtime.js"
-    : "https://gym.example/v21.2/assets/runtime.js";
+  const requestUrl = mode === "navigate"
+    ? (worker.scope === "https://gym.example/" ? "https://gym.example/index.html" : "https://gym.example/v21.2/index.html")
+    : (worker.scope === "https://gym.example/" ? "https://gym.example/assets/runtime.js" : "https://gym.example/v21.2/assets/runtime.js");
   let responsePromise;
   listeners.fetch({
     request: { method: "GET", mode, url: requestUrl },
@@ -53,9 +53,11 @@ async function runFetchWithCacheFailure(worker, failure, mode) {
 }
 
 for (const worker of workers) {
-  for (const failure of ["open", "put"]) {
-    test(worker.path + " returns network response when CacheStorage " + failure + " fails", async () => {
-      await runFetchWithCacheFailure(worker, failure);
-    });
+  for (const mode of ["cors", "navigate"]) {
+    for (const failure of ["open", "put"]) {
+      test(worker.path + " returns network response for " + mode + " when CacheStorage " + failure + " fails", async () => {
+        await runFetchWithCacheFailure(worker, failure, mode);
+      });
+    }
   }
 }
