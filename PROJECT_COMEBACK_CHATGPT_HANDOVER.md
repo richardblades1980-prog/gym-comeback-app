@@ -1107,3 +1107,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Snapshot creation, retention and restore writes remain in the same IndexedDB transaction. Transaction/quota failures abort without committing a partial restore or safety snapshot.
 - Added repeated-restore tests for bounded retention, non-recursive payloads and identity-upgrade snapshot preservation, plus transaction-failure recovery coverage.
 - Exact final-SHA browser and backup validation required. Do not touch main or deploy.
+
+
+### G3.7.3 implementation checkpoint — validation (2026-11-18)
+
+- Implementation checkpoint: `448baab267b2b73bfd3f01e5d88ff1484bdd1bd2`.
+- Backup validation [#44245394837 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44245394837): 132 tests passed, 0 failed, including bounded retention, non-recursive snapshots, identity-upgrade snapshot preservation and rollback after invalid IndexedDB key failure.
+- Browser validation [#44245394988 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44245394988): bundle parity, syntax, full Chromium/browser/offline suite, IndexedDB persistence and upgrade/backup round-trip passed.
+- Validation exposed a synchronous IndexedDB write failure path that was not explicitly aborting the restore transaction. The implementation now aborts on any transaction-body exception and confirms original data and snapshot state remain unchanged.
+- A further retention edge case was corrected: restore-snapshot records supplied by an incoming backup are skipped during the metadata replace loop, then the union of existing/incoming/new safety history is capped at three. The current pre-identity-upgrade snapshot takes precedence and is preserved.
+- Documentation checkpoint validation on the exact final SHA is pending; do not touch main or deploy.
