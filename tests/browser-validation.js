@@ -430,7 +430,7 @@ function server() {
       await app.waitForFunction(({ day, date }) =>
         document.querySelector("#gym-workout-day").value === String(day) &&
         document.querySelector("#gym-workout-date").value === date &&
-        document.querySelector("#gym-workout-status").textContent.includes("No in-progress session"),
+        document.querySelector("#gym-workout-active").hidden,
       { day, date });
       await app.locator("#gym-workout-start").click();
       await app.waitForFunction(async ({ day, date }) => {
