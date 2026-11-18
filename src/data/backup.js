@@ -324,7 +324,7 @@
       appVersion: parsed.data.appVersion || null, exportedAt: parsed.data.exportedAt || null,
       includedModules: Array.isArray(parsed.data.includedModules) ? parsed.data.includedModules.slice() : [],
       backupScope: parsed.data.backupScope || "full", totalIncomingRecords: parsed.validation.totalRecords,
-      stores, preservedStores,
+      stores, preservedStores: preservedStores.map(store => store.name), preservedStoreDetails: preservedStores,
       warning: parsed.sourceFormatVersion === 1
         ? "V1 restore replaces only the original V1 stores. Where V6 identity stores exist, they are preserved untouched. A pre-restore safety snapshot is saved in metadata."
         : "Replace stores are overwritten. Append/merge stores retain existing history, skip identical records, append new records, and stop on immutable conflicts. A pre-restore safety snapshot is saved in metadata."

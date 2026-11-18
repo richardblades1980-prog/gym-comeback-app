@@ -166,7 +166,8 @@ test("V1 restore preview explicitly reports newer identity stores as preserved u
   const current = { exerciseDefinitions: [{ id: "identity-current" }] };
   sandbox.window.ProjectComebackDB = { getVersion: async () => 6, getAll: async store => current[store] || [] };
   const preview = await backup.previewRestore(incoming);
-  const preserved = preview.preservedStores.find(store => store.name === "exerciseDefinitions");
+  assert.ok(preview.preservedStores.includes("exerciseDefinitions"));
+  const preserved = preview.preservedStoreDetails.find(store => store.name === "exerciseDefinitions");
   assert.equal(preserved.behavior, "preserve-untouched");
   assert.equal(preserved.current, 1);
   assert.equal(preserved.incoming, 0);
@@ -182,5 +183,6 @@ test("V1 preview on pre-V6 database does not request nonexistent identity stores
   }};
   const preview = await backup.previewRestore(incoming);
   assert.deepEqual(JSON.parse(JSON.stringify(preview.preservedStores)), []);
+  assert.deepEqual(JSON.parse(JSON.stringify(preview.preservedStoreDetails)), []);
   delete sandbox.window.ProjectComebackDB;
 });
