@@ -1,3 +1,17 @@
+
+# Project Comeback — G3.5 programme progression and Gym history checkpoint (2026-11-18)
+
+- **Active branch:** `V21.2-development`; `main` remains untouched. No merge or deployment.
+- **Latest code milestone:** G3.5 programme week/day progression and Gym history implemented. Code SHA `147e115b36ca6488543e6d986f8afc8ace9a7385`; browser [#44236214382 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236214382), backup [#44236214450 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44236214450).
+- Legacy plan choices restored: 4/8/12 weeks, 2–5 planned days/week, defaults 4 weeks and 2 days. Sequential unlock rules are preserved: Week1 Day1, then prior planned day, then previous week's final planned day to unlock next-week Day1. Manual unlock/relock stored in preferences and cannot bypass days-per-week limits.
+- Added `src/modules/gym-progression.js` with offline mirror. Preferences and sessions use existing stores; no schema/store/index/backup-format changes. Session `week` is saved, and resume matching includes week/day/date.
+- Gym history shows completed and in-progress sessions with Week/Day, date, status, progress/duration, exercise/set details and Resume action. Browser test verifies in-progress and completed history.
+- Browser/backup validation on the code SHA passed; source/offline bundle parity, syntax, engine tests, progression tests, workout/rest/celebration regressions, offline reload and cold-process persistence all passed.
+- Service-worker shell cache v23. Artwork unchanged and deferred.
+- **Legacy editable weight/reps carry-forward (V19.1) is not included in G3.5.** Consider it separately after core flow; any port must prefill only editable empty fields and never overwrite existing session values.
+- Roadmap/handover docs are being updated. Final validation is required on the exact documentation commit SHA before milestone closure. Do not merge/deploy.
+- **Next milestone:** G3.6 equipment/manual swaps and progression summaries, source-grounded and design-first.
+
 # Project Comeback — G3.4b save-first workout celebration checkpoint (2026-11-18)
 
 - **Active branch:** `V21.2-development`; `main` remains unchanged at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No merge or deployment.
@@ -1013,8 +1027,8 @@ Implemented first G3.2 slice:
 - Current code/documentation head at time of this handover note: `80a25b1a652b1caaeb1eaeb9fd0899e3e8b7c42e`. Exact-SHA CI for the final documentation commit is pending; do not declare the milestone fully validated until both browser and backup workflows pass on the final head.
 - Recent test debugging: first browser assertion incorrectly expected set 2 to remain locked after set 1 completion. Correct behaviour is set 2 unlocked and set 3 still locked. The latest browser assertion was corrected accordingly. The browser workflow at `cc6c89f...` had this incorrect assertion; do not treat it as an application defect.
 - Latest known earlier backup run on `ef6950a...` passed; browser run on that SHA was still in progress/failed due the incorrect next-set assertion. Current exact SHA is `80a25b1...`; check latest workflows before proceeding.
-- Still deferred: rest timer (+15/skip/cancel and end-time catch-up), timed-set stopwatch/manual corrections, configurable set count/progression focus/recording mode in UI, save-before-six-second celebration, week progression/unlock rules, swaps/equipment adaptation, accessible 450ms/keyboard exercise guide. Keep these in the roadmap and do not imply they are implemented.
-- Next development step after exact-SHA validation: build timed-set controls and smart rest persistence, then save/celebration flow and day/week progression. Keep functional scope ahead of aesthetics.
+- Superseded by later milestones: rest timer, timed-set stopwatch/manual corrections, save-before-six-second celebration and week/day progression/history are now implemented and validated. Still deferred: equipment/manual swaps, progression summaries/carry-forward review, and the accessible 450ms/keyboard exercise guide. Keep these in the roadmap and do not imply deferred items are implemented.
+- Historical next-step note superseded: G3.3/G3.4/G3.5 are complete; continue with G3.6 after exact-SHA validation. Keep functional scope ahead of aesthetics.
 - No merge/deployment. Production `main` remains protected and root legacy `index.html` unchanged. Do not alter either without explicit authorisation.
 
 ---
