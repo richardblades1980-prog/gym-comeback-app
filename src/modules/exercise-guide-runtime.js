@@ -5,7 +5,30 @@ const REGISTRY_URL="./assets/exercise-guide-registry.v2.json";
 let registryPromise=null;
 function sourcePayload(base){
  const source=base.source,days=base.listDays();
- return {snapshotId:source.snapshotId,sourceNamespace:source.sourceNamespace,sourceFile:source.sourceFile,sourceGitBlobSha:source.sourceGitBlobSha,status:source.status,days:days.map(day=>({dayNumber:day.dayNumber,title:day.title,sourceTip:day.sourceTip,slots:day.slots.map(slot=>({slotId:slot.slotId,position:slot.position,sourceExerciseLabel:slot.sourceExerciseLabel,sourceDescription:slot.sourceDescription,sourceGroupKey:slot.sourceGroupKey,sourceMuscleKeys:slot.sourceMuscleKeys,defaultSetCount:slot.defaultSetCount,defaultProgressionFocus:slot.defaultProgressionFocus,defaultRecordingMode:slot.defaultRecordingMode,identityLinkStatus:slot.identityLinkStatus}))})};
+ return {
+  snapshotId:source.snapshotId,
+  sourceNamespace:source.sourceNamespace,
+  sourceFile:source.sourceFile,
+  sourceGitBlobSha:source.sourceGitBlobSha,
+  status:source.status,
+  days:days.map(day=>({
+   dayNumber:day.dayNumber,
+   title:day.title,
+   sourceTip:day.sourceTip,
+   slots:day.slots.map(slot=>({
+    slotId:slot.slotId,
+    position:slot.position,
+    sourceExerciseLabel:slot.sourceExerciseLabel,
+    sourceDescription:slot.sourceDescription,
+    sourceGroupKey:slot.sourceGroupKey,
+    sourceMuscleKeys:slot.sourceMuscleKeys,
+    defaultSetCount:slot.defaultSetCount,
+    defaultProgressionFocus:slot.defaultProgressionFocus,
+    defaultRecordingMode:slot.defaultRecordingMode,
+    identityLinkStatus:slot.identityLinkStatus
+   }))
+  }))
+ };
 }
 function loadRegistry(url){
  if(!registryPromise)registryPromise=fetch(url||REGISTRY_URL).then(r=>{if(!r.ok)throw new Error("Exercise guide registry is unavailable.");return r.json();}).catch(e=>{registryPromise=null;throw e;});
