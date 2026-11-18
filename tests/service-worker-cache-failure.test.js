@@ -26,7 +26,7 @@ async function runFetchWithCacheFailure(worker, failure, mode) {
     keys: async () => []
   };
   const self = {
-    location: { href: worker.scope, origin: "https://gym.example", pathname: worker.scope === "https://gym.example/" ? "/" : "/v21.2/" },
+    location: new URL(worker.scope),
     addEventListener: (name, handler) => { listeners[name] = handler; },
     skipWaiting: async () => undefined,
     clients: { claim: async () => undefined }
