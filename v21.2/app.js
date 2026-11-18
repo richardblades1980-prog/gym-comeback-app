@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -116,17 +116,49 @@ async function handleGymWorkoutField(event){
  }catch(error){notice(error.message,true);}
  finally{input.disabled=false;}
 }
+function closeGymCelebration(){
+ const dialog=$("gym-celebration-dialog");
+ if(gymCelebrationTimer!==null){clearTimeout(gymCelebrationTimer);gymCelebrationTimer=null;}
+ if(dialog.open)dialog.close();
+}
+async function showGymCelebration(session){
+ const dialog=$("gym-celebration-dialog"),image=$("gym-celebration-image");
+ let gender="male";
+ try{
+  const profile=await ProjectComebackDB.get("profile","gym-profile");
+  if(String(profile&&profile.value&&profile.value.gender||"").toLowerCase()==="female")gender="female";
+ }catch(error){
+  // Match the legacy default when no usable saved hero preference is available.
+ }
+ const day=Number(session.day)||1;
+ const asset=gender==="female"?"female-celebration.gif":(day===1?"celebration-day1.gif":"celebration-day2.gif");
+ image.src="./assets/celebrations/v1/"+asset;
+ image.alt=gender==="female"
+  ?"Female Gym Comeback hero celebrating a saved workout."
+  :"Gym Comeback hero celebrating a saved workout.";
+ image.hidden=false;
+ $("gym-celebration-session").textContent="Day "+day+" workout saved to your Gym history.";
+ if(gymCelebrationTimer!==null)clearTimeout(gymCelebrationTimer);
+ dialog.showModal();
+ gymCelebrationTimer=window.setTimeout(()=>{
+  gymCelebrationTimer=null;
+  if(dialog.open)dialog.close();
+ },6000);
+}
 async function finishGymWorkout(){
  const button=$("gym-workout-finish");
  if(!activeGymWorkout)return;
  try{
   setBusy(button,true);
-  await ProjectComebackGymWorkout.finishSession(activeGymWorkout);
+  // The engine resolves only after the completed session has been committed to IndexedDB.
+  const completedSession=await ProjectComebackGymWorkout.finishSession(activeGymWorkout);
   activeGymWorkout=null;
   $("gym-workout-active").hidden=true;
   $("gym-workout-status").textContent="Workout completed and saved.";
-  await refresh();
-  notice("Workout completed and saved to your Gym history.");
+  try{await refresh();}
+  catch(error){notice("Workout saved. Some history panels could not refresh: "+error.message,true);}
+  try{await showGymCelebration(completedSession);}
+  catch(error){notice("Workout saved. The celebration could not be displayed: "+error.message,true);}
  }catch(error){notice(error.message,true);}
  finally{setBusy(button,false,"Finish workout");}
 }
@@ -458,6 +490,13 @@ $("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
 $("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
 $("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
+$("gym-celebration-skip").addEventListener("click",closeGymCelebration);
+$("gym-celebration-dismiss").addEventListener("click",closeGymCelebration);
+$("gym-celebration-dialog").addEventListener("close",()=>{
+ if(gymCelebrationTimer!==null){clearTimeout(gymCelebrationTimer);gymCelebrationTimer=null;}
+ const returnFocus=$("gym-workout-start");
+ if(returnFocus)returnFocus.focus({preventScroll:true});
+});
 $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
 $("gym-workout-date").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
  $("module-cards").addEventListener("click",async event=>{const button=event.target.closest("[data-module-id]");if(!button)return;const id=button.dataset.moduleId;try{button.disabled=true;const current=await ProjectComebackModules.get(id);await ProjectComebackModules.setEnabled(id,!current.enabled);await refresh();notice(current.enabled?"Module paused. Existing records have been kept.":"Module enabled. You can add and schedule activities again.");}catch(error){notice(error.message,true);}finally{button.disabled=false;}});
