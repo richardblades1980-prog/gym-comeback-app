@@ -47,3 +47,6 @@ Both workflows run on pushes and pull requests targeting `V21.2-development`. A 
 
 
 - **Exercise-guide cryptographic helpers:** `node --test tests/exercise-guide-crypto.test.js` tests canonicalisation, SHA-256 vectors, domain separation and fail-closed behavior. The helper source/offline mirror is included in the bundle parity check. This helper is not yet wired into production registry validation.
+
+
+- **Exercise-guide digest contracts:** `node --test tests/exercise-guide-digests.test.js` validates the async guide-content, asset-set, assignment and review digest payload contracts, including tamper/cross-binding checks and fail-closed crypto behavior. These contracts are not yet wired to production registry validation.

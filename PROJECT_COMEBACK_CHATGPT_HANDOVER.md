@@ -1272,3 +1272,12 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Tests cover known SHA-256 empty/`abc` vectors; key ordering/array order/Unicode/number formatting; rejection of non-finite/unsupported/cyclic/sparse/non-plain/accessor/symbol/extra-array-property/unpaired-surrogate inputs; domain separation, mismatch, deterministic results and error propagation.
 - Not connected to guide registry, renderer or production app. Registry remains empty; no approvals.
 - Exact-final-SHA browser and backup workflows required before PASS.
+
+
+## G3.7.2e — Async digest contracts implementation
+
+- Added `src/modules/exercise-guide-digests.js` plus exact offline mirror `v21.2/assets/exercise-guide-digests.js` and parity check.
+- Four allowlisted payload contracts: guide content; asset-set manifest and tuples; programme-slot assignment bound to snapshot, guide version/content digest, scope and substitution; review bound to target/version/digest, decision, reviewer metadata, timestamp and notes.
+- Asset tuples canonicalize by asset ID and duplicate IDs reject. Unknown fields and malformed schema values fail closed.
+- Contract tests cover positive digest verification, tampering, cross-target/snapshot/version changes, asset tuple changes, deterministic output, nonmutation, schema rejection and unavailable/rejected crypto.
+- Still isolated: no registry validator, runtime, renderer or registry records changed. Exact-final-SHA validations required before PASS.
