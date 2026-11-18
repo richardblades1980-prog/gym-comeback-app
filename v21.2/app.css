@@ -44,3 +44,5 @@
  .gym-set-action{justify-content:flex-start}
  .gym-exercise-heading{flex-direction:column}
 }
+
+.gym-rest-timer{margin:14px 0 18px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);text-align:center}.gym-rest-timer>strong{display:block;font-size:clamp(42px,8vw,68px);font-variant-numeric:tabular-nums;letter-spacing:.05em}.gym-rest-progress{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0}.gym-rest-progress span{display:block;height:100%;width:100%;background:var(--accent);transition:width .2s linear}.gym-rest-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.gym-exercise-settings{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.gym-exercise-settings label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.gym-exercise-settings select{min-height:34px}
