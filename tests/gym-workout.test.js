@@ -307,7 +307,7 @@ test("manual exercise substitution preserves programme identity, sets, persists,
     setValues: exercise.sets.map(set => [set.weight, set.reps, set.duration, set.targetDuration, set.status])
   };
   await workout.setExerciseSubstitution(created.workout, exercise.id, "Dumbbell Floor Press", "available");
-  assert.equal(exercise.name, "Dumbbell Floor Press");
+  assert.equal(exercise.name, original.sourceExerciseLabel, "database identity remains the programme exercise");
   assert.equal(exercise.performedExerciseName, "Dumbbell Floor Press");
   assert.equal(exercise.substitution.sourceExerciseLabel, original.sourceExerciseLabel);
   assert.equal(exercise.substitution.performedExerciseName, "Dumbbell Floor Press");
@@ -327,7 +327,7 @@ test("manual exercise substitution preserves programme identity, sets, persists,
 
   let loaded = await workout.loadSession(created.workout.session.id);
   let saved = loaded.exerciseRecords[0];
-  assert.equal(saved.name, "Resistance Band Chest Press");
+  assert.equal(saved.name, original.sourceExerciseLabel, "database identity remains the programme exercise");
   assert.equal(saved.performedExerciseName, "Resistance Band Chest Press");
   assert.equal(saved.sourceExerciseLabel, original.sourceExerciseLabel);
   assert.equal(saved.programmeSlotId, original.programmeSlotId);
