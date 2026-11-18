@@ -68,3 +68,22 @@
 .gym-celebration-actions button{min-width:190px}
 .gym-celebration-note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.45;text-align:center}
 @media(max-width:520px){.gym-celebration-card{padding:17px}.gym-celebration-image{max-height:230px}}
+
+.gym-progression-panel{margin-top:15px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.gym-progression-panel strong{display:block;font-size:13px}
+.gym-progression-panel p{margin:7px 0 12px;font-size:12px}
+.gym-progression-panel button{min-height:42px}
+.gym-history-entry{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:var(--panel2)}
+.gym-history-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.gym-history-heading strong{display:block;font-size:14px}
+.gym-history-heading small,.gym-history-exercises small{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.gym-history-status{font-size:10px;font-weight:800;border-radius:99px;padding:5px 8px;white-space:nowrap}
+.gym-history-status.completed{color:var(--accent);border:1px solid #526b38}
+.gym-history-status.progress{color:#ffd38c;border:1px solid #8a6330}
+.gym-history-summary{font-size:12px;color:var(--muted);margin:8px 0}
+.gym-history-entry button{margin:6px 0}
+.gym-history-entry details{margin-top:7px}
+.gym-history-entry summary{cursor:pointer;color:var(--muted);font-size:12px;padding:6px 0}
+.gym-history-exercises{padding-left:20px;display:grid;gap:8px}
+.gym-history-exercises li{font-size:12px}
+@media(max-width:520px){.gym-history-heading{flex-direction:column;align-items:flex-start}}
