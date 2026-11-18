@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymWorkoutRefreshToken=0,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null,exerciseGuideTrigger=null,exerciseGuideHoldTimer=null,exerciseGuidePointer=null,exerciseGuideManifestPromise=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymWorkoutRefreshToken=0,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null,gymCelebrationTimer=null,exerciseGuideTrigger=null,exerciseGuideHoldTimer=null,exerciseGuidePointer=null,exerciseGuideManifestPromise=null,exerciseGuideRequestGate=ProjectComebackExerciseGuideRuntime.createRequestGate();
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -132,13 +132,13 @@ function renderGymWorkout(){
 
 const EXERCISE_GUIDE_RECORDS=Object.freeze({});
 function cancelExerciseGuideHold(){if(exerciseGuideHoldTimer!==null){clearTimeout(exerciseGuideHoldTimer);exerciseGuideHoldTimer=null;}exerciseGuidePointer=null;}
-function guideAssetManifest(){if(!exerciseGuideManifestPromise)exerciseGuideManifestPromise=fetch("./assets/guides/manifest.v1.json",{cache:"no-store"}).then(response=>{if(!response.ok)throw new Error("Guide asset manifest is unavailable.");return response.json();}).catch(error=>{exerciseGuideManifestPromise=null;throw error;});return exerciseGuideManifestPromise;}
+function guideAssetManifest(){if(!exerciseGuideManifestPromise)exerciseGuideManifestPromise=fetch("./assets/guides/manifest.v1.json").then(response=>{if(!response.ok)throw new Error("Guide asset manifest is unavailable.");return response.json();}).catch(error=>{exerciseGuideManifestPromise=null;throw error;});return exerciseGuideManifestPromise;}
 function guideAddText(parent,tag,text,className){const node=document.createElement(tag);if(className)node.className=className;node.textContent=String(text??"");parent.appendChild(node);return node;}
-function renderExerciseGuideContent(exercise,record,state,manifest){
+function renderExerciseGuideContent(exercise,record,state,manifest,statusMessage,detailMessage){
  const content=$("gym-exercise-guide-content");content.replaceChildren();
- const status=guideAddText(content,"p",state.status==="incomplete"?"Guide being prepared":"Guide unavailable","gym-exercise-guide-status");status.setAttribute("role","status");
+ const status=guideAddText(content,"p",statusMessage||(state.status==="incomplete"?"Guide being prepared":"Guide unavailable"),"gym-exercise-guide-status");status.setAttribute("role","status");
  if(state.status!=="complete"){
-  guideAddText(content,"p",state.status==="incomplete"?"This guide is not ready for use. Required content or artwork is still being reviewed. Draft instructions are not displayed.":"There is no reviewed guide available for this programme exercise yet. Draft instructions are not displayed.","muted");
+  guideAddText(content,"p",detailMessage||(state.status==="incomplete"?"This guide is not ready for use. Required content or artwork is still being reviewed. Draft instructions are not displayed.":"There is no reviewed guide available for this programme exercise yet. Draft instructions are not displayed."),"muted");
   if(exercise.substitution)guideAddText(content,"p","This is the programme exercise guide status. Your manual substitution (“"+(exercise.performedExerciseName||exercise.name)+"”) has not been verified against this guide.","gym-exercise-guide-note");
   return;
  }
@@ -153,14 +153,23 @@ async function openExerciseGuide(exerciseId,trigger){
  if(!activeGymWorkout)return;
  const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===exerciseId);if(!exercise)return;
  cancelExerciseGuideHold();exerciseGuideTrigger=trigger||document.querySelector('[data-guide-heading][data-exercise-id="'+CSS.escape(exerciseId)+'"]');
- const title=$("gym-exercise-guide-title"),dialog=$("gym-exercise-guide-dialog");const sourceName=exercise.sourceExerciseLabel||exercise.name||"Exercise";title.textContent=sourceName+" guide";
- const record=EXERCISE_GUIDE_RECORDS[exercise.programmeSlotId]||null;let state=ProjectComebackExerciseGuide.resolveGuideState(record,new Set());let manifest=null;
- if(record){try{manifest=await guideAssetManifest();state=ProjectComebackExerciseGuide.resolveGuideState(record,new Set(manifest.assets.map(asset=>asset.assetId)));}catch(_){state={status:"incomplete",reason:"Guide assets could not be verified."};}}
- renderExerciseGuideContent(exercise,record,state,manifest);
- $("gym-exercise-guide-subtitle").textContent=exercise.substitution?"Programme exercise: "+sourceName+". Manual substitution: "+(exercise.performedExerciseName||exercise.name)+". This guide is not a verified guide for the substituted movement.":"Guide reference for the original programme exercise. Opening this guide does not change your workout.";
+ const token=exerciseGuideRequestGate.begin(),title=$("gym-exercise-guide-title"),dialog=$("gym-exercise-guide-dialog"),sourceName=exercise.sourceExerciseLabel||exercise.name||"Exercise";
+ title.textContent=sourceName+" guide";$("gym-exercise-guide-subtitle").textContent="Verifying the exercise guide. No workout data is changed.";
+ renderExerciseGuideContent(exercise,null,{status:"incomplete"},null,"Verifying guide…","Checking the exact programme slot and reviewed registry.");
  if(!dialog.open)dialog.showModal();$("gym-exercise-guide-close").focus({preventScroll:true});
+ try{
+  const [registry,manifest]=await Promise.all([ProjectComebackExerciseGuideRuntime.loadRegistry(),guideAssetManifest()]);
+  const result=await ProjectComebackExerciseGuideRuntime.validate(ProjectComebackGymBaseProgramme,manifest,registry);
+  if(!exerciseGuideRequestGate.isCurrent(token)||!dialog.open)return;
+  const resolution=result.resolutions[exercise.programmeSlotId]||{status:"unavailable",reason:"No exact programme-slot guide resolution exists."};
+  renderExerciseGuideContent(exercise,null,{status:resolution.status,reason:resolution.reason},manifest);
+ }catch(error){
+  if(!exerciseGuideRequestGate.isCurrent(token)||!dialog.open)return;
+  renderExerciseGuideContent(exercise,null,{status:"incomplete"},"","Verification unavailable","The registry, source snapshot, artwork manifest or cryptographic verification could not be completed. No guide instructions are displayed.");
+ }
+ $("gym-exercise-guide-subtitle").textContent=exercise.substitution?"Programme exercise: "+sourceName+". Manual substitution: "+(exercise.performedExerciseName||exercise.name)+". This guide is not verified for the substituted movement.":"Guide reference for the original programme exercise. Opening this guide does not change your workout.";
 }
-function closeExerciseGuide(){const dialog=$("gym-exercise-guide-dialog");if(dialog.open)dialog.close();}
+function closeExerciseGuide(){exerciseGuideRequestGate.invalidate();const dialog=$("gym-exercise-guide-dialog");if(dialog.open)dialog.close();}
 function handleExerciseGuideDialogClose(){cancelExerciseGuideHold();const trigger=exerciseGuideTrigger;exerciseGuideTrigger=null;if(trigger&&trigger.isConnected)trigger.focus({preventScroll:true});}
 function guideFocusTrap(event){if(event.key!=="Tab")return;const dialog=$("gym-exercise-guide-dialog"),items=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')].filter(item=>!item.hidden);if(!items.length){event.preventDefault();$("gym-exercise-guide-close").focus();return;}const first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}
 function bindExerciseGuideInteractions(){
