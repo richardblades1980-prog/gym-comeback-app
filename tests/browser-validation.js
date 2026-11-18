@@ -140,9 +140,12 @@ function server() {
     await app.goto(base + "/v21.2/");
     const testDates = await app.evaluate(() => {
       const iso = date => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
-      const tomorrow = new Date();
+      const today = new Date();
+      const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      return { today: iso(new Date()), future: iso(tomorrow) };
+      const afterTomorrow = new Date(today);
+      afterTomorrow.setDate(afterTomorrow.getDate() + 2);
+      return { today: iso(today), future: iso(tomorrow), afterTomorrow: iso(afterTomorrow) };
     });
     if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
       throw new Error("Initial navigation state is not exposed accessibly.");
@@ -371,6 +374,168 @@ function server() {
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
     console.log("PASS persisted rest countdown, +15, skip/cancel, undo cleanup, and per-exercise rest override");
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
+
+    console.log("[browser] Save-first six-second celebration, Skip/Dismiss and saved-record preservation");
+    const seedCompletedWorkoutForCelebration = async (day, date) => {
+      const fixture = await app.evaluate(async ({ day, date }) => {
+        const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]);
+        const session = sessions.find(item => item.day === day && item.status === "in-progress");
+        if (!session) throw new Error("No in-progress workout fixture exists for celebration test: " + JSON.stringify({ day, date }));
+        const [exercises, sets] = await Promise.all([
+          ProjectComebackDB.getAllByIndex("exerciseRecords", "by_session", session.id),
+          ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id)
+        ]);
+        const completedAt = new Date().toISOString();
+        const completedExercises = exercises.map(exercise => Object.assign({}, exercise, { status: "completed" }));
+        const completedSets = sets.map(set => {
+          const completed = Object.assign({}, set, { status: "completed", completedAt });
+          delete completed.stopwatchStartedAt;
+          return completed;
+        });
+        const completedSession = Object.assign({}, session);
+        delete completedSession.restEndAt;
+        delete completedSession.restDurationSeconds;
+        delete completedSession.restExerciseId;
+        delete completedSession.restSetNumber;
+        await ProjectComebackDB.updateGymWorkoutBundle({
+          sessionId: session.id,
+          session: completedSession,
+          exerciseRecords: completedExercises,
+          setRecords: completedSets
+        });
+        return { sessionId: session.id, exerciseCount: exercises.length, setCount: sets.length };
+      }, { day, date });
+      await app.reload();
+      await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+      await app.locator("#gym-workout-day").selectOption(String(day));
+      await app.locator("#gym-workout-date").fill(date);
+      await app.locator('[data-view="gym"]').click();
+      await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden &&
+        !document.querySelector("#gym-workout-finish").disabled);
+      return fixture;
+    };
+    const startCelebrationWorkout = async (day, date) => {
+      await app.locator("#gym-workout-day").selectOption(String(day));
+      await app.locator("#gym-workout-date").fill(date);
+      await app.locator("#gym-workout-start").click();
+      await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
+    };
+    const savedCelebrationState = async (day, date) => app.evaluate(async ({ day, date }) => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]))
+        .find(item => item.day === day);
+      return session ? { id: session.id, status: session.status, completedAt: session.completedAt, updatedAt: session.updatedAt } : null;
+    }, { day, date });
+
+    const firstCelebrationFixture = await seedCompletedWorkoutForCelebration(1, testDates.today);
+    await app.locator("#gym-workout-finish").click();
+    await app.waitForFunction(() => document.querySelector("#gym-celebration-dialog").open);
+    await app.waitForFunction(() => {
+      const image = document.querySelector("#gym-celebration-image");
+      return image.complete && image.naturalWidth > 0;
+    });
+    const firstCelebration = await app.evaluate(async date => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 1);
+      const image = document.querySelector("#gym-celebration-image");
+      return { sessionStatus: session.status, completedAt: session.completedAt, image: image.getAttribute("src"), alt: image.alt };
+    }, testDates.today);
+    if (firstCelebrationFixture.exerciseCount !== 7 || firstCelebrationFixture.setCount !== 21 ||
+        firstCelebration.sessionStatus !== "completed" || !firstCelebration.completedAt ||
+        firstCelebration.image !== "./assets/celebrations/v1/celebration-day1.gif" ||
+        !firstCelebration.alt.includes("hero")) {
+      throw new Error("Day 1 celebration opened before its session was saved or selected the wrong verified GIF: " + JSON.stringify({ firstCelebrationFixture, firstCelebration }));
+    }
+    const firstSavedState = await savedCelebrationState(1, testDates.today);
+    await app.locator("#gym-celebration-skip").click();
+    await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open);
+    const afterSkip = await savedCelebrationState(1, testDates.today);
+    if (!afterSkip || afterSkip.status !== "completed" || afterSkip.completedAt !== firstSavedState.completedAt ||
+        afterSkip.updatedAt !== firstSavedState.updatedAt) {
+      throw new Error("Skipping the celebration changed the already-saved Day 1 workout: " + JSON.stringify({ firstSavedState, afterSkip }));
+    }
+
+    await app.evaluate(async () => ProjectComebackDB.put("profile", {
+      id: "gym-profile", value: { gender: "female" }, legacyKey: "browser-celebration-profile",
+      legacyRawValue: JSON.stringify({ gender: "female" })
+    }));
+    await startCelebrationWorkout(2, testDates.future);
+    const secondCelebrationFixture = await seedCompletedWorkoutForCelebration(2, testDates.future);
+    await app.locator("#gym-workout-finish").click();
+    await app.waitForFunction(() => document.querySelector("#gym-celebration-dialog").open);
+    await app.waitForFunction(() => {
+      const image = document.querySelector("#gym-celebration-image");
+      return image.complete && image.naturalWidth > 0;
+    });
+    const secondCelebration = await app.evaluate(async date => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 2);
+      return { sessionStatus: session.status, src: document.querySelector("#gym-celebration-image").getAttribute("src") };
+    }, testDates.future);
+    if (secondCelebrationFixture.exerciseCount !== 7 || secondCelebrationFixture.setCount !== 21 ||
+        secondCelebration.sessionStatus !== "completed" ||
+        secondCelebration.src !== "./assets/celebrations/v1/female-celebration.gif") {
+      throw new Error("Saved female hero preference was not respected for the Day 2 celebration: " + JSON.stringify({ secondCelebrationFixture, secondCelebration }));
+    }
+    const secondSavedState = await savedCelebrationState(2, testDates.future);
+    await app.locator("#gym-celebration-dismiss").click();
+    await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open);
+    const afterDismiss = await savedCelebrationState(2, testDates.future);
+    if (!afterDismiss || afterDismiss.status !== "completed" || afterDismiss.completedAt !== secondSavedState.completedAt ||
+        afterDismiss.updatedAt !== secondSavedState.updatedAt) {
+      throw new Error("Dismissing the celebration changed the already-saved Day 2 workout: " + JSON.stringify({ secondSavedState, afterDismiss }));
+    }
+
+    await app.evaluate(async () => ProjectComebackDB.put("profile", {
+      id: "gym-profile", value: { gender: "male" }, legacyKey: "browser-celebration-profile",
+      legacyRawValue: JSON.stringify({ gender: "male" })
+    }));
+    await startCelebrationWorkout(3, testDates.afterTomorrow);
+    const thirdCelebrationFixture = await seedCompletedWorkoutForCelebration(3, testDates.afterTomorrow);
+    await app.locator("#gym-workout-finish").click();
+    await app.waitForFunction(() => document.querySelector("#gym-celebration-dialog").open);
+    await app.waitForFunction(() => {
+      const image = document.querySelector("#gym-celebration-image");
+      return image.complete && image.naturalWidth > 0;
+    });
+    const thirdCelebration = await app.evaluate(async date => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 3);
+      return { sessionStatus: session.status, src: document.querySelector("#gym-celebration-image").getAttribute("src") };
+    }, testDates.afterTomorrow);
+    if (thirdCelebrationFixture.exerciseCount !== 6 || thirdCelebrationFixture.setCount !== 18 ||
+        thirdCelebration.sessionStatus !== "completed" ||
+        thirdCelebration.src !== "./assets/celebrations/v1/celebration-day2.gif") {
+      throw new Error("Day 3 celebration did not use the legacy male/default day-2 artwork rule: " + JSON.stringify({ thirdCelebrationFixture, thirdCelebration }));
+    }
+    const thirdSavedState = await savedCelebrationState(3, testDates.afterTomorrow);
+    const autoCloseStarted = Date.now();
+    await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open, null, { timeout: 10000 });
+    const autoCloseElapsed = Date.now() - autoCloseStarted;
+    const afterAutoClose = await savedCelebrationState(3, testDates.afterTomorrow);
+    if (autoCloseElapsed < 5500 || autoCloseElapsed > 8500 ||
+        !afterAutoClose || afterAutoClose.status !== "completed" ||
+        afterAutoClose.completedAt !== thirdSavedState.completedAt || afterAutoClose.updatedAt !== thirdSavedState.updatedAt) {
+      throw new Error("The celebration did not auto-close at six seconds or changed the completed session: " +
+        JSON.stringify({ autoCloseElapsed, thirdSavedState, afterAutoClose }));
+    }
+
+    await app.evaluate(async sessionSpecs => {
+      for (const spec of sessionSpecs) {
+        const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", spec.date]);
+        const session = sessions.find(item => item.day === spec.day);
+        if (!session) continue;
+        const exercises = await ProjectComebackDB.getAllByIndex("exerciseRecords", "by_session", session.id);
+        const sets = await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id);
+        for (const record of sets) await ProjectComebackDB.remove("setRecords", record.id);
+        for (const record of exercises) await ProjectComebackDB.remove("exerciseRecords", record.id);
+        await ProjectComebackDB.remove("sessions", session.id);
+      }
+      await ProjectComebackDB.remove("profile", "gym-profile");
+    }, [
+      { day: 1, date: testDates.today },
+      { day: 2, date: testDates.future },
+      { day: 3, date: testDates.afterTomorrow }
+    ]);
+    await app.reload();
+    await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+    console.log("PASS saved state is committed before celebration, Day 1/Day 2/female hero selection, Skip/Dismiss, six-second auto-close, and no post-close data mutation");
 
     console.log("[browser] Failed guide-cache update preserves the active offline version");
     testServerState.serveGuideWorkerV2 = true;
