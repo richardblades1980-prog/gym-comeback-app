@@ -287,7 +287,7 @@ function server() {
         slot: exercise.programmeSlotId, equipment: exercise.substitution && exercise.substitution.equipmentStatus,
         setCount: await ProjectComebackDB.getAllByIndex("setRecords", "by_exercise", id).then(items => items.length) };
     });
-    if (swapPersisted.name !== "Dumbbell Floor Press" || swapPersisted.performed !== "Dumbbell Floor Press" ||
+    if (swapPersisted.name !== "Chest Press Machine" || swapPersisted.performed !== "Dumbbell Floor Press" ||
         swapPersisted.source !== "Chest Press Machine" || swapPersisted.slot !== "legacy-base-day-01-slot-01" ||
         swapPersisted.equipment !== "available" || swapPersisted.setCount !== 3) {
       throw new Error("Manual swap changed source identity or failed to persist: " + JSON.stringify(swapPersisted));
