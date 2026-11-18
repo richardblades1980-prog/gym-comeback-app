@@ -454,8 +454,7 @@ async function inspectMigration(){
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
 $("gym-workout-start").addEventListener("click",startGymWorkout);
-$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
-$("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
+$("gym-workout-active").addEventListener("click",handleGymWorkoutAction);\n$("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
 $("gym-workout-exercises").addEventListener("change",handleGymWorkoutField);
 $("gym-workout-finish").addEventListener("click",finishGymWorkout);
 $("gym-workout-day").addEventListener("change",()=>refreshGymWorkout().catch(error=>notice(error.message,true)));
@@ -520,22 +519,12 @@ $("legacy-snapshot").addEventListener("click",async event=>{const b=event.curren
 $("migration-confirm").addEventListener("change",event=>{$("migration-run").disabled=!(event.target.checked&&safetySnapshotSaved);});
 $("migration-run").addEventListener("click",async event=>{
  const b=event.currentTarget;if(!safetySnapshotSaved||!$("migration-confirm").checked)return;
- try{setBusy(b,true);const result=await ProjectComebackMigration.migrateAndVerify();const verified=await ProjectComebackMigration.inspect();if(verified.status!=="complete")throw new Error("Migration returned without a verified completion marker.");$("migration-result").hidden=false;$("migration-result").textContent="Migration status: "+result.status+"
-Source keys: "+result.sourceKeyCount+"
-Warnings: "+result.warnings.length+"
-"+result.warnings.map(w=>w.key+": "+w.reason).join("
-");await refresh();await inspectMigration();notice("Migration completed and the typed completion marker is verified.");}catch(error){$("migration-result").hidden=false;$("migration-result").textContent="Migration did not complete: "+error.message;notice(error.message,true);}finally{setBusy(b,false,"Run migration");}
+ try{setBusy(b,true);const result=await ProjectComebackMigration.migrateAndVerify();const verified=await ProjectComebackMigration.inspect();if(verified.status!=="complete")throw new Error("Migration returned without a verified completion marker.");$("migration-result").hidden=false;$("migration-result").textContent="Migration status: "+result.status+"\nSource keys: "+result.sourceKeyCount+"\nWarnings: "+result.warnings.length+"\n"+result.warnings.map(w=>w.key+": "+w.reason).join("\n");await refresh();await inspectMigration();notice("Migration completed and the typed completion marker is verified.");}catch(error){$("migration-result").hidden=false;$("migration-result").textContent="Migration did not complete: "+error.message;notice(error.message,true);}finally{setBusy(b,false,"Run migration");}
 });
 $("restore-file").addEventListener("change",async event=>{
  restorePayload=null;$("restore-confirm").checked=false;$("restore-apply").disabled=true;$("restore-confirm-wrap").hidden=true;
  const file=event.target.files&&event.target.files[0];if(!file)return;
- try{const text=await file.text();const preview=await ProjectComebackBackup.previewRestore(text);restorePayload=text;$("restore-preview").hidden=false;$("restore-preview").textContent="Valid backup · "+preview.totalIncomingRecords+" incoming records
-Exported: "+(preview.exportedAt||"unknown")+"
-
-"+Object.entries(preview.stores).filter(([,v])=>v.added||v.changed||v.removed).map(([name,v])=>name+": "+v.added+" added, "+v.changed+" changed, "+v.removed+" removed").join("
-")+"
-
-"+preview.warning;$("restore-confirm-wrap").hidden=false;notice("Backup validated. Review the restore preview carefully.");}catch(error){$("restore-preview").hidden=false;$("restore-preview").textContent=error.message;notice(error.message,true);}
+ try{const text=await file.text();const preview=await ProjectComebackBackup.previewRestore(text);restorePayload=text;$("restore-preview").hidden=false;$("restore-preview").textContent="Valid backup · "+preview.totalIncomingRecords+" incoming records\nExported: "+(preview.exportedAt||"unknown")+"\n\n"+Object.entries(preview.stores).filter(([,v])=>v.added||v.changed||v.removed).map(([name,v])=>name+": "+v.added+" added, "+v.changed+" changed, "+v.removed+" removed").join("\n")+"\n\n"+preview.warning;$("restore-confirm-wrap").hidden=false;notice("Backup validated. Review the restore preview carefully.");}catch(error){$("restore-preview").hidden=false;$("restore-preview").textContent=error.message;notice(error.message,true);}
 });
 $("restore-confirm").addEventListener("change",event=>{$("restore-apply").disabled=!(event.target.checked&&restorePayload);});
 $("restore-apply").addEventListener("click",async event=>{
