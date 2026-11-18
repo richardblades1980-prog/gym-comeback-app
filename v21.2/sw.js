@@ -140,7 +140,7 @@ self.addEventListener("fetch",event=>{
  const url=new URL(request.url);if(url.origin!==self.location.origin||!url.pathname.startsWith(new URL("./",self.location).pathname))return;
  // Guide artwork and its manifest are served only from their dedicated verified cache.
  if(url.pathname.includes("/assets/guides/")||url.pathname.includes("/assets/celebrations/")){
-  event.respondWith(caches.open(GUIDE_CACHE_NAME).then(cache=>cache.match(request).then(cached=>cached||fetch(request))).catch(()=>Response.error()));
+  event.respondWith(caches.open(GUIDE_CACHE_NAME).then(cache=>cache.match(request).then(cached=>cached||new Response("Verified guide asset is not cached.",{status:404,headers:{"content-type":"text/plain"}}))).catch(()=>Response.error()));
   return;
  }
  // Catalogue release assets are cached only by the verified release loader in their own immutable namespace.
