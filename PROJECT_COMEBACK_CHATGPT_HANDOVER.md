@@ -1028,3 +1028,16 @@ Implemented first G3.2 slice:
 - Still deferred: rest timer (+15/skip/cancel and end-time catch-up), timed-set stopwatch/manual corrections, configurable set count/progression focus/recording mode in UI, save-before-six-second celebration, week progression/unlock rules, swaps/equipment adaptation, accessible 450ms/keyboard exercise guide. Keep these in the roadmap and do not imply they are implemented.
 - Next development step after exact-SHA validation: build timed-set controls and smart rest persistence, then save/celebration flow and day/week progression. Keep functional scope ahead of aesthetics.
 - No merge/deployment. Production `main` remains protected and root legacy `index.html` unchanged. Do not alter either without explicit authorisation.
+
+---
+
+## G3.4b celebration milestone checkpoint — 2026-11-18
+
+- **Latest validated code/test SHA:** `bfaf9d877e16c2890b0ed99dbf7016b09bab970a`.
+- Save-first celebration, existing GIF selection, accessible Skip/Dismiss, six-second auto-close and persisted-completion preservation are implemented and browser validated.
+- Completion writes use a completed-session copy and commit before mutating the in-memory workout. A deliberately failed completion write remains in-progress and retryable; no celebration is shown.
+- Test uses isolated future dates and verifies cleanup does not change the pre-test Gym session count. The same persistent browser profile cold-reopens and retains IndexedDB data.
+- Browser validation [#44234071650 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234071650); backup validation [#44234071733 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234071733).
+- Service-worker shell cache is v22. Existing celebration GIFs remain unchanged; no database schema or backup format changes.
+- Roadmap/handover documentation is being updated. Final validation must run on the exact documentation commit SHA before milestone closure. Do not merge/deploy.
+- Next: G3.5 day/week flow and history.
