@@ -141,11 +141,19 @@ function server() {
     const testDates = await app.evaluate(() => {
       const iso = date => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
       const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const afterTomorrow = new Date(today);
-      afterTomorrow.setDate(afterTomorrow.getDate() + 2);
-      return { today: iso(today), future: iso(tomorrow), afterTomorrow: iso(afterTomorrow) };
+      const addDays = days => {
+        const date = new Date(today);
+        date.setDate(date.getDate() + days);
+        return iso(date);
+      };
+      return {
+        today: iso(today),
+        future: addDays(1),
+        afterTomorrow: addDays(2),
+        celebrationDay1: addDays(3),
+        celebrationDay2: addDays(4),
+        celebrationDay3: addDays(5)
+      };
     });
     if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
       throw new Error("Initial navigation state is not exposed accessibly.");
@@ -426,7 +434,7 @@ function server() {
       return session ? { id: session.id, status: session.status, completedAt: session.completedAt, updatedAt: session.updatedAt } : null;
     }, { day, date });
 
-    const firstCelebrationFixture = await seedCompletedWorkoutForCelebration(1, testDates.today);
+    const firstCelebrationFixture = await seedCompletedWorkoutForCelebration(1, testDates.celebrationDay1);
     await app.evaluate(() => {
       const original = window.ProjectComebackDB;
       window.__gymCelebrationOriginalDb = original;
@@ -447,7 +455,7 @@ function server() {
         workoutVisible: !document.querySelector("#gym-workout-active").hidden,
         finishEnabled: !document.querySelector("#gym-workout-finish").disabled,
         sessionStatus: session.status, completedAt: session.completedAt };
-    }, testDates.today);
+    }, testDates.celebrationDay1);
     if (failedFinishState.dialogOpen || !failedFinishState.workoutVisible || !failedFinishState.finishEnabled ||
         failedFinishState.sessionStatus !== "in-progress" || failedFinishState.completedAt !== undefined) {
       throw new Error("A failed finish write opened the celebration or stranded the live workout: " + JSON.stringify(failedFinishState));
@@ -470,7 +478,7 @@ function server() {
         !firstCelebration.alt.includes("hero")) {
       throw new Error("Day 1 celebration opened before its session was saved or selected the wrong verified GIF: " + JSON.stringify({ firstCelebrationFixture, firstCelebration }));
     }
-    const firstSavedState = await savedCelebrationState(1, testDates.today);
+    const firstSavedState = await savedCelebrationState(1, testDates.celebrationDay1);
     await app.locator("#gym-celebration-skip").click();
     await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open);
     const afterSkip = await savedCelebrationState(1, testDates.today);
@@ -483,8 +491,8 @@ function server() {
       id: "gym-profile", value: { gender: "female" }, legacyKey: "browser-celebration-profile",
       legacyRawValue: JSON.stringify({ gender: "female" })
     }));
-    await startCelebrationWorkout(2, testDates.future);
-    const secondCelebrationFixture = await seedCompletedWorkoutForCelebration(2, testDates.future);
+    await startCelebrationWorkout(2, testDates.celebrationDay2);
+    const secondCelebrationFixture = await seedCompletedWorkoutForCelebration(2, testDates.celebrationDay2);
     await app.locator("#gym-workout-finish").click();
     await app.waitForFunction(() => document.querySelector("#gym-celebration-dialog").open);
     await app.waitForFunction(() => {
@@ -494,13 +502,13 @@ function server() {
     const secondCelebration = await app.evaluate(async date => {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 2);
       return { sessionStatus: session.status, src: document.querySelector("#gym-celebration-image").getAttribute("src") };
-    }, testDates.future);
+    }, testDates.celebrationDay2);
     if (secondCelebrationFixture.exerciseCount !== 7 || secondCelebrationFixture.setCount !== 21 ||
         secondCelebration.sessionStatus !== "completed" ||
         secondCelebration.src !== "./assets/celebrations/v1/female-celebration.gif") {
       throw new Error("Saved female hero preference was not respected for the Day 2 celebration: " + JSON.stringify({ secondCelebrationFixture, secondCelebration }));
     }
-    const secondSavedState = await savedCelebrationState(2, testDates.future);
+    const secondSavedState = await savedCelebrationState(2, testDates.celebrationDay2);
     await app.locator("#gym-celebration-dismiss").click();
     await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open);
     const afterDismiss = await savedCelebrationState(2, testDates.future);
@@ -513,8 +521,8 @@ function server() {
       id: "gym-profile", value: { gender: "male" }, legacyKey: "browser-celebration-profile",
       legacyRawValue: JSON.stringify({ gender: "male" })
     }));
-    await startCelebrationWorkout(3, testDates.afterTomorrow);
-    const thirdCelebrationFixture = await seedCompletedWorkoutForCelebration(3, testDates.afterTomorrow);
+    await startCelebrationWorkout(3, testDates.celebrationDay3);
+    const thirdCelebrationFixture = await seedCompletedWorkoutForCelebration(3, testDates.celebrationDay3);
     await app.locator("#gym-workout-finish").click();
     await app.waitForFunction(() => document.querySelector("#gym-celebration-dialog").open);
     await app.waitForFunction(() => {
@@ -524,13 +532,13 @@ function server() {
     const thirdCelebration = await app.evaluate(async date => {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.day === 3);
       return { sessionStatus: session.status, src: document.querySelector("#gym-celebration-image").getAttribute("src") };
-    }, testDates.afterTomorrow);
+    }, testDates.celebrationDay3);
     if (thirdCelebrationFixture.exerciseCount !== 6 || thirdCelebrationFixture.setCount !== 18 ||
         thirdCelebration.sessionStatus !== "completed" ||
         thirdCelebration.src !== "./assets/celebrations/v1/celebration-day2.gif") {
       throw new Error("Day 3 celebration did not use the legacy male/default day-2 artwork rule: " + JSON.stringify({ thirdCelebrationFixture, thirdCelebration }));
     }
-    const thirdSavedState = await savedCelebrationState(3, testDates.afterTomorrow);
+    const thirdSavedState = await savedCelebrationState(3, testDates.celebrationDay3);
     const autoCloseStarted = Date.now();
     await app.waitForFunction(() => !document.querySelector("#gym-celebration-dialog").open, null, { timeout: 10000 });
     const autoCloseElapsed = Date.now() - autoCloseStarted;
@@ -555,9 +563,9 @@ function server() {
       }
       await ProjectComebackDB.remove("profile", "gym-profile");
     }, [
-      { day: 1, date: testDates.today },
-      { day: 2, date: testDates.future },
-      { day: 3, date: testDates.afterTomorrow }
+      { day: 1, date: testDates.celebrationDay1 },
+      { day: 2, date: testDates.celebrationDay2 },
+      { day: 3, date: testDates.celebrationDay3 }
     ]);
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
