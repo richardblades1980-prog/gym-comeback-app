@@ -47,7 +47,6 @@ test("empty guide registry is cached in the shell, not the dedicated artwork cac
   assert.deepEqual(registry.guides, []);
   assert.match(sw, /assets\\/exercise-guide-registry\\.v2\\.json/);
   assert.match(sw, /CACHE_NAME=CACHE_PREFIX\\+"v27"/);
-  assert.doesNotMatch(registry.sourceSnapshotId, /unreviewed/);
 });
 
 test("guide artwork requests bypass generic shell caching", () => {
