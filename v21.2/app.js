@@ -69,6 +69,7 @@ function renderGymWorkout(){
   gymStopwatchRenderInterval=setInterval(updateGymStopwatchDisplays,250);
  }
  updateGymStopwatchDisplays();
+ gymRestRenderInterval=setInterval(updateGymRestDisplay,250);
 }
 async function startGymWorkout(){
  const button=$("gym-workout-start"),day=Number($("gym-workout-day").value),date=$("gym-workout-date").value;
