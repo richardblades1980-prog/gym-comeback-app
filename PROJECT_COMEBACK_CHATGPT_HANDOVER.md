@@ -1443,3 +1443,35 @@ Both paths share browser origin `https://richardblades1980-prog.github.io`. This
 - No merge, deployment, live hosting change, actual data migration or production approval occurred. Main remains unchanged.
 
 **Next suggested work:** after this validated checkpoint, finish the independent release-readiness documentation sweep (included in this checkpoint), then design the controlled same-origin migration rehearsal without running it against live data.
+
+---
+
+# Gym Comeback V21.2 — GitHub Pages source confirmed (2026-11-19)
+
+**User-provided evidence:** `Pages.pdf`, screenshot of repository Settings → Pages, timestamp 19 November 2026, 9:47 AM.
+
+## Confirmed live Pages configuration
+
+- Source mode: **Deploy from a branch**.
+- Selected branch: **`main`**.
+- Selected folder: **`/(root)`**.
+- GitHub displays the site as live at `https://richardblades1980-prog.github.io/gym-comeback-app/`.
+- GitHub's UI says it was last deployed by the repository owner **4 days ago** relative to the screenshot.
+- The screenshot does **not** show the deployed commit SHA. Do not claim or infer the last deployment SHA.
+
+## Candidate / publication state
+
+- Development branch at pre-update inspection: `aa652df424ff19f9808980e219c5275b4f3283bf`.
+- Candidate branch: `V21.2-pages-release-candidate`.
+- Candidate SHA: `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`.
+- Candidate exact-SHA browser validation #44413382202: PASS.
+- Candidate is designed to publish from `/(root)`; it preserves the V21.1 root entry page and manifest, includes the reviewed root worker coexistence change, and includes the complete `/v21.2/` app tree.
+- Candidate is still unselected. No Pages source setting was changed and no publication occurred.
+
+## Next action and safety boundary
+
+The earlier missing preflight input is now answered: the current source is `main / (root)`. The next decision is whether to switch Pages to `V21.2-pages-release-candidate / (root)`. This is a production-facing source switch. Do not perform it until the user separately and explicitly approves publication. Keep `main` unchanged.
+
+For rollback, restore the Pages source selection to `main / (root)`. Before any approved switch, re-check and record the exact current `main` SHA and verify the actual Pages deployment/build identity; the screenshot only establishes the selected source, not the precise last-published commit.
+
+This update is documentation-only. It does not change the Pages setting, deploy, merge, alter live V21.1 records or access browser data.
