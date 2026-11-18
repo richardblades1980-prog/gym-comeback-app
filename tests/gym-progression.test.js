@@ -59,7 +59,7 @@ test("manual unlock/relock override; planned-frequency limit still applies", asy
 });
 
 test("completion is distinguished by explicit programme week/day", async () => {
-  const { db, progression } = setup();
+  const { db, progression } = await setup();
   await db.put("sessions", { id: "same-day-w1", moduleId: "gym", status: "completed", week: 1, day: 1, date: "2026-11-18" });
   await db.put("sessions", { id: "same-day-w2", moduleId: "gym", status: "in-progress", week: 2, day: 1, date: "2026-11-18" });
   assert.equal(await progression.hasCompletedWorkout(1, 1), true);
@@ -67,7 +67,7 @@ test("completion is distinguished by explicit programme week/day", async () => {
 });
 
 test("history includes unfinished sessions and sorts newest first", async () => {
-  const { db, progression } = setup();
+  const { db, progression } = await setup();
   await db.put("sessions", { id: "old", moduleId: "gym", status: "completed", week: 1, day: 1, date: "2026-11-01" });
   await db.put("sessions", { id: "new", moduleId: "gym", status: "in-progress", week: 2, day: 2, date: "2026-11-18" });
   const list = await progression.history();
