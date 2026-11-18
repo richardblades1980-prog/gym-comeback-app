@@ -321,7 +321,7 @@ test("manual exercise substitution preserves programme identity, sets, persists,
   assert.deepEqual(exercise.sets.map(set => [set.weight, set.reps, set.duration, set.targetDuration, set.status]), original.setValues);
 
   await workout.setExerciseSubstitution(created.workout, exercise.id, "Resistance Band Chest Press", "unknown");
-  assert.equal(exercise.name, "Resistance Band Chest Press");
+  assert.equal(exercise.name, original.sourceExerciseLabel, "source name remains immutable across repeated swaps");
   assert.equal(exercise.substitution.sourceExerciseLabel, original.sourceExerciseLabel);
   assert.equal(exercise.substitution.equipmentStatus, "unknown");
 
