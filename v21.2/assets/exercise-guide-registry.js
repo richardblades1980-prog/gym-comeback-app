@@ -21,7 +21,7 @@ guides.forEach(x=>{if(!["draft","in-review","approved","rejected","withdrawn"].i
 if(!nonempty(x.title)||!nonempty(x.setup)||!list(x.steps)||!list(x.cues)||!list(x.safetyNotes)||!list(x.assetIds))errors.push("Guide required content missing: "+x.guideId+"@"+x.version);
 if(!nonempty(x.exerciseScope)||!nonempty(x.variationScope)||!nonempty(x.equipmentScope)||!nonempty(x.contextScope))errors.push("Guide exercise/variation/equipment/context scope must be explicit: "+x.guideId+"@"+x.version);
 if(!assets||!Array.isArray(x.assetIds)||x.assetIds.some(id=>!assets.has(id)))errors.push("Guide references unverified local assets: "+x.guideId+"@"+x.version);
-if(!digestMatches(contentForDigest(x),x.contentDigest,digestFor))errors.push("Guide content digest mismatch: "+x.guideId+"@"+x.version;});
+if(!digestMatches(contentForDigest(x),x.contentDigest,digestFor))errors.push("Guide content digest mismatch: "+x.guideId+"@"+x.version);});
 reviews.forEach(r=>{if(!["approve","reject","request-changes"].includes(r.decision))errors.push("Invalid review decision: "+r.reviewRecordId);
 if(r.targetType==="guide"){const x=guideMap.get(r.targetId+"@"+r.targetVersion);if(!x)errors.push("Review references unknown guide version: "+r.reviewRecordId);else if(r.reviewedDigest!==x.contentDigest)errors.push("Guide review digest/version mismatch: "+r.reviewRecordId);}
 else if(r.targetType==="assignment"){const a=assignments.find(x=>x.assignmentId===r.targetId);if(!a)errors.push("Review references unknown assignment: "+r.reviewRecordId);else if(r.reviewedDigest!==a.assignmentDigest)errors.push("Assignment review digest mismatch: "+r.reviewRecordId);}else errors.push("Unknown review target type: "+r.reviewRecordId);});
