@@ -356,11 +356,12 @@
     return workout.session;
   }
   async function skipRest(workout) { clearRest(workout.session); await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session }); return workout.session; }
-  async function cancelRest(workout) { return skipRest(workout); }
+  async function cancelRest(workout) {
+    assertWorkoutInProgress(workout);
+    return skipRest(workout);
+  }
 
   async function undoSet(workout, exerciseId, setNumber) {
-    assertWorkoutInProgress(workout);
-    assertWorkoutInProgress(workout);
     assertWorkoutInProgress(workout);
     const exercise = getExercise(workout, exerciseId);
     const set = getSet(workout, exercise, setNumber);
