@@ -197,15 +197,16 @@ function server() {
     }
     await appContext.setOffline(true);
     const offlineGuideFetch = await app.evaluate(async () => {
-      const urls = ["./assets/guides/v1/equipment/equipment-bands.svg","./assets/celebrations/v1/celebration-day1.gif"];
+      const urls = ["./assets/guides/v1/equipment/equipment-bands.svg","./assets/celebrations/v1/celebration-day1.gif","./assets/exercise-guide-registry.v2.json"];
       const results = [];
       for (const url of urls) {
         const response = await fetch(url);
-        results.push({ ok: response.ok, bytes: (await response.arrayBuffer()).byteLength });
+        const bytes=await response.arrayBuffer();
+        results.push({ ok: response.ok, bytes: bytes.byteLength, registry: url.endsWith("registry.v2.json") ? JSON.parse(new TextDecoder().decode(bytes)) : null });
       }
       return results;
     });
-    if (offlineGuideFetch.length !== 2 || offlineGuideFetch.some(item => !item.ok || item.bytes < 1000)) {
+    if (offlineGuideFetch.length !== 3 || offlineGuideFetch.slice(0,2).some(item => !item.ok || item.bytes < 1000) || !offlineGuideFetch[2].ok || offlineGuideFetch[2].registry.schemaVersion !== 2 || offlineGuideFetch[2].registry.guides.length !== 0) {
       throw new Error("Guide artwork was not served from the dedicated cache while offline: " + JSON.stringify(offlineGuideFetch));
     }
     await app.reload();
