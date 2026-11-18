@@ -176,6 +176,35 @@ test("timed-set stopwatch persists across reload, resumes from its timestamp, su
   assert.equal(persisted.exerciseRecords[0].sets[0].duration, "");
 });
 
+test("smart rest starts on set completion, persists absolute end time, supports +15, skip, cancel and exercise presets", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const exercise = created.workout.exerciseRecords[0];
+  assert.equal(exercise.restSeconds, 90);
+  await workout.setExerciseRest(created.workout, exercise.id, 120);
+  assert.equal(exercise.restSeconds, 120);
+  await workout.startSet(created.workout, exercise.id, 1);
+  const result = await workout.completeSet(created.workout, exercise.id, 1);
+  assert.equal(result.restStarted, true);
+  assert.ok(Number.isFinite(created.workout.session.restEndAt));
+  assert.equal(created.workout.session.restDurationSeconds, 120);
+  const loaded = await workout.loadSession(created.workout.session.id);
+  assert.equal(loaded.session.restEndAt, created.workout.session.restEndAt);
+  await workout.adjustRest(loaded, 15);
+  assert.equal(loaded.session.restEndAt, created.workout.session.restEndAt + 15000);
+  assert.equal(loaded.session.restDurationSeconds, 135);
+  await workout.skipRest(loaded);
+  assert.equal(loaded.session.restEndAt, undefined);
+  await workout.startSet(loaded, exercise.id, 2);
+  await workout.completeSet(loaded, exercise.id, 2);
+  assert.ok(loaded.session.restEndAt);
+  await workout.cancelRest(loaded);
+  assert.equal(loaded.session.restEndAt, undefined);
+  await assert.rejects(() => workout.setExerciseRest(loaded, exercise.id, 80), /supported rest duration/);
+  const persisted = await db.get("sessions", loaded.session.id);
+  assert.equal(persisted.restEndAt, undefined);
+});
+
 test("completing a timed set stops its running stopwatch and saves the elapsed duration", async () => {
   const { db, workout } = await setup();
   const created = await workout.startSession(1, "2026-11-18");
