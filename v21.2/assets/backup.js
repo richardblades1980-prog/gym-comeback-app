@@ -15,6 +15,8 @@
   ]);
   const STORE_NAMES = Object.freeze([...LEGACY_STORE_NAMES, ...IDENTITY_STORE_NAMES]);
   const HISTORY_MERGE_STORES = new Set(["identityReviewEvents", "catalogueReleases", "exerciseDefinitions", "exerciseVariations", "programmeVersions", "programmeDays", "programmeSlots"]);
+  const RESTORE_SNAPSHOT_TYPE = "pre-restore-safety-snapshot";
+  const RESTORE_SNAPSHOT_RETENTION = 3;
 
   function cloneJson(value) {
     return JSON.parse(JSON.stringify(value));
@@ -315,6 +317,18 @@
         conflicts, idempotencySkipped, projected: conflicts ? null : (merge ? current.length + added : incoming.length + (name === "metadata" ? 1 : 0))
       };
     }
+    if (stores.metadata && !stores.metadata.conflicts) {
+      const currentMetadata = currentRecords.metadata || [];
+      const incomingMetadata = parsed.data.data.metadata || [];
+      const currentUpgrade = currentMetadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
+      const incomingUpgrade = incomingMetadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
+      const newestPreview = { id: "__restore-preview__", type: RESTORE_SNAPSHOT_TYPE, createdAt: new Date().toISOString() };
+      const retainedCount = retainedRestoreSnapshots(currentMetadata, incomingMetadata, newestPreview).length;
+      const incomingBaseCount = incomingMetadata.filter(record => !isRestoreSafetySnapshot(record)).length;
+      const preserveUpgradeCount = currentUpgrade && !incomingUpgrade ? 1 : 0;
+      stores.metadata.projected = incomingBaseCount + preserveUpgradeCount + retainedCount;
+      stores.metadata.description = "Existing metadata is replaced, the pre-restore safety snapshot is written, the newest three restore snapshots are retained, and the pre-identity-upgrade safety snapshot is preserved when omitted.";
+    }
     const preservedStores = parsed.sourceFormatVersion === 1 && currentVersion >= 6 ? await Promise.all(IDENTITY_STORE_NAMES.map(async name => ({
       name, behavior: "preserve-untouched", action: "Preserve current records; backup does not contain this store",
       current: (await dbApi.getAll(name)).length, incoming: 0, projected: null
@@ -324,11 +338,29 @@
       appVersion: parsed.data.appVersion || null, exportedAt: parsed.data.exportedAt || null,
       includedModules: Array.isArray(parsed.data.includedModules) ? parsed.data.includedModules.slice() : [],
       backupScope: parsed.data.backupScope || "full", totalIncomingRecords: parsed.validation.totalRecords,
+      restoreSafetySnapshotRetention: RESTORE_SNAPSHOT_RETENTION,
       stores, preservedStores: preservedStores.map(store => store.name), preservedStoreDetails: preservedStores,
       warning: parsed.sourceFormatVersion === 1
-        ? "V1 restore replaces only the original V1 stores. Where V6 identity stores exist, they are preserved untouched. A pre-restore safety snapshot is saved in metadata."
+        ? "V1 restore replaces only the original V1 stores. Where V6 identity stores exist, they are preserved untouched. Restore safety snapshots are bounded to the newest three and do not recursively contain prior restore snapshots."
         : "Replace stores are overwritten. Append/merge stores retain existing history, skip identical records, append new records, and stop on immutable conflicts. A pre-restore safety snapshot is saved in metadata."
     };
+  }
+
+  function isRestoreSafetySnapshot(record) {
+    return !!record && record.type === RESTORE_SNAPSHOT_TYPE;
+  }
+
+  function retainedRestoreSnapshots(existing, incoming, newest) {
+    const byId = new Map();
+    for (const record of [...(existing || []), ...(incoming || []), newest].filter(isRestoreSafetySnapshot)) {
+      byId.set(String(record.id), record);
+    }
+    return [...byId.values()].sort((a, b) => {
+      const at = Date.parse(a.createdAt || "");
+      const bt = Date.parse(b.createdAt || "");
+      if (Number.isFinite(at) && Number.isFinite(bt) && at !== bt) return bt - at;
+      return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    }).slice(0, RESTORE_SNAPSHOT_RETENTION);
   }
 
   function requestResult(request) {
@@ -364,14 +396,19 @@
       const availableStores = db.version >= 6 ? STORE_NAMES : LEGACY_STORE_NAMES;
       const restoreStores = parsed.sourceFormatVersion === 1 ? LEGACY_STORE_NAMES : STORE_NAMES;
       const current = await readStores(db, availableStores);
-      const restoreId = "pre-restore-" + new Date().toISOString().replace(/[^0-9]/g, "");
+      const restoreId = "pre-restore-" + new Date().toISOString().replace(/[^0-9]/g, "") + "-" + Math.random().toString(36).slice(2, 8);
+      // A restore safety snapshot must not contain earlier restore snapshots.
+      // This prevents recursive payload growth while preserving other metadata safeguards.
+      const safetyData = Object.assign({}, current, {
+        metadata: current.metadata.filter(record => !isRestoreSafetySnapshot(record))
+      });
       const safetyRecord = {
         id: restoreId,
-        type: "pre-restore-safety-snapshot",
+        type: RESTORE_SNAPSHOT_TYPE,
         createdAt: new Date().toISOString(),
         sourceBackupExportedAt: parsed.data.exportedAt || null,
-        recordCounts: Object.fromEntries(availableStores.map(name => [name, current[name].length])),
-        data: current
+        recordCounts: Object.fromEntries(availableStores.map(name => [name, safetyData[name].length])),
+        data: safetyData
       };
 
       const tx = db.transaction(restoreStores, "readwrite");
@@ -415,7 +452,17 @@
           store.add(record);
         }
       }
-      tx.objectStore("metadata").put(safetyRecord);
+      const metadataStore = tx.objectStore("metadata");
+      const incomingMetadata = parsed.data.data.metadata || [];
+      // Retain the pre-identity-upgrade snapshot if an incoming restore omits it.
+      const currentUpgradeSnapshot = current.metadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
+      const incomingUpgradeSnapshot = incomingMetadata.find(record => record.id === "identity-upgrade-v6-safety-snapshot");
+      if (!incomingUpgradeSnapshot && currentUpgradeSnapshot) metadataStore.put(currentUpgradeSnapshot);
+
+      // Preserve restore-snapshot history across restores, but cap it at the newest three.
+      const retainedSnapshots = retainedRestoreSnapshots(current.metadata, incomingMetadata, safetyRecord);
+      for (const snapshot of retainedSnapshots) metadataStore.put(snapshot);
+      metadataStore.put(safetyRecord);
       await done;
       return {
         restored: true,

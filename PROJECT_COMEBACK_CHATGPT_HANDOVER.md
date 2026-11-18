@@ -1097,3 +1097,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - The preview UI lists every incoming store's action and counts, plus every V1 identity store that remains untouched. Confirmation copy requires review of replace/merge/preserve/conflict behaviour.
 - Restore transaction behaviour is unchanged; this increment is preview/reporting only. Added regression tests for V1 replacement counts, V2 merge/conflict semantics, V1 identity preservation, and V1 preview on pre-V6 schema.
 - Validation is required on the exact final commit with browser and backup workflows. Do not touch main or deploy.
+
+
+## G3.7.3 — Restore safety snapshot retention (2026-11-18)
+
+- Restore safety snapshots are bounded to the three newest records in metadata. Snapshot history is carried forward across restores and pruned transactionally.
+- New safety snapshots exclude earlier restore-safety snapshot records from their own metadata payload, preventing recursive nesting and unbounded backup/restore payload growth.
+- The pre-identity-upgrade safety snapshot is preserved when an incoming restore omits it; its verification safeguard remains unchanged.
+- Snapshot creation, retention and restore writes remain in the same IndexedDB transaction. Transaction/quota failures abort without committing a partial restore or safety snapshot.
+- Added repeated-restore tests for bounded retention, non-recursive payloads and identity-upgrade snapshot preservation, plus transaction-failure recovery coverage.
+- Exact final-SHA browser and backup validation required. Do not touch main or deploy.

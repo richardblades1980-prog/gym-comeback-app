@@ -186,3 +186,58 @@ test("V1 preview on pre-V6 database does not request nonexistent identity stores
   assert.deepEqual(JSON.parse(JSON.stringify(preview.preservedStoreDetails)), []);
   delete sandbox.window.ProjectComebackDB;
 });
+
+
+test("restore safety snapshots are bounded, non-recursive, and preserve identity-upgrade safety", async () => {
+  const { indexedDB } = require("fake-indexeddb");
+  const dbWindow = { indexedDB };
+  const dbSandbox = { window: dbWindow };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8"), dbSandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/backup.js"), "utf8"), dbSandbox);
+  const db = dbWindow.ProjectComebackDB;
+  const restore = dbWindow.ProjectComebackBackup;
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(db.name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+  await db.put("metadata", { id: "identity-upgrade-v6-safety-snapshot", type: "pre-identity-upgrade-safety-snapshot", verificationStatus: "complete", data: { preserved: true } });
+  const incoming = validEnvelope();
+  incoming.data.metadata = [];
+  for (let i = 0; i < 5; i++) {
+    incoming.data.profile = [{ id: "profile-" + i, displayName: "Restore " + i }];
+    await restore.restoreBackup(incoming, { confirmed: true });
+  }
+  const metadata = await db.getAll("metadata");
+  const snapshots = metadata.filter(record => record.type === "pre-restore-safety-snapshot");
+  assert.equal(snapshots.length, 3, "only the three newest restore snapshots should remain");
+  for (const snapshot of snapshots) {
+    assert.ok(Array.isArray(snapshot.data.metadata));
+    assert.equal(snapshot.data.metadata.some(record => record.type === "pre-restore-safety-snapshot"), false, "snapshot payload must not recursively include prior restore snapshots");
+  }
+  assert.ok(metadata.some(record => record.id === "identity-upgrade-v6-safety-snapshot"), "identity-upgrade safety snapshot must survive restore retention");
+  assert.equal((await db.get("profile", "profile-4")).displayName, "Restore 4");
+});
+
+test("restore transaction failure leaves existing data and does not commit a safety snapshot", async () => {
+  const { indexedDB } = require("fake-indexeddb");
+  const dbWindow = { indexedDB };
+  const dbSandbox = { window: dbWindow };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8"), dbSandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/backup.js"), "utf8"), dbSandbox);
+  const db = dbWindow.ProjectComebackDB;
+  const restore = dbWindow.ProjectComebackBackup;
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(db.name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+  await db.put("profile", { id: "existing", displayName: "Keep me" });
+  const incoming = validEnvelope();
+  incoming.data.profile = [{ id: {}, displayName: "Invalid IndexedDB key" }];
+  await assert.rejects(() => restore.restoreBackup(incoming, { confirmed: true }));
+  assert.equal((await db.get("profile", "existing")).displayName, "Keep me");
+  assert.equal((await db.getAll("metadata")).filter(record => record.type === "pre-restore-safety-snapshot").length, 0);
+});
