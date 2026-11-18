@@ -245,7 +245,7 @@ function server() {
       startDisabled: document.querySelector("#gym-workout-start").disabled
     }));
     if (planControls.weeks.join(",") !== "4,8,12" || planControls.weekOptions.join(",") !== "1,2,3,4" ||
-        planControls.daysPerWeek !== "2" || !planControls.startDisabled === false) {
+        planControls.daysPerWeek !== "2" || planControls.startDisabled !== false) {
       throw new Error("Gym progression controls do not match the legacy plan defaults: " + JSON.stringify(planControls));
     }
     await app.locator("#gym-workout-day").selectOption("2");
@@ -261,15 +261,15 @@ function server() {
     console.log("[browser] Start, enter and resume a real Gym workout");
     await app.locator("#gym-workout-start").click();
     await app.waitForFunction(() => !document.querySelector("#gym-workout-active").hidden);
-    const workoutGraph = await app.evaluate(() => ({
+    const workoutGraph = await app.evaluate(async date => ({
       title: document.querySelector("#gym-workout-title").textContent,
       week: document.querySelector("#gym-workout-week").value,
-      storedWeek: ProjectComebackDB.get("sessions", document.querySelector("#gym-workout-title").dataset.sessionId),
+      storedWeek: (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(session => session.status === "in-progress")?.week,
       exercises: document.querySelectorAll("#gym-workout-exercises .gym-exercise-card").length,
       sets: document.querySelectorAll("#gym-workout-exercises .gym-set-row").length,
       firstName: document.querySelector("#gym-workout-exercises .gym-exercise-card h3").textContent
-    }));
-    if (workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
+    }), testDates.today);
+    if (workoutGraph.week !== "1" || workoutGraph.storedWeek !== 1 || workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
     // Exercise the timed-repetition UI against the real IndexedDB-backed workout record.
