@@ -346,16 +346,24 @@ function server() {
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
     const timerLabel = await app.locator("#gym-rest-label").textContent();
     if (!timerLabel.includes("after set 2")) throw new Error("Rest timer did not identify the completed set: " + timerLabel);
-    await secondSetRow.locator('[data-gym-action="undo"]').click();
+    const undoButton = secondSetRow.locator('[data-gym-action="undo"]');
+    const undoTarget = {
+      exerciseId: await undoButton.getAttribute("data-exercise-id"),
+      setNumber: await undoButton.getAttribute("data-set-number")
+    };
+    if (undoTarget.setNumber !== "2") throw new Error("Browser undo control is not targeting set 2: " + JSON.stringify(undoTarget));
+    await undoButton.click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
-    const undoRestState = await app.evaluate(async date => {
+    const undoRestState = await app.evaluate(async ({ date, exerciseId }) => {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress");
-      const exercise = (await ProjectComebackDB.getAllByIndex("exerciseRecords", "by_session", session.id))[0];
+      const exercise = await ProjectComebackDB.get("exerciseRecords", exerciseId);
       const sets = await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id);
-      return { restEndAt: session.restEndAt, secondSetStatus: sets.find(set => set.exerciseRecordId === exercise.id && set.setNumber === 2)?.status };
-    }, testDates.today);
-    if (undoRestState.restEndAt !== undefined || undoRestState.secondSetStatus !== "in-progress") {
-      throw new Error("Undoing a completed set did not clear its rest state: " + JSON.stringify(undoRestState));
+      return { restEndAt: session.restEndAt, exerciseStatus: exercise.status,
+        setStatuses: sets.filter(set => set.exerciseRecordId === exerciseId).map(set => ({ setNumber: set.setNumber, status: set.status })) };
+    }, { date: testDates.today, exerciseId: undoTarget.exerciseId });
+    const undoneSecondSet = undoRestState.setStatuses.find(set => set.setNumber === 2);
+    if (undoRestState.restEndAt !== undefined || !undoneSecondSet || undoneSecondSet.status !== "in-progress") {
+      throw new Error("Undoing a completed set did not clear its rest state: " + JSON.stringify({undoTarget,undoRestState}));
     }
     await secondSetRow.locator('[data-gym-action="complete"]').click();
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
