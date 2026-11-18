@@ -279,41 +279,55 @@
     const dbApi = global.ProjectComebackDB;
     if (!dbApi) throw new Error("Load database.js before backup.js.");
     const currentVersion = typeof dbApi.getVersion === "function" ? await dbApi.getVersion() : 5;
-    if (parsed.sourceFormatVersion === 2 && currentVersion < 6) {
-      throw new Error("This V2 backup requires the V6 identity foundation. Upgrade the database before restoring it.");
-    }
+    if (parsed.sourceFormatVersion === 2 && currentVersion < 6) throw new Error("This V2 backup requires the V6 identity foundation. Upgrade the database before restoring it.");
     const names = parsed.sourceFormatVersion === 1 ? LEGACY_STORE_NAMES : STORE_NAMES;
     const currentRecords = {};
     await Promise.all(names.map(async name => { currentRecords[name] = await dbApi.getAll(name); }));
     const stores = {};
-      for (const name of names) {
-        const current = currentRecords[name];
-        const incoming = parsed.data.data[name];
-        const currentById = new Map(current.map(record => [String(record.id), record]));
-        const incomingIds = new Set(incoming.map(record => String(record.id)));
-        let unchanged = 0, changed = 0, added = 0;
-        for (const record of incoming) {
-          const existing = currentById.get(String(record.id));
-          if (!existing) added += 1;
-          else if (stableRecordJson(existing) === stableRecordJson(record)) unchanged += 1;
-          else changed += 1;
-        }
-        const removed = current.filter(record => !incomingIds.has(String(record.id))).length;
-        stores[name] = { current: current.length, incoming: incoming.length, added, changed, unchanged, removed };
+    for (const name of names) {
+      const current = currentRecords[name], incoming = parsed.data.data[name];
+      const merge = HISTORY_MERGE_STORES.has(name);
+      const currentById = new Map(current.map(record => [String(record.id), record]));
+      const incomingIds = new Set(incoming.map(record => String(record.id)));
+      let unchanged = 0, changed = 0, added = 0, conflicts = 0, idempotencySkipped = 0;
+      for (const record of incoming) {
+        const existing = currentById.get(String(record.id));
+        if (!existing) {
+          if (merge && name === "identityReviewEvents") {
+            const byKey = current.find(item => item.profileId === record.profileId && item.idempotencyKey === record.idempotencyKey);
+            if (byKey) { if (eventComparable(byKey) === eventComparable(record)) idempotencySkipped++; else conflicts++; continue; }
+          }
+          added++;
+        } else if (stableRecordJson(existing) === stableRecordJson(record)) unchanged++;
+        else if (merge) { changed++; conflicts++; }
+        else changed++;
       }
+      const removed = merge ? 0 : current.filter(record => !incomingIds.has(String(record.id))).length;
+      stores[name] = {
+        behavior: merge ? "merge-preserve" : "replace",
+        action: merge ? "Merge incoming records; preserve existing history" : "Replace existing records with incoming records",
+        description: merge
+          ? "Existing records remain. Identical records are skipped; new records are appended; immutable conflicts stop the restore."
+          : name === "metadata"
+            ? "Existing metadata is replaced. Restore also writes one pre-restore safety snapshot."
+            : "Existing records are cleared and incoming records are written.",
+        current: current.length, incoming: incoming.length, added, changed, unchanged, removed,
+        conflicts, idempotencySkipped, projected: merge ? current.length + added : incoming.length + (name === "metadata" ? 1 : 0)
+      };
+    }
+    const preservedStores = parsed.sourceFormatVersion === 1 && currentVersion >= 6 ? await Promise.all(IDENTITY_STORE_NAMES.map(async name => ({
+      name, behavior: "preserve-untouched", action: "Preserve current records; backup does not contain this store",
+      current: (await dbApi.getAll(name)).length, incoming: 0, projected: null
+    }))) : [];
     return {
-      valid: true,
-      sourceFormatVersion: parsed.sourceFormatVersion,
-      appVersion: parsed.data.appVersion || null,
-      exportedAt: parsed.data.exportedAt || null,
+      valid: true, sourceFormatVersion: parsed.sourceFormatVersion,
+      appVersion: parsed.data.appVersion || null, exportedAt: parsed.data.exportedAt || null,
       includedModules: Array.isArray(parsed.data.includedModules) ? parsed.data.includedModules.slice() : [],
-      backupScope: parsed.data.backupScope || "full",
-      totalIncomingRecords: parsed.validation.totalRecords,
-      stores,
-      preservedStores: parsed.sourceFormatVersion === 1 ? IDENTITY_STORE_NAMES.slice() : [],
+      backupScope: parsed.data.backupScope || "full", totalIncomingRecords: parsed.validation.totalRecords,
+      stores, preservedStores,
       warning: parsed.sourceFormatVersion === 1
-        ? "This V1 backup predates canonical identity data. Restoring it preserves all current identity records and replaces only the original V1 stores."
-        : "Restoring replaces mutable records. Append-only identity review events and catalogue releases are retained and merged; conflicting immutable records stop the restore."
+        ? "V1 restore replaces only the original V1 stores. Where V6 identity stores exist, they are preserved untouched. A pre-restore safety snapshot is saved in metadata."
+        : "Replace stores are overwritten. Append/merge stores retain existing history, skip identical records, append new records, and stop on immutable conflicts. A pre-restore safety snapshot is saved in metadata."
     };
   }
 

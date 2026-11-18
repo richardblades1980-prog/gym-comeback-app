@@ -1087,3 +1087,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - Added service/API regression coverage that completes a workout, attempts the mutation surface, attempts a direct bundle update, and confirms stored session/exercise/set records remain unchanged.
 - No schema/store/index or backup-format changes. Canonical service/database and offline mirrors remain identical. Shell cache advanced to v24.
 - Exact-SHA browser and backup validation are required before closure; main and deployment remain untouched.
+
+
+## G3.7.2 — Restore preview transparency (2026-11-18)
+
+- Restore preview now reports actual per-store behaviour: replace, merge/preserve, or (for V1 backups in a V6 database) preserved untouched identity stores.
+- Replace stores show actual removals, incoming additions/changes, and projected record count. Metadata projection includes the pre-restore safety snapshot written by restore.
+- Merge/preserve stores report zero removals, append additions, identical records skipped, immutable conflicts, and projected count. Identity-review idempotency-key matches are separately identified as skips or conflicts.
+- The preview UI lists every incoming store's action and counts, plus every V1 identity store that remains untouched. Confirmation copy requires review of replace/merge/preserve/conflict behaviour.
+- Restore transaction behaviour is unchanged; this increment is preview/reporting only. Added regression tests for V1 replacement counts, V2 merge/conflict semantics, V1 identity preservation, and V1 preview on pre-V6 schema.
+- Validation is required on the exact final commit with browser and backup workflows. Do not touch main or deploy.
