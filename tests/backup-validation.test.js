@@ -241,3 +241,66 @@ test("restore transaction failure leaves existing data and does not commit a saf
   assert.equal((await db.get("profile", "existing")).displayName, "Keep me");
   assert.equal((await db.getAll("metadata")).filter(record => record.type === "pre-restore-safety-snapshot").length, 0);
 });
+
+test("corrupted and structurally invalid backups are rejected before database writes", async () => {
+  const { indexedDB } = require("fake-indexeddb");
+  const dbWindow = { indexedDB };
+  const dbSandbox = { window: dbWindow };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8"), dbSandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/backup.js"), "utf8"), dbSandbox);
+  const db = dbWindow.ProjectComebackDB;
+  const restore = dbWindow.ProjectComebackBackup;
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(db.name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error || new Error("Could not delete test database."));
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+  await db.put("profile", { id: "existing", displayName: "Preserve existing" });
+  await assert.rejects(() => restore.restoreBackup("{broken json", { confirmed: true }), /not valid JSON/);
+  const incomplete = validEnvelope();
+  delete incomplete.data.readiness;
+  await assert.rejects(() => restore.restoreBackup(incomplete, { confirmed: true }), /Backup is incomplete/);
+  const duplicate = validEnvelope();
+  duplicate.data.profile.push({ id: "profile-main", displayName: "Duplicate" });
+  await assert.rejects(() => restore.restoreBackup(duplicate, { confirmed: true }), /Duplicate record ID/);
+  assert.equal((await db.get("profile", "existing")).displayName, "Preserve existing");
+  assert.equal((await db.getAll("metadata")).filter(record => record.type === "pre-restore-safety-snapshot").length, 0);
+});
+
+test("V2 unique-index failure after queued replace writes rolls back and permits retry", async () => {
+  const { indexedDB } = require("fake-indexeddb");
+  const dbWindow = { indexedDB };
+  const dbSandbox = { window: dbWindow };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8"), dbSandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/backup.js"), "utf8"), dbSandbox);
+  const db = dbWindow.ProjectComebackDB;
+  const restore = dbWindow.ProjectComebackBackup;
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(db.name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error || new Error("Could not delete test database."));
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+  const v1Safety = await restore.createLegacySafetyBackup();
+  await db.upgradeToV6(v1Safety);
+  await db.put("profile", { id: "existing", displayName: "Old profile" });
+  const incoming = await restore.createBackup();
+  incoming.data.profile = [{ id: "incoming", displayName: "New profile" }];
+  incoming.data.exerciseAliases = [
+    { id: "alias-a", profileId: "profile-a", sourceNamespace: "legacy", exactValue: "Duplicate", exerciseDefinitionId: "definition-a" },
+    { id: "alias-b", profileId: "profile-a", sourceNamespace: "legacy", exactValue: "Duplicate", exerciseDefinitionId: "definition-b" }
+  ];
+  await assert.rejects(() => restore.restoreBackup(incoming, { confirmed: true }));
+  assert.equal((await db.get("profile", "existing")).displayName, "Old profile");
+  assert.equal(await db.get("profile", "incoming"), undefined);
+  assert.equal(await db.count("exerciseAliases"), 0);
+  assert.equal((await db.getAll("metadata")).filter(record => record.type === "pre-restore-safety-snapshot").length, 0);
+
+  incoming.data.exerciseAliases = [incoming.data.exerciseAliases[0]];
+  const retried = await restore.restoreBackup(incoming, { confirmed: true });
+  assert.equal(retried.restored, true);
+  assert.equal((await db.get("profile", "incoming")).displayName, "New profile");
+  assert.equal(await db.count("exerciseAliases"), 1);
+  assert.ok(await db.get("metadata", retried.restoreId), "successful retry stores its safety snapshot");
+});
