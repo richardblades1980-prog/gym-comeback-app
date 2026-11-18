@@ -48,3 +48,23 @@
 .gym-rest-timer{margin:14px 0 18px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);text-align:center}.gym-rest-timer>strong{display:block;font-size:clamp(42px,8vw,68px);font-variant-numeric:tabular-nums;letter-spacing:.05em}.gym-rest-progress{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0}.gym-rest-progress span{display:block;height:100%;width:100%;background:var(--accent);transition:width .2s linear}.gym-rest-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.gym-exercise-settings{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.gym-exercise-settings label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.gym-exercise-settings select{min-height:34px}
 
 .gym-rest-alert-setting{display:flex;justify-content:center;align-items:center;gap:8px;margin:10px auto;color:var(--muted);font-size:12px}.gym-rest-alert-setting select{min-height:34px}
+
+ 
+.gym-celebration-dialog{width:min(520px,calc(100vw - 28px));max-width:none;max-height:calc(100dvh - 28px);overflow:auto;margin:auto;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 18px 56px rgba(0,0,0,.48)}
+.gym-celebration-dialog::backdrop{background:rgba(3,9,17,.88)}
+.gym-celebration-card{padding:22px}
+.gym-celebration-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.gym-celebration-heading h2{margin:0;font-size:clamp(22px,5vw,30px);line-height:1.05;letter-spacing:-.035em}
+.gym-celebration-heading .eyebrow{margin-bottom:7px}
+.gym-celebration-dismiss{flex:0 0 38px;width:38px;min-height:38px;padding:4px;font-size:22px;line-height:1}
+.gym-celebration-description{margin:12px 0;text-align:center}
+.gym-celebration-image{display:block;width:100%;max-height:280px;object-fit:contain;border-radius:12px;background:#09111d;margin:12px auto}
+.gym-celebration-session{text-align:center;font-size:13px;font-weight:750;margin:10px 0;color:var(--accent)}
+.gym-celebration-progress{height:7px;overflow:hidden;border-radius:99px;background:#27364b;margin:15px 0 12px}
+.gym-celebration-progress span{display:block;width:100%;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(1)}
+.gym-celebration-dialog[open] .gym-celebration-progress span{animation:gym-celebration-countdown 6s linear forwards}
+@keyframes gym-celebration-countdown{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.gym-celebration-actions{display:flex;justify-content:center}
+.gym-celebration-actions button{min-width:190px}
+.gym-celebration-note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.45;text-align:center}
+@media(max-width:520px){.gym-celebration-card{padding:17px}.gym-celebration-image{max-height:230px}}
