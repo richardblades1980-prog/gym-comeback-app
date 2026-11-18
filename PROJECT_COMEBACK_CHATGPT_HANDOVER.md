@@ -1,36 +1,24 @@
-# Project Comeback — G3.4a smart rest timer code validation checkpoint (2026-11-18)
+# Project Comeback — G3.4b save-first workout celebration checkpoint (2026-11-18)
 
-- **Active branch:** `V21.2-development`; `main` remains untouched.
-- **Previous validated milestone:** G3.3 timed-set stopwatch exact SHA `44de75d192ae39aa771f73f3fe1c2b923eb79dfc`; browser run #44201664330 and backup run #44201664306 both passed.
-- **Current milestone:** G3.4a smart rest timer, source-grounded against legacy `docs/archive/README-V17-SMART-REST-TIMER.txt`.
-- **Implemented:** default 90-second rest, presets 45/60/75/90/120/150/180, per-exercise rest settings, automatic rest after a completed set when another set follows, timestamp recovery after reload, +15 seconds, Skip rest and Cancel rest, progress display and contextual label.
-- **Persistence:** rest state is stored on the existing session record using absolute `restEndAt` and context fields. Set completion and timer start save atomically through the existing workout transaction. No DB version/store/index or backup-format change.
-- **Follow-up fixes:** the End alert preference selector now remains available when the timer panel is hidden; undoing the set that owns the active rest period clears the matching rest state and atomically saves the affected session/exercise/set records. Regression tests cover both behaviours.
-- **Offline delivery:** canonical `src/modules/gym-workout.js` and `v21.2/assets/gym-workout.js` are byte-identical. Service-worker shell cache is `v21` to ensure existing installations fetch the corrected offline bundle. Guide and celebration assets remain in their separate verified cache.
-- **Alert modes:** sound + vibration, sound-only, vibration-only and visual-only. Preferences are stored in localStorage. A visible notice is always provided; audio/vibration are attempted subject to browser/device support and permissions.
-- **Code validation on exact SHA `7b7f77dd19d0a8ec65a99d3bd0f283713e11090c`:**
-  - Browser/Chromium [#44224944486 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44224944486).
-  - Backup validation [#44224944615 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44224944615).
-  - Browser coverage passed rest countdown persistence/recovery, +15, skip/cancel, undo cleanup, per-exercise override, workout reload/resume, app offline cold start and verified guide/celebration cache checks. Bundle parity, syntax and workout engine tests passed.
-- **Final sign-off:** rerun both workflows on the exact final documentation commit SHA after this handover/roadmap update. G3.4a is not fully closed until both final-SHA checks pass. Do not merge to `main` or deploy.
-- **Next milestone:** G3.4b save-before-celebration; use existing verified celebration GIFs, show for six seconds with Skip/Dismiss, and ensure the saved workout remains completed regardless of dismissal. No artwork refresh is needed.
+- **Active branch:** `V21.2-development`; `main` remains unchanged at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No merge or deployment.
+- **Completed immediately before this milestone:** G3.4a Smart Rest Timer. Exact final documentation SHA `2ebb00f1173f5a3ab2e9f404b0728406d0e24f23`; browser #44225800555 and backup #44225800665 both passed.
+- **Current milestone:** G3.4b Save-first workout celebration.
+- **Save-before-show:** `finishSession()` constructs a completed-session copy, persists it through the existing atomic workout transaction, and mutates the in-memory workout only after that write succeeds. A failed write leaves the session in progress and retryable. The UI opens the celebration only after the save promise resolves. A celebration presentation error cannot reverse the saved workout.
+- **Presentation:** accessible native modal dialog with the saved-session confirmation, selected existing GIF, six-second progress indicator and auto-close, Skip celebration and Dismiss controls. Escape/native dialog dismissal closes the overlay; the close action does not write to or mutate session records.
+- **Artwork selection:** reused only the three existing verified assets under `v21.2/assets/celebrations/v1/`. Explicit saved profile gender `female` selects `female-celebration.gif`; otherwise Day 1 selects `celebration-day1.gif`, and all other days select `celebration-day2.gif`. No new artwork was generated or added.
+- **Persistence safety:** no DB schema/store/index or backup-format change. Service-worker shell cache advanced from v21 to v22 for the UI markup/style/script changes. The celebration GIFs are already covered by the verified 41-asset dedicated offline cache.
+- **Regression coverage:** unit test injects a failed finish write and verifies the live session remains in progress with rest context intact, then retries and verifies completed state persistence. Chromium coverage injects a failed write in the real app, verifies no dialog and retry availability, then proves saved-first behaviour, Day 1/Day 2/female GIF choice, Skip, Dismiss, six-second auto-close and unchanged completedAt/updatedAt values after closing.
+- **Test fixture integrity:** celebration sessions use dedicated dates three to five days ahead. The browser test waits for date refresh, starts the exact day/date session and verifies it exists in IndexedDB before preparing completed sets. It snapshots and restores the original profile and deletes only its dedicated session/exercise/set fixtures. The earlier in-progress workout is not reused or deleted; the full cold-browser process persistence check passes.
+- **CI reliability:** browser workflow now restores/saves Playwright browser binaries with separate cache actions and installs Chromium without repeating OS dependency installation. Cached browser restore and install completed in seconds on the validated run.
 
+**Code validation on exact implementation SHA `9d72d43b5b263221b2d5879648c9ffa65e897420`:**
+- Browser/Chromium [#44234292910 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234292910).
+- Backup validation [#44234292767 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44234292767).
 
-# Project Comeback — G3.3 timed-set stopwatch implementation checkpoint (2026-11-18)
+**Documentation checkpoint:** the roadmap and this handover are being updated together. The resulting exact branch-head commit must pass both required workflows before G3.4b is closed. Do not amend either document after those final checks; record any next work in a new milestone checkpoint.
 
-- **Active branch:** `V21.2-development`; implementation remains isolated from `main` and V21.1.
-- **User decision:** G3.3 timed-set stopwatch scope explicitly approved on 18 November 2026.
-- **Implementation:** persisted stopwatch Start/Stop/Reset, live elapsed display, reload/background recovery from saved timestamps, actual-duration save and manual correction, separate target seconds, and automatic stop/save if a set is completed while timing.
-- **Persistence boundary:** existing `setRecords` only. Stopwatch start timestamp and accumulated milliseconds are stored on the set record; actual duration remains in `duration`; target remains in `targetDuration`. No database schema/version/store/index or backup-format change.
-- **Files changed:** `src/modules/gym-workout.js`, identical `v21.2/assets/gym-workout.js`, `v21.2/app.js`, `v21.2/app.css`, `v21.2/sw.js` (shell cache v19), `tests/gym-workout.test.js`, `tests/browser-validation.js`, and `docs/V21.2-GYM-WORKOUT-FUNCTIONAL-ROADMAP.md`.
-- **Key implementation commits:** service `b7027aeff6df7548eaed128157f19c17ff2ab244`; offline service bundle `16bc158eb0e4560335dbb84d554d5950876c7144`; UI `7e8103f7a568f43184a604dbe8ce22ab1f4cb12f`; styles `6282b886cc29a44c9c1f8072c4f23407ed40ab25`; engine tests `6166262f685cd06f2e753eee65b4ba16c276f02b`; browser coverage `11728caaf51c0af91cf53fbba2d7e5e69b922167`; shell cache bump `4ac099d7686f9f86fbe62d2e956f2702b9734be1`; cache assertion update `695837035f3232d756f0375d3dd81aa4c1637ef4`; explicit target/actual separation test `e02f08f59a0fa487c65f591e869ae58b5327504c`; async-save browser assertion fix `e7d14f9c6350a2563d7a2639a1e37202fafa4fc4`; in-progress completion test fix `85b412206d2e6d67f311abfd59d89172c982cf03`; roadmap `9eddeaa91da739f24847235beb535be3277eafe5`.
-- **Browser-test correction:** the first Chromium run reached the stop action correctly and the persisted record showed 1,349 ms / 1 actual second, but the test read the input before the asynchronous save/render completed. Updated the browser test to wait for the saved value and confirm manual correction is present in IndexedDB before reset. This was a test synchronization issue, not a stopwatch persistence defect; the corrected browser workflow must prove it on the final SHA.
-- **Follow-up browser assertion correction:** once the stopwatch starts, the set is intentionally marked `in-progress`; after stopping/resetting, the browser test must complete it directly rather than expecting a second `Start set` button. Adjusted the regression sequence accordingly. No application behavior change.
-- **Validation status:** do not call G3.3 validated yet. Browser and backup workflows must both complete successfully on the final handover-documentation commit SHA. Earlier per-commit runs are not a substitute for exact-final-SHA validation.
-- **Scope boundary:** no smart rest timer or six-second celebration in this increment; those remain G3.4. No artwork refresh, equipment swaps, progression enhancements, schema changes, merge or deployment.
-- **Next:** inspect current live branch head and exact workflow runs; resolve any failing assertion from logs; rerun both workflows on the final corrected handover SHA. If both pass, record links and continue to G3.4 only after reporting the G3.3 validation result.
+**Next milestone:** G3.5 — day/week flow and history. Keep work functional, test-driven and source-grounded. Do not expand artwork or deferred launch scope.
 
----
 
 # Project Comeback — catalogue delivery implementation checkpoint (2026-11-17)
 
