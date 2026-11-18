@@ -731,6 +731,42 @@ function server() {
       throw new Error("The previous guide artwork could not be retrieved offline after a failed update: " + JSON.stringify(preservedOfflineAsset));
     }
     console.log("PASS failed v2 install leaves v1 cache complete and usable offline");
+    console.log("[browser] Successful guide-cache upgrade retires old cache only after activation");
+    testServerState.serveGuideWorkerV2 = true;
+    const successfulUpdate = await app.evaluate(async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      const outcome = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => resolve({ timedOut: true }), 30000);
+        registration.addEventListener("updatefound", () => {
+          const installing = registration.installing;
+          installing?.addEventListener("statechange", () => {
+            if (installing.state === "redundant" || installing.state === "activated") {
+              clearTimeout(timeout); resolve({ state: installing.state });
+            }
+          });
+        }, { once: true });
+        registration.update().catch(error => { clearTimeout(timeout); reject(error); });
+      });
+      return { ...outcome, active: registration.active?.scriptURL,
+        controller: navigator.serviceWorker.controller?.scriptURL,
+        names: await caches.keys() };
+    });
+    testServerState.serveGuideWorkerV2 = false;
+    if (successfulUpdate.timedOut || successfulUpdate.state !== "activated" ||
+        !successfulUpdate.names.includes("project-comeback-v21-2a-guides-v2") ||
+        successfulUpdate.names.includes("project-comeback-v21-2a-guides-v1")) {
+      throw new Error("Successful guide-cache update did not activate and retire v1 safely: " + JSON.stringify(successfulUpdate));
+    }
+    await appContext.setOffline(true);
+    const upgradedOfflineAsset = await app.evaluate(async () => {
+      const response = await fetch("./assets/guides/v1/equipment/equipment-bands.svg");
+      return { ok: response.ok, bytes: (await response.arrayBuffer()).byteLength };
+    });
+    await appContext.setOffline(false);
+    if (!upgradedOfflineAsset.ok || upgradedOfflineAsset.bytes < 1000) {
+      throw new Error("Newly activated guide cache was not usable offline: " + JSON.stringify(upgradedOfflineAsset));
+    }
+    console.log("PASS successful update activates verified v2 cache, retires v1, and serves artwork offline");
     const emptyComparisonText = await app.locator("#assessment-comparison").textContent();
     if (!emptyComparisonText.includes("Save your original baseline") ||
         !emptyComparisonText.includes("add a follow-up assessment")) {
