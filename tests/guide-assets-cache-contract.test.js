@@ -41,6 +41,15 @@ test("published cache versions are immutable and failed installs preserve caches
   assert.ok(sw.indexOf("await installGuideAssets()") < sw.indexOf("await self.skipWaiting()"));
 });
 
+test("empty guide registry is cached in the shell, not the dedicated artwork cache", () => {
+  const registry = JSON.parse(fs.readFileSync(path.join(root, "v21.2/assets/exercise-guide-registry.v2.json"), "utf8"));
+  assert.equal(registry.schemaVersion, 2);
+  assert.deepEqual(registry.guides, []);
+  assert.match(sw, /assets\\/exercise-guide-registry\\.v2\\.json/);
+  assert.match(sw, /CACHE_NAME=CACHE_PREFIX\\+"v27"/);
+  assert.doesNotMatch(registry.sourceSnapshotId, /unreviewed/);
+});
+
 test("guide artwork requests bypass generic shell caching", () => {
   assert.match(sw, /url\.pathname\.includes\("\/assets\/guides\/"\)\|\|url\.pathname\.includes\("\/assets\/celebrations\/"\)/);
   assert.match(sw, /caches\.open\(GUIDE_CACHE_NAME\).*?cache\.match\(request\).*?fetch\(request\)/s);
@@ -59,6 +68,7 @@ test("browser validation confirms all 41 guide assets and serves guide artwork o
   assert.match(browser, /guideCacheCheck\.count !== 41/);
   assert.match(browser, /guideCacheCheck\.shellHasGuideFiles/);
   assert.match(browser, /offlineGuideFetch/);
+  assert.match(browser, /exercise-guide-registry\.v2\.json/);
   assert.match(browser, /project-comeback-v21-2a-guides-v1/);
   assert.match(browser, /serveGuideWorkerV2/);
   assert.match(browser, /failGuideAsset/);
