@@ -1325,3 +1325,24 @@ Checkpoint based on the verified G3.7.2f SHA `8da7c28be06db8b319e3f83499d878a3d8
 - Activation now claims clients before retiring older shell/guide namespaces. Successful replacement and failed replacement have browser coverage; the browser suite also verifies offline artwork continuity after activation.
 - Guide registry remains empty. No guide content, assignments, reviews or approvals were added. No database, backup format, identity or programme changes. No merge or deployment.
 - Implementation and validation commit: `6602987327a8adb15fecbc039d9e34943b9b89dc`. Browser validation [#44374952330 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44374952330); backup validation [#44374952571 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44374952571). Both runs target that exact SHA. Documentation-only checkpoint update follows; its resulting commit is being revalidated. Main remains unchanged; no merge or deployment.
+
+
+
+## Current continuation checkpoint — G3.7.2j review readiness (2026-11-19)
+
+**Implementation SHA:** ac55eaedfaa43b951695b07d1b20a0ce1b0eaa82 on V21.2-development.
+
+- Verified live source inventory: 42 optional exercise-library rows; 25 existing explicit legacy guide descriptions; 15 exact-name overlaps; 27 generic-fallback optional rows; 27 draft guides with exact coverage of the generic-fallback set.
+- Source-preserved five-day programme has 32 slots (7 / 7 / 6 / 6 / 6) and 17 distinct labels. All 32 exact slot IDs have a review-readiness assignment row and remain UNASSIGNED. Exact-name overlap is not an assignment or approval.
+- Review queue: 35 ready for qualified review, 15 need clarification and 2 hold, across 52 descriptions/drafts. “Ready” means suitable to enter a qualified review, not approved or safe for publication.
+- Holds: Hip / Ankle Mobility (combined movement categories) and Superman / Back Extension (distinguishable floor patterns).
+- Clarification blockers: configuration-aware Machine Chest Press, Machine Shoulder Press and Leg Press Machine; confirmation of seated Leg Extension Machine; separate seated and prone/lying Leg Curl setup; no automatic Abdominal Crunch Machine mapping to base Abdominal Crunch; seated/standing decision for Dumbbell Shoulder Press.
+- Reviewer evidence requirements, exact content/version digests, separate guide/asset-set/slot approvals, immutable version rules and approval invalidation/revocation are recorded in docs/V21.2-EXERCISE-GUIDE-REVIEW-READINESS.md.
+- Added tests/exercise-guide-review-readiness.test.js to both browser and backup CI workflows. Its source contract checks the exact source inventory, draft coverage, queue counts/statuses, all 32 exact slot IDs/labels and the empty production registry.
+- Browser validation [#44384280349 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44384280349) and backup validation [#44384280304 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44384280304) both completed against the exact implementation SHA above.
+- No reviewer or qualification was invented; no human approval, guide record, asset-set approval, programme assignment or published content was added. Production v2 registry remains empty. The protected legacy root source and programme source are unchanged.
+- Scope was review-readiness only: no catalogue/runtime/UI/database/backup/history/artwork/cache changes. No merge or deployment.
+
+**Next boundary:** actual guide content review and any later publication require verified qualified human reviewers, exact-digest approvals and explicit per-slot assignments. Passing code tests does not satisfy that human approval gate. Do not populate the registry or publish drafts without that separate authorization.
+
+Protected main remains 0d0527a6463c3cfd0fbb54d69123316c9a384b42.
