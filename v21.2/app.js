@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id);
 const localNow=new Date();
 const today=[localNow.getFullYear(),String(localNow.getMonth()+1).padStart(2,"0"),String(localNow.getDate()).padStart(2,"0")].join("-");
-let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymStopwatchRenderInterval=null;
+let safetySnapshotSaved=false,restorePayload=null,identitySafetyBackup=null,activeGymWorkout=null,gymStopwatchRenderInterval=null,gymRestRenderInterval=null,gymRestAlertedEndAt=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
@@ -34,6 +34,8 @@ function updateGymStopwatchDisplays(){
   display.textContent=String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
  });
 }
+function gymRestRemainingMs(){return activeGymWorkout&&activeGymWorkout.session.restEndAt?Math.max(0,Number(activeGymWorkout.session.restEndAt)-Date.now()):0;}
+function updateGymRestDisplay(){const session=activeGymWorkout&&activeGymWorkout.session,box=$("gym-rest-timer");if(!box)return;if(!session||!session.restEndAt){box.hidden=true;return;}box.hidden=false;const remaining=gymRestRemainingMs(),seconds=Math.ceil(remaining/1000),minutes=Math.floor(seconds/60),remainder=seconds%60;$("gym-rest-countdown").textContent=String(minutes).padStart(2,"0")+":"+String(remainder).padStart(2,"0");const duration=Math.max(1,Number(session.restDurationSeconds)||90);$("gym-rest-progress-bar").style.width=Math.max(0,Math.min(100,remaining/(duration*1000)*100))+"%";const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===session.restExerciseId);$("gym-rest-label").textContent=(exercise?exercise.name+" · after set "+session.restSetNumber:"Rest period")+" — "+(remaining?"Take your rest.":"Rest complete — ready for your next set.");if(!remaining&&gymRestAlertedEndAt!==session.restEndAt){gymRestAlertedEndAt=session.restEndAt;notice("Rest complete — ready for your next set.");}}
 function renderGymWorkout(){
  const workout=activeGymWorkout;
  if(!workout){$("gym-workout-active").hidden=true;return;}
@@ -43,7 +45,7 @@ function renderGymWorkout(){
  const completed=allSets.filter(set=>set.status==="completed").length;
  $("gym-workout-progress").textContent=completed+" of "+allSets.length+" sets completed · Changes save automatically on each field edit.";
  $("gym-workout-finish").disabled=!allSets.length||completed!==allSets.length;
- $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
+ updateGymRestDisplay();\n $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
   const sets=exercise.sets.map(set=>{
    const locked=set.status==="locked",done=set.status==="completed";
    const repField=exercise.recordingMode==="reps"||exercise.recordingMode==="timed-reps"
@@ -58,9 +60,10 @@ function renderGymWorkout(){
     '<button class="secondary" type="button" data-gym-action="start" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Start set</button>';
    return '<div class="gym-set-row"><div class="gym-set-heading"><strong>Set '+set.setNumber+'</strong><span class="gym-set-state">'+esc(set.status.replace("-"," "))+'</span></div><div class="gym-set-fields">'+weightField+repField+durationField+'</div><div class="gym-set-action">'+action+'</div></div>';
   }).join("");
-  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div>'+sets+'</article>';
+  const restOptions=ProjectComebackGymWorkout.restPresets.map(seconds=>'<option value="'+seconds+'"'+(Number(exercise.restSeconds||90)===seconds?' selected':'')+'>'+seconds+' sec</option>').join("");
+  return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3>'+esc(exercise.name)+'</h3><p>'+esc(exercise.description||"")+'</p></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+sets+'</article>';
  }).join("");
- if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
+ if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);\n if(gymRestRenderInterval)clearInterval(gymRestRenderInterval);
  gymStopwatchRenderInterval=null;
  if(workout.exerciseRecords.some(exercise=>(exercise.sets||[]).some(set=>Number.isFinite(Number(set.stopwatchStartedAt))&&Number(set.stopwatchStartedAt)>0))){
   gymStopwatchRenderInterval=setInterval(updateGymStopwatchDisplays,250);
@@ -90,7 +93,7 @@ async function handleGymWorkoutAction(event){
   else if(action==="undo")await ProjectComebackGymWorkout.undoSet(activeGymWorkout,exerciseId,setNumber);
   else if(action==="timer-start")await ProjectComebackGymWorkout.startStopwatch(activeGymWorkout,exerciseId,setNumber);
   else if(action==="timer-stop")await ProjectComebackGymWorkout.stopStopwatch(activeGymWorkout,exerciseId,setNumber);
-  else if(action==="timer-reset")await ProjectComebackGymWorkout.resetStopwatch(activeGymWorkout,exerciseId,setNumber);
+  else if(action==="timer-reset")await ProjectComebackGymWorkout.resetStopwatch(activeGymWorkout,exerciseId,setNumber);\n  else if(action==="rest-add")await ProjectComebackGymWorkout.adjustRest(activeGymWorkout,15);\n  else if(action==="rest-skip")await ProjectComebackGymWorkout.skipRest(activeGymWorkout);\n  else if(action==="rest-cancel")await ProjectComebackGymWorkout.cancelRest(activeGymWorkout);
   renderGymWorkout();
  }catch(error){notice(error.message,true);renderGymWorkout();}
 }
@@ -99,7 +102,7 @@ async function handleGymWorkoutField(event){
  if(!input||!activeGymWorkout)return;
  try{
   input.disabled=true;
-  await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,input.dataset.exerciseId,Number(input.dataset.setNumber),{[input.dataset.gymField]:input.value});
+  if(input.dataset.gymField==="restSeconds")await ProjectComebackGymWorkout.setExerciseRest(activeGymWorkout,input.dataset.exerciseId,Number(input.value));\n  else await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,input.dataset.exerciseId,Number(input.dataset.setNumber),{[input.dataset.gymField]:input.value});
   $("gym-workout-status").textContent="Saved locally.";
  }catch(error){notice(error.message,true);}
  finally{input.disabled=false;}
