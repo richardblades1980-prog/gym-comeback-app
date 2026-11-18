@@ -21,4 +21,4 @@ jobs:
       - name: Install test dependencies
         run: npm install --no-package-lock
       - name: Run backup validation tests
-        run: node --test tests/identity-persistence.test.js tests/backup-validation.test.js tests/programme-manager.test.js tests/workload-summary.test.js tests/gym-migration.test.js tests/shared-migration.test.js tests/migration-orchestration.test.js tests/indexeddb-integration.test.js tests/legacy-exercise-name-collisions.test.js tests/exercise-identity-contract.test.js tests/catalogue-delivery-contract.test.js tests/gym-workout.test.js
+        run: node --test tests/identity-persistence.test.js tests/backup-validation.test.js tests/programme-manager.test.js tests/workload-summary.test.js tests/gym-migration.test.js tests/shared-migration.test.js tests/migration-orchestration.test.js tests/indexeddb-integration.test.js tests/legacy-exercise-name-collisions.test.js tests/exercise-identity-contract.test.js tests/catalogue-delivery-contract.test.js tests/gym-workout.test.js tests/gym-progression.test.js
