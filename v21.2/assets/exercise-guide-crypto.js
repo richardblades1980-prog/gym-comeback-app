@@ -10,8 +10,8 @@ function canonicalize(value){
   if(typeof v!=="object")throw new TypeError("Canonical JSON rejects unsupported values.");
   if(seen.has(v))throw new TypeError("Canonical JSON rejects cyclic values.");seen.add(v);
   let out;
-  if(Array.isArray(v)){for(let i=0;i<v.length;i++)if(!Object.prototype.hasOwnProperty.call(v,i))throw new TypeError("Canonical JSON rejects sparse arrays.");out="["+v.map(walk).join(",")+"]";}
-  else{const proto=Object.getPrototypeOf(v);if(proto!==Object.prototype&&proto!==null)throw new TypeError("Canonical JSON requires plain objects.");const keys=Object.keys(v).sort();for(const k of keys){validUnicode(k);if(typeof v[k]==="undefined"||typeof v[k]==="function"||typeof v[k]==="symbol"||typeof v[k]==="bigint")throw new TypeError("Canonical JSON rejects unsupported object values.");}out="{"+keys.map(k=>JSON.stringify(k)+":"+(walk(v[k]))).join(",")+"}";}
+  if(Array.isArray(v)){for(let i=0;i<v.length;i++)if(!Object.prototype.hasOwnProperty.call(v,i))throw new TypeError("Canonical JSON rejects sparse arrays.");if(Reflect.ownKeys(v).some(k=>k!=="length"&&!(typeof k==="string"&&/^(0|[1-9][0-9]*)$/.test(k)&&Number(k)<v.length)))throw new TypeError("Canonical JSON rejects arrays with extra properties.");out="["+v.map(walk).join(",")+"]";}
+  else{const proto=Object.getPrototypeOf(v);if(proto!==Object.prototype&&proto!==null)throw new TypeError("Canonical JSON requires plain objects.");if(Object.getOwnPropertySymbols(v).length)throw new TypeError("Canonical JSON rejects symbol keys.");const keys=Object.keys(v).sort();for(const k of keys){validUnicode(k);const d=Object.getOwnPropertyDescriptor(v,k);if(!d||!Object.prototype.hasOwnProperty.call(d,"value")||typeof d.value==="undefined"||typeof d.value==="function"||typeof d.value==="symbol"||typeof d.value==="bigint")throw new TypeError("Canonical JSON rejects unsupported object values.");}out="{"+keys.map(k=>JSON.stringify(k)+":"+(walk(v[k]))).join(",")+"}";}
   seen.delete(v);return out;
  }return walk(value);
 }
