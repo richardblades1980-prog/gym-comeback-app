@@ -8,11 +8,14 @@ const root = path.resolve(__dirname, "..");
 const STEP_TIMEOUT_MS = 20000;
 console.log("[browser] Starting Chromium validation");
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif" };
-const testServerState = { serveGuideWorkerV2: false, failGuideAsset: false };
+const testServerState = { serveGuideWorkerV2: false, failGuideAsset: false, serveRootWorkerV2: false };
 function server() {
   return http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
-    if (pathname === "/v21.2/sw.js" && testServerState.serveGuideWorkerV2) {
+    const pagesPrefix = "/gym-comeback-app";
+    const routePath = pathname === pagesPrefix ? "/" :
+      pathname.startsWith(pagesPrefix + "/") ? pathname.slice(pagesPrefix.length) : pathname;
+    if (routePath === "/v21.2/sw.js" && testServerState.serveGuideWorkerV2) {
       fs.readFile(path.join(root, "v21.2/sw.js"), "utf8", (err, source) => {
         if (err) { res.writeHead(500).end("Unable to read service worker"); return; }
         const updated = source
@@ -24,12 +27,25 @@ function server() {
       });
       return;
     }
+    if (routePath === "/sw.js" && testServerState.serveRootWorkerV2) {
+      fs.readFile(path.join(root, "sw.js"), "utf8", (err, source) => {
+        if (err) { res.writeHead(500).end("Unable to read root service worker"); return; }
+        const updated = source.replace(
+          "const CACHE='gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset';",
+          "const CACHE='gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset-v2';"
+        );
+        if (updated === source) { res.writeHead(500).end("Root service-worker update fixture did not change the cache version"); return; }
+        res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" });
+        res.end(updated);
+      });
+      return;
+    }
     if (testServerState.failGuideAsset &&
-        pathname === "/v21.2/assets/guides/v1/equipment/equipment-bands.svg") {
+        routePath === "/v21.2/assets/guides/v1/equipment/equipment-bands.svg") {
       res.writeHead(503, { "content-type": "text/plain", "cache-control": "no-store" }).end("Intentional failed-update fixture");
       return;
     }
-    const file = path.resolve(root, "." + pathname);
+    const file = path.resolve(root, "." + routePath);
     if (!file.startsWith(root + path.sep) && file !== root) { res.writeHead(403).end(); return; }
     fs.stat(file, (err, stat) => {
       const target = !err && stat.isDirectory() ? path.join(file, "index.html") : file;
@@ -48,6 +64,7 @@ function server() {
   const browser = await chromium.launch({ headless: true });
   browser.on("disconnected", () => console.error("[browser] Chromium disconnected"));
   let appContext = null;
+  let sharedOriginContext = null;
   let phoneProfile = null;
   try {
     const context = await browser.newContext();
@@ -117,6 +134,129 @@ function server() {
     }
 
     console.log("PASS offline app shell served from /tests/fixtures/offline/ service-worker scope");
+
+    console.log("[browser] Same-origin V21.1 and V21.2 service-worker isolation");
+    sharedOriginContext = await browser.newContext();
+    sharedOriginContext.setDefaultTimeout(STEP_TIMEOUT_MS);
+    sharedOriginContext.setDefaultNavigationTimeout(STEP_TIMEOUT_MS);
+    const legacyPage = await sharedOriginContext.newPage();
+    await legacyPage.goto(base + "/gym-comeback-app/");
+    await legacyPage.waitForFunction(() => {
+      const controller = navigator.serviceWorker.controller;
+      return Boolean(controller && new URL(controller.scriptURL).pathname.endsWith("/gym-comeback-app/sw.js"));
+    }, null, { timeout: 20000 });
+    await legacyPage.evaluate(() => localStorage.setItem("v21-2-shared-origin-regression", "preserve-me"));
+    const legacyInitial = await legacyPage.evaluate(async () => ({
+      title: document.title,
+      scope: (await navigator.serviceWorker.getRegistration())?.scope,
+      cacheNames: await caches.keys()
+    }));
+    if (!legacyInitial.title.includes("Gym Comeback") ||
+        !legacyInitial.scope.endsWith("/gym-comeback-app/") ||
+        !legacyInitial.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset")) {
+      throw new Error("V21.1 did not establish its expected GitHub Pages project-path origin and root worker: " + JSON.stringify(legacyInitial));
+    }
+
+    const v21Page = await sharedOriginContext.newPage();
+    await v21Page.goto(base + "/gym-comeback-app/v21.2/");
+    await v21Page.waitForFunction(() =>
+      document.querySelector("#connection-state")?.textContent === "Local database ready" &&
+      Boolean(navigator.serviceWorker.controller) &&
+      new URL(navigator.serviceWorker.controller.scriptURL).pathname.endsWith("/gym-comeback-app/v21.2/sw.js"),
+      null, { timeout: 30000 });
+    const coexistence = await legacyPage.evaluate(async () => {
+      const rootCacheName = "gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset";
+      const rootCache = await caches.open(rootCacheName);
+      const rootIndexResponse = await rootCache.match(new URL("./index.html", location.href).href);
+      const v21IndexInRootCache = await rootCache.match(new URL("./v21.2/index.html", location.href).href);
+      const rootIndexText = rootIndexResponse ? await rootIndexResponse.clone().text() : "";
+      return {
+        rootController: navigator.serviceWorker.controller?.scriptURL,
+        rootCachePresent: (await caches.keys()).includes(rootCacheName),
+        rootIndexPresent: Boolean(rootIndexResponse),
+        rootIndexIsLegacy: rootIndexText.includes("<title>Gym Comeback</title>"),
+        v21IndexWasNotStoredAsRootIndex: !v21IndexInRootCache,
+        sentinel: localStorage.getItem("v21-2-shared-origin-regression")
+      };
+    });
+    const v21Controller = await v21Page.evaluate(() => navigator.serviceWorker.controller?.scriptURL || "");
+    const coexistenceCacheNames = await v21Page.evaluate(() => caches.keys());
+    if (!coexistence.rootController.endsWith("/gym-comeback-app/sw.js") ||
+        !coexistence.rootCachePresent || !coexistence.rootIndexPresent ||
+        !coexistence.rootIndexIsLegacy || !coexistence.v21IndexWasNotStoredAsRootIndex ||
+        coexistence.sentinel !== "preserve-me" ||
+        !v21Controller.endsWith("/gym-comeback-app/v21.2/sw.js") ||
+        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v27") ||
+        !coexistenceCacheNames.includes("project-comeback-v21-2a-guides-v1")) {
+      throw new Error("V21.1 and V21.2 workers/caches did not coexist without intercepting or overwriting one another: " +
+        JSON.stringify({ coexistence, v21Controller, coexistenceCacheNames }));
+    }
+    console.log("PASS both apps install on the GitHub Pages project path; V21.1 keeps its root page and V21.2 uses its narrower worker/cache namespaces");
+
+    console.log("[browser] V21.1 service-worker update preserves V21.2 caches");
+    testServerState.serveRootWorkerV2 = true;
+    const rootUpdate = await legacyPage.evaluate(async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration?.active) throw new Error("V21.1 root worker is not active before the update test.");
+      const activation = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("V21.1 service-worker update activation timed out.")), 25000);
+        registration.addEventListener("updatefound", () => {
+          const installing = registration.installing;
+          if (!installing) { clearTimeout(timer); reject(new Error("V21.1 update event had no installing worker.")); return; }
+          installing.addEventListener("statechange", () => {
+            if (installing.state === "activated") { clearTimeout(timer); resolve(installing.state); }
+            else if (installing.state === "redundant") { clearTimeout(timer); reject(new Error("V21.1 updated worker became redundant.")); }
+          });
+        }, { once: true });
+      });
+      await registration.update();
+      const state = await activation;
+      return {
+        state,
+        activeState: registration.active?.state,
+        cacheNames: await caches.keys(),
+        sentinel: localStorage.getItem("v21-2-shared-origin-regression")
+      };
+    });
+    testServerState.serveRootWorkerV2 = false;
+    const v21ControllerAfterRootUpdate = await v21Page.evaluate(() => navigator.serviceWorker.controller?.scriptURL || "");
+    if (rootUpdate.state !== "activated" ||
+        !rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset-v2") ||
+        rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset") ||
+        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v27") ||
+        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-guides-v1") ||
+        rootUpdate.sentinel !== "preserve-me" ||
+        !v21ControllerAfterRootUpdate.endsWith("/gym-comeback-app/v21.2/sw.js")) {
+      throw new Error("Updating V21.1 removed V21.2 caches, displaced its controller or lost same-origin data: " +
+        JSON.stringify({ rootUpdate, v21ControllerAfterRootUpdate }));
+    }
+    console.log("PASS root update retires only its old V21.1 cache and leaves V21.2 service worker and caches intact");
+
+    await sharedOriginContext.setOffline(true);
+    await legacyPage.reload();
+    if (!(await legacyPage.title()).includes("Gym Comeback")) {
+      throw new Error("V21.1 root application did not cold-load offline after its service-worker update.");
+    }
+    await v21Page.reload();
+    await v21Page.waitForFunction(() => document.querySelector("#connection-state")?.textContent === "Local database ready", null, { timeout: 20000 });
+    if (!(await v21Page.title()).includes("V21.2")) {
+      throw new Error("V21.2 application did not cold-load offline alongside the V21.1 root worker.");
+    }
+    const offlineSharedState = await legacyPage.evaluate(() => ({
+      sentinel: localStorage.getItem("v21-2-shared-origin-regression"),
+      controller: navigator.serviceWorker.controller?.scriptURL
+    }));
+    const offlineV21Controller = await v21Page.evaluate(() => navigator.serviceWorker.controller?.scriptURL || "");
+    await sharedOriginContext.setOffline(false);
+    if (offlineSharedState.sentinel !== "preserve-me" ||
+        !offlineSharedState.controller.endsWith("/gym-comeback-app/sw.js") ||
+        !offlineV21Controller.endsWith("/gym-comeback-app/v21.2/sw.js")) {
+      throw new Error("Offline reload changed shared-origin test data or the expected scoped service-worker controllers: " +
+        JSON.stringify({ offlineSharedState, offlineV21Controller }));
+    }
+    console.log("PASS both V21.1 and V21.2 applications cold-load offline on the same GitHub Pages-style origin");
+    await sharedOriginContext.close();
+    sharedOriginContext = null;
 
     console.log("[browser] Real V21.2 application");
     phoneProfile = fs.mkdtempSync(path.join(os.tmpdir(), "project-comeback-phone-profile-"));
@@ -1573,6 +1713,10 @@ function server() {
     if (appContext) {
       try { await appContext.close(); }
       catch (error) { console.error("[browser] Persistent context cleanup failed:", error.message); }
+    }
+    if (sharedOriginContext) {
+      try { await sharedOriginContext.close(); }
+      catch (error) { console.error("[browser] Shared-origin context cleanup failed:", error.message); }
     }
     try { await browser.close(); }
     catch (error) { console.error("[browser] Browser cleanup failed:", error.message); }
