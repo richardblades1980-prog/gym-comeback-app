@@ -1,3 +1,4 @@
+function cacheResponseBestEffort(cacheName,request,response){return caches.open(cacheName).then(cache=>cache.put(request,response)).catch(()=>undefined);}
 const CACHE_PREFIX="project-comeback-v21-2a-shell-";
 const CACHE_NAME=CACHE_PREFIX+"v25";
 const GUIDE_CACHE_PREFIX="project-comeback-v21-2a-guides-";
@@ -145,6 +146,6 @@ self.addEventListener("fetch",event=>{
  // Catalogue release assets are cached only by the verified release loader in their own immutable namespace.
  if(url.pathname.includes("/catalogues/exercise/"))return;
  event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
-  if(response.ok&&response.type==="basic"){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));}return response;
+  if(response.ok&&response.type==="basic"){const copy=response.clone();cacheResponseBestEffort(CACHE_NAME,request,copy);}return response;
  }).catch(()=>request.mode==="navigate"?caches.match("./index.html"):Response.error())));
 });
