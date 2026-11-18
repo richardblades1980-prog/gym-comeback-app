@@ -1225,3 +1225,13 @@ Final code validation is on exact SHA `4944be8e9c6a5bf37fd228bcde9337e21648a216`
 - No DB/schema/store/index, backup, history, catalogue, protected root app, merge or deployment changes.
 
 ---
+
+## G3.7.2a — Exercise guide registry/review design checkpoint (2026-11-18)
+
+- Live branch was inspected before work; branch remained at `7458cf67c50711b19cb13b9fd2f5f5d182d03f34` and protected main remained `0d0527a6463c3cfd0fbb54d69123316c9a384b42`.
+- Added `docs/V21.2-EXERCISE-GUIDE-REGISTRY-REVIEW-DESIGN.md`, defining separate versioned guide content, digest-bound human review records and explicit programme-slot assignments. Assignment keys are exact source slot IDs, never display-name matching.
+- Guide approval and assignment approval are distinct. Published guide versions are immutable; changes require a new version and fresh review. Variation/equipment inheritance must be explicit and reviewed. Manual substitutions do not automatically inherit the original guide.
+- Validation is fail-closed: invalid/stale review/version/digest, identity/scope ambiguity, missing assets, conflicts or unapproved substitutions resolve incomplete/unavailable rather than guessed instruction.
+- This increment is documentation/design only. No runtime implementation, registry population, guide publication, review/approval, exercise identity, artwork, DB/backup/history/catalogue change, merge or deployment.
+- Next: G3.7.2b pure registry/assignment validation module and tests; registry stays empty.
+- Exact final-SHA browser and backup workflows must pass before this documentation checkpoint is closed.
