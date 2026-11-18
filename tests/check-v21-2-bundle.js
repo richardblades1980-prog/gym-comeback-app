@@ -11,6 +11,7 @@ const pairs = [
   ["src/modules/gym-progression.js","v21.2/assets/gym-progression.js"],
   ["src/modules/exercise-guide.js","v21.2/assets/exercise-guide.js"],
   ["src/modules/exercise-guide-registry.js","v21.2/assets/exercise-guide-registry.js"],
+  ["src/modules/exercise-guide-crypto.js","v21.2/assets/exercise-guide-crypto.js"],
   ["src/data/gym-migration.js","v21.2/assets/gym-migration.js"],
   ["src/data/shared-migration.js","v21.2/assets/shared-migration.js"],
   ["src/data/migration.js","v21.2/assets/migration.js"],
