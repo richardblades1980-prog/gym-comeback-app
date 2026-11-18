@@ -6,7 +6,7 @@
 - **Implemented:** default 90-second rest, presets 45/60/75/90/120/150/180, per-exercise rest settings, automatic rest after a completed set when another set follows, timestamp recovery after reload, +15 seconds, Skip rest and Cancel rest, progress display and contextual label.
 - **Persistence:** rest state stored on the existing session record using absolute `restEndAt` and context fields. No DB version/store/index or backup-format change.
 - **Files changed so far:** `src/modules/gym-workout.js`, identical `v21.2/assets/gym-workout.js`, `v21.2/app.js`, `v21.2/index.html`, `v21.2/app.css`, `v21.2/sw.js` (shell cache v20), `tests/gym-workout.test.js`, `tests/browser-validation.js`, roadmap.
-- **Alert modes:** legacy supports sound+vibration, sound-only, vibration-only, and visual-only. Device/browser permissions and support affect audio/vibration. This behavior is not yet implemented in this increment; it remains an acceptance item pending design review.
+- **Alert modes implemented:** selectable sound+vibration, sound-only, vibration-only, and visual-only. Visual notice always appears; audio and vibration are attempted with device/browser fallback. Preference is stored in localStorage on this device.
 - **Validation:** pending. Do not close G3.4a until both browser and backup workflows pass on the final documentation SHA and offline/cache regression is confirmed.
 - **Scope:** celebration/save-before-celebration remains G3.4b; no artwork refresh, schema migration, main merge, or deployment.
 - **Next:** verify current branch head, inspect exact workflow runs, resolve issues from logs, update the manual with validation links, then rerun both workflows on final handover commit.
