@@ -6,6 +6,7 @@
 
   const PROGRAMME_ID = "gym-base-programme-source-v1";
   const MAX_SETS = 8;
+  const REST_PRESETS = Object.freeze([45, 60, 75, 90, 120, 150, 180]);
   const SET_STATUSES = Object.freeze(["locked", "not-started", "in-progress", "completed"]);
 
   function requiredString(value, label) {
@@ -115,6 +116,7 @@
         setCount,
         progressionFocus: slot.defaultProgressionFocus,
         recordingMode: slot.defaultRecordingMode,
+        restSeconds: 90,
         status: "not-started"
       };
       exerciseRecords.push(exercise);
@@ -267,9 +269,38 @@
     set.completedAt = new Date().toISOString();
     unlockNext(exercise);
     updateExerciseStatus(exercise);
+    const nextSet = exercise.sets.find(item => item.setNumber > setNumber && item.status === "not-started");
+    const restSeconds = Number(exercise.restSeconds) || 90;
+    if (restSeconds > 0) {
+      workout.session.restEndAt = Date.now() + restSeconds * 1000;
+      workout.session.restDurationSeconds = restSeconds;
+      workout.session.restExerciseId = exercise.id;
+      workout.session.restSetNumber = setNumber;
+    } else clearRest(workout.session);
     await saveChanges(workout, [exercise.id], [set.id, ...exercise.sets.filter(item => item.status === "not-started" && item.setNumber === setNumber + 1).map(item => item.id)]);
-    return { set, exerciseCompleted: exercise.status === "completed" };
+    await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session });
+    return { set, exerciseCompleted: exercise.status === "completed", restStarted: Boolean(nextSet && restSeconds > 0) };
   }
+
+  function clearRest(session) { delete session.restEndAt; delete session.restDurationSeconds; delete session.restExerciseId; delete session.restSetNumber; }
+
+  async function setExerciseRest(workout, exerciseId, seconds) {
+    const exercise = getExercise(workout, exerciseId);
+    if (!REST_PRESETS.includes(seconds)) throw new Error("Choose a supported rest duration.");
+    exercise.restSeconds = seconds;
+    await saveChanges(workout, [exercise.id], []);
+    return exercise;
+  }
+  async function adjustRest(workout, seconds) {
+    if (!workout.session.restEndAt) throw new Error("No active rest timer.");
+    if (!Number.isInteger(seconds) || seconds !== 15) throw new Error("Only +15 seconds is supported.");
+    workout.session.restEndAt += seconds * 1000;
+    workout.session.restDurationSeconds = (Number(workout.session.restDurationSeconds) || 0) + seconds;
+    await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session });
+    return workout.session;
+  }
+  async function skipRest(workout) { clearRest(workout.session); await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session }); return workout.session; }
+  async function cancelRest(workout) { return skipRest(workout); }
 
   async function undoSet(workout, exerciseId, setNumber) {
     const exercise = getExercise(workout, exerciseId);
@@ -319,6 +350,11 @@
     stopStopwatch,
     resetStopwatch,
     undoSet,
+    restPresets: REST_PRESETS,
+    setExerciseRest,
+    adjustRest,
+    skipRest,
+    cancelRest,
     finishSession
   });
 })(window);
