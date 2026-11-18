@@ -271,7 +271,7 @@
     updateExerciseStatus(exercise);
     const nextSet = exercise.sets.find(item => item.setNumber > setNumber && item.status === "not-started");
     const restSeconds = Number(exercise.restSeconds) || 90;
-    if (restSeconds > 0) {
+    if (nextSet && restSeconds > 0) {
       workout.session.restEndAt = Date.now() + restSeconds * 1000;
       workout.session.restDurationSeconds = restSeconds;
       workout.session.restExerciseId = exercise.id;
@@ -330,6 +330,7 @@
     const now = new Date();
     const started = Date.parse(workout.session.startedAt || "");
     const durationMinutes = Number.isFinite(started) ? Math.max(0, Math.round((now.getTime() - started) / 60000)) : 0;
+    clearRest(workout.session);
     workout.session.status = "completed";
     workout.session.completedAt = now.toISOString();
     workout.session.durationMinutes = durationMinutes;
