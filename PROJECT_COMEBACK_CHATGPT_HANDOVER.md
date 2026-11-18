@@ -1,3 +1,13 @@
+# Project Comeback — G3.7.4 cross-store integrity diagnostics checkpoint (2026-11-18)
+
+- Active branch: `V21.2-development`; `main` remains untouched. No merge or deployment.
+- Added a read-only cross-store diagnostic service with stable finding codes, severity, source store/record, related reference and explanation. It never auto-repairs or mutates records.
+- Coverage: session/exercise/set graph and module consistency; exercise definition/variation, alias and configuration references; identity-review release/reversal/supersession references; programme version/day/slot relationships; catalogue active pointer and optional release references.
+- Optional references are not automatically errors; warnings and errors are distinguished. Incoming backup and live database reports are separate in restore preview.
+- Added `ProjectComebackIntegrity.diagnoseData`, `diagnoseLiveDatabase`, and `ProjectComebackBackup.validateBackupIntegrity`. Restore preview exposes `integrityDiagnostics.incoming` and `.live`.
+- Added integrity test suite, offline mirror, bundle parity, script loading, shell cache v25 and validation workflow coverage.
+- Exact-SHA browser and backup validation are pending. Do not merge to main or deploy.
+
 
 # Project Comeback — G3.5 programme progression and Gym history checkpoint (2026-11-18)
 
