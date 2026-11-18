@@ -170,7 +170,7 @@ async function openExerciseGuide(exerciseId,trigger){
  $("gym-exercise-guide-subtitle").textContent=exercise.substitution?"Programme exercise: "+sourceName+". Manual substitution: "+(exercise.performedExerciseName||exercise.name)+". This guide is not verified for the substituted movement.":"Guide reference for the original programme exercise. Opening this guide does not change your workout.";
 }
 function closeExerciseGuide(){exerciseGuideRequestGate.invalidate();const dialog=$("gym-exercise-guide-dialog");if(dialog.open)dialog.close();}
-function handleExerciseGuideDialogClose(){cancelExerciseGuideHold();const trigger=exerciseGuideTrigger;exerciseGuideTrigger=null;if(trigger&&trigger.isConnected)trigger.focus({preventScroll:true});}
+function handleExerciseGuideDialogClose(){exerciseGuideRequestGate.invalidate();cancelExerciseGuideHold();const trigger=exerciseGuideTrigger;exerciseGuideTrigger=null;if(trigger&&trigger.isConnected)trigger.focus({preventScroll:true});}
 function guideFocusTrap(event){if(event.key!=="Tab")return;const dialog=$("gym-exercise-guide-dialog"),items=[...dialog.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')].filter(item=>!item.hidden);if(!items.length){event.preventDefault();$("gym-exercise-guide-close").focus();return;}const first=items[0],last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}
 function bindExerciseGuideInteractions(){
  const container=$("gym-workout-exercises");
