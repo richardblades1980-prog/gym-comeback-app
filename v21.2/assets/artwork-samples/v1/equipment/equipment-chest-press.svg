@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Seated chest press machine — artwork sample</title>
+<desc id="desc">Isolated three-quarter technical illustration of a generic selectorised seated chest press machine. No brand or model is represented.</desc>
+<defs>
+  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dce6f1"/><stop offset=".28" stop-color="#71839b"/><stop offset=".55" stop-color="#edf3f8"/><stop offset=".78" stop-color="#53647a"/><stop offset="1" stop-color="#26374d"/></linearGradient>
+  <linearGradient id="steelDark" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#1a2a40"/><stop offset=".5" stop-color="#62758d"/><stop offset="1" stop-color="#152238"/></linearGradient>
+  <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8fc5ff"/><stop offset=".45" stop-color="#3977b1"/><stop offset="1" stop-color="#1c4772"/></linearGradient>
+  <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e0ff9b"/><stop offset="1" stop-color="#8fcf45"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="13"/></filter>
+</defs>
+<ellipse cx="600" cy="704" rx="380" ry="28" fill="#07101d" opacity=".18" filter="url(#shadow)"/>
+<path d="M275 188 L425 150 L465 178 L465 624 L302 655 L263 622 Z" fill="url(#steelDark)" stroke="#0b1525" stroke-width="12" stroke-linejoin="round"/>
+<path d="M295 204 L409 176 L409 600 L295 624 Z" fill="#111f32" stroke="#8394aa" stroke-width="5"/>
+<path d="M315 230 L391 211 L391 584 L315 602 Z" fill="#07111f" stroke="#3f536c" stroke-width="4"/>
+<path d="M324 260 L383 246 L383 263 L324 278 Z M324 287 L383 273 L383 290 L324 305 Z M324 314 L383 300 L383 317 L324 332 Z M324 341 L383 327 L383 344 L324 359 Z M324 368 L383 354 L383 371 L324 386 Z M324 395 L383 381 L383 398 L324 413 Z M324 422 L383 408 L383 425 L324 440 Z M324 449 L383 435 L383 452 L324 467 Z M324 476 L383 462 L383 479 L324 494 Z M324 503 L383 489 L383 506 L324 521 Z M324 530 L383 516 L383 533 L324 548 Z" fill="#344a64" stroke="#91a2b6" stroke-width="2"/>
+<path d="M350 249 L350 555" stroke="#d1dce8" stroke-width="7" opacity=".8"/>
+<rect x="341" y="550" width="20" height="28" rx="4" fill="url(#lime)" stroke="#24364b" stroke-width="4"/>
+<path d="M197 650 L724 650 L813 684 L276 684 Z" fill="url(#steelDark)" stroke="#0b1525" stroke-width="12" stroke-linejoin="round"/>
+<path d="M254 650 L700 650 L756 671 L299 671 Z" fill="url(#steel)" opacity=".9"/>
+<path d="M323 624 L348 629 L321 672 L295 672 Z M714 623 L742 630 L780 672 L751 672 Z" fill="url(#steel)" stroke="#152238" stroke-width="7"/>
+<path d="M430 626 L480 241 Q486 194 529 184 L730 184 Q778 184 796 228 L832 633" fill="none" stroke="#101d2e" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M430 626 L480 241 Q486 194 529 184 L730 184 Q778 184 796 228 L832 633" fill="none" stroke="url(#steel)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M496 223 L502 601 M783 238 L813 612" stroke="#e7eef5" stroke-width="4" opacity=".7"/>
+<path d="M500 293 Q508 273 530 270 L604 261 Q626 260 631 282 L655 458 Q658 478 638 485 L557 500 Q535 503 528 483 Z" fill="#0a1728" stroke="#17263b" stroke-width="13"/>
+<path d="M512 291 Q519 283 533 281 L597 273 Q614 270 618 289 L641 451 Q645 464 630 469 L565 483 Q550 487 546 470 Z" fill="url(#pad)" stroke="#a7d4ff" stroke-width="5"/>
+<path d="M523 302 L600 291" stroke="#d9edff" stroke-width="5" opacity=".55"/>
+<path d="M580 488 L618 488 L641 604 L596 613 Z" fill="url(#steelDark)" stroke="#101d2e" stroke-width="9"/>
+<path d="M544 591 Q550 571 574 573 L671 580 Q693 582 699 603 L690 642 Q687 658 668 657 L553 649 Q533 646 537 626 Z" fill="#0d1a2d" stroke="#1e3048" stroke-width="12"/>
+<path d="M552 590 Q558 584 574 585 L663 591 Q678 592 680 607 L674 632 Q672 643 657 641 L560 634 Q547 633 548 619 Z" fill="url(#pad)" stroke="#a7d4ff" stroke-width="4"/>
+<path d="M543 652 L546 681 L725 681 L731 656" fill="none" stroke="url(#steel)" stroke-width="18" stroke-linecap="round"/>
+<path d="M518 325 Q451 300 397 345 L353 403 M630 312 Q718 286 766 343 L802 398" fill="none" stroke="#142238" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M518 325 Q451 300 397 345 L353 403 M630 312 Q718 286 766 343 L802 398" fill="none" stroke="url(#steel)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="520" cy="325" r="29" fill="url(#steelDark)" stroke="#0b1525" stroke-width="8"/><circle cx="520" cy="325" r="13" fill="url(#lime)" stroke="#26384e" stroke-width="5"/>
+<circle cx="630" cy="312" r="29" fill="url(#steelDark)" stroke="#0b1525" stroke-width="8"/><circle cx="630" cy="312" r="13" fill="url(#lime)" stroke="#26384e" stroke-width="5"/>
+<path d="M353 403 L333 452 Q327 467 342 475 L365 484 M802 398 L824 450 Q830 467 814 476 L790 484" fill="none" stroke="#101d2e" stroke-width="24" stroke-linecap="round"/>
+<path d="M353 403 L333 452 Q327 467 342 475 L365 484 M802 398 L824 450 Q830 467 814 476 L790 484" fill="none" stroke="#8fc5ff" stroke-width="13" stroke-linecap="round"/>
+<path d="M405 226 Q438 192 467 217 L489 248" fill="none" stroke="#dce6f1" stroke-width="5"/><circle cx="468" cy="216" r="15" fill="#26384e" stroke="#dce6f1" stroke-width="5"/>
+<path d="M468 231 L468 556 L350 556" fill="none" stroke="#dce6f1" stroke-width="4"/>
+<path d="M263 620 L306 611 M770 630 L814 620" stroke="#b8f36b" stroke-width="8" stroke-linecap="round"/>
+<path d="M314 200 L414 174" stroke="#8fc5ff" stroke-width="6" opacity=".85"/>
+<circle cx="302" cy="641" r="8" fill="#b8f36b"/><circle cx="754" cy="661" r="8" fill="#b8f36b"/>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" role="img" aria-labelledby="title desc">
+<title id="title">Chest muscles — artwork sample</title>
+<desc id="desc">Simplified front-view anatomical illustration of an adult upper body with the pectoral muscles highlighted in lime. Educational artwork only.</desc>
+<defs>
+ <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1f5fa"/><stop offset=".32" stop-color="#bcc8d6"/><stop offset=".68" stop-color="#8e9daf"/><stop offset="1" stop-color="#e3eaf1"/></linearGradient>
+ <linearGradient id="muscle" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e7ffad"/><stop offset=".55" stop-color="#b8f36b"/><stop offset="1" stop-color="#70ad38"/></linearGradient>
+ <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#68798e" stop-opacity=".15"/><stop offset=".5" stop-color="#f8fbff" stop-opacity=".55"/><stop offset="1" stop-color="#53647b" stop-opacity=".22"/></linearGradient>
+</defs>
+<!-- Neck -->
+<path d="M510 125 L690 125 L704 277 Q704 330 756 359 L444 359 Q496 330 496 277 Z" fill="url(#body)" stroke="#53647b" stroke-width="8"/>
+<path d="M511 183 Q600 222 689 183 M523 277 Q600 310 677 277" fill="none" stroke="#6e7c90" stroke-width="6" opacity=".65"/>
+<!-- Torso silhouette -->
+<path d="M500 342 Q438 342 365 379 Q286 414 235 478 Q190 536 205 654 L254 858 Q279 945 306 1031 L335 1325 Q342 1375 390 1395 L810 1395 Q858 1375 865 1325 L894 1031 Q921 945 946 858 L995 654 Q1010 536 965 478 Q914 414 835 379 Q762 342 700 342 Q665 376 600 383 Q535 376 500 342 Z" fill="url(#body)" stroke="#52647b" stroke-width="10" stroke-linejoin="round"/>
+<!-- Upper arms -->
+<path d="M364 390 Q291 414 243 482 Q204 535 216 639 L258 864 Q267 916 300 943 Q335 955 354 916 L332 839 L306 646 Q296 560 348 511 L421 465 Z" fill="url(#body)" stroke="#52647b" stroke-width="9"/>
+<path d="M836 390 Q909 414 957 482 Q996 535 984 639 L942 864 Q933 916 900 943 Q865 955 846 916 L868 839 L894 646 Q904 560 852 511 L779 465 Z" fill="url(#body)" stroke="#52647b" stroke-width="9"/>
+<!-- Forearms -->
+<path d="M257 862 Q285 914 307 947 L347 1218 Q356 1274 328 1296 Q295 1310 279 1264 L224 1008 Q207 938 257 862 Z" fill="url(#body)" stroke="#52647b" stroke-width="9"/>
+<path d="M943 862 Q915 914 893 947 L853 1218 Q844 1274 872 1296 Q905 1310 921 1264 L976 1008 Q993 938 943 862 Z" fill="url(#body)" stroke="#52647b" stroke-width="9"/>
+<!-- Pectoral muscles -->
+<path d="M596 436 Q550 402 481 414 Q415 425 373 473 Q351 501 365 539 Q391 601 474 625 Q536 642 590 607 Q613 572 611 500 Q611 457 596 436 Z" fill="url(#muscle)" stroke="#527b31" stroke-width="9"/>
+<path d="M604 436 Q650 402 719 414 Q785 425 827 473 Q849 501 835 539 Q809 601 726 625 Q664 642 610 607 Q587 572 589 500 Q589 457 604 436 Z" fill="url(#muscle)" stroke="#527b31" stroke-width="9"/>
+<path d="M474 425 Q514 450 567 464 M726 425 Q686 450 633 464" fill="none" stroke="#efffd0" stroke-width="9" opacity=".75"/>
+<path d="M598 438 Q590 510 599 606 M602 438 Q610 510 601 606" fill="none" stroke="#527b31" stroke-width="5" opacity=".75"/>
+<!-- Clavicles and sternum -->
+<path d="M462 382 Q520 404 598 397 Q680 404 738 382" fill="none" stroke="#6e7f94" stroke-width="9" stroke-linecap="round"/>
+<path d="M600 394 L600 682" stroke="#6e7f94" stroke-width="7" opacity=".7"/>
+<!-- Abdominal segments -->
+<g fill="none" stroke="#77889b" stroke-width="7" opacity=".72">
+ <path d="M511 666 Q553 648 596 662 Q600 704 594 748 Q552 765 511 745 Z"/>
+ <path d="M604 662 Q647 648 689 666 L689 745 Q648 765 606 748 Z"/>
+ <path d="M507 766 Q550 750 593 766 L591 842 Q549 858 505 837 Z"/>
+ <path d="M607 766 Q650 750 693 766 L695 837 Q651 858 609 842 Z"/>
+ <path d="M507 855 Q549 838 590 853 L587 923 Q550 940 506 916 Z"/>
+ <path d="M610 853 Q651 838 693 855 L694 916 Q650 940 613 923 Z"/>
+</g>
+<!-- Oblique and serratus contour -->
+<g fill="none" stroke="#8292a5" stroke-width="8" opacity=".7">
+ <path d="M383 610 Q430 644 481 671 M380 672 Q430 700 491 719 M817 610 Q770 644 719 671 M820 672 Q770 700 709 719"/>
+ <path d="M420 560 Q444 590 469 604 M780 560 Q756 590 731 604"/>
+</g>
+<!-- Deltoid and arm contours -->
+<g fill="none" stroke="#6d7e93" stroke-width="8" opacity=".68">
+ <path d="M252 486 Q285 444 337 455 Q368 467 377 511 M948 486 Q915 444 863 455 Q832 467 823 511"/>
+ <path d="M262 601 Q301 626 318 690 M938 601 Q899 626 882 690"/>
+ <path d="M291 913 Q323 951 344 1013 M909 913 Q877 951 856 1013"/>
+</g>
+<!-- Soft highlights -->
+<path d="M350 478 Q401 420 463 409 M850 478 Q799 420 737 409" fill="none" stroke="#fff" stroke-width="9" opacity=".55"/>
+<path d="M385 1020 Q600 1084 815 1020" fill="none" stroke="#65768b" stroke-width="7" opacity=".3"/>
+<path d="M600 1430 L600 1460" stroke="#b8f36b" stroke-width="12" stroke-linecap="round"/>
+</svg>

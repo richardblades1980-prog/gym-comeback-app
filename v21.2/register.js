@@ -1,0 +1,1 @@
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").then(()=>{const el=document.getElementById("connection-state");if(el&&navigator.onLine)el.title="Offline app shell enabled";}).catch(error=>console.warn("V21.2 offline registration unavailable:",error)));}

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Project Comeback V21.2 — Gym Comeback and Hiking Preparation">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Comeback">
+  <title>Project Comeback V21.2</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./"><span class="brand-mark">PC</span><span><strong>PROJECT COMEBACK</strong><small>VERSION 21.2</small></span></a>
+      <span id="connection-state" class="status-pill" role="status" aria-live="polite">Starting…</span>
+    </header>
+    <main id="main-content" tabindex="-1">
+      <section class="welcome">
+        <div><p class="eyebrow">YOUR TRAINING, YOUR PACE</p><h1>Build your comeback.</h1><p class="muted">One place for your gym work and hiking preparation.</p></div>
+        <div class="date-card"><span id="today-label">TODAY</span><strong id="today-date">—</strong></div>
+      </section>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab active" data-view="overview" aria-current="page">Overview</button>
+        <button class="tab" data-view="gym">Gym</button>
+        <button class="tab" data-view="hiking">Hiking</button>
+        <button class="tab" data-view="assessments">Assessments</button>
+        <button class="tab" data-view="schedule">Schedule</button>
+        <button class="tab" data-view="data">Data &amp; backup</button>
+      </nav>
+      <section id="view-overview" class="view">
+        <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your training space</h2></div><span class="subtle">Stored on this device</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span>Gym sessions</span><strong id="gym-count">—</strong><small>Saved records</small></article>
+          <article class="stat-card"><span>Hiking records</span><strong id="hiking-count">—</strong><small>Manual entries</small></article>
+          <article class="stat-card"><span>Planned activities</span><strong id="schedule-count">—</strong><small>Upcoming schedule</small></article>
+        </div>
+        <div class="panel training-overview">
+          <div class="section-heading"><div><p class="eyebrow">NEXT 7 DAYS</p><h2>Training overview</h2><p class="muted">Your upcoming Gym and Hiking plans, grouped by day.</p></div></div>
+          <div id="upcoming-overview" class="record-list empty-state">Loading your schedule…</div>
+        </div>
+        <div class="panel">
+          <div class="section-heading"><div><p class="eyebrow">LAST 30 DAYS</p><h2>Completed training</h2><p class="muted">Completed sessions and weekly recorded duration, shown separately for Gym and Hiking.</p></div></div>
+          <div id="completed-overview" class="module-grid">
+            <article class="module-card"><h3>Gym</h3><p>Loading completed sessions…</p></article>
+            <article class="module-card"><h3>Hiking</h3><p>Loading completed records…</p></article>
+          </div>
+        </div>
+        <div class="panel journey-panel">
+          <div class="section-heading"><div><p class="eyebrow">YOUR PROGRESS JOURNEY</p><h2>Starting point to now</h2><p class="muted">A dated record of your assessments, using only measurements you've saved.</p></div></div>
+          <div id="assessment-journey" class="assessment-journey">
+            <p class="empty-state">Complete your original baseline assessment to start your progress journey.</p>
+          </div>
+          <div class="hiking-journey-section"><div class="section-heading"><div><p class="eyebrow">HIKING MILESTONES</p><h3>Your walks, added up</h3><p class="muted">A summary of completed hikes and the measurements you have recorded.</p></div></div><div id="hiking-journey"><p class="empty-state">Your completed hikes will appear here.</p></div></div>
+          <div class="gym-journey-section"><div class="section-heading"><div><p class="eyebrow">GYM MILESTONES</p><h3>Your training, counted</h3><p class="muted">A summary of completed Gym sessions and saved set details.</p></div></div><div id="gym-journey"><p class="empty-state">Your completed Gym sessions will appear here.</p></div></div>
+        </div>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">YOUR MODULES</p><h2>Separate spaces, shared overview</h2></div></div><div id="module-cards" class="module-grid"></div><p class="muted module-management-note">You can pause a module at any time. Its existing records remain saved and visible; pausing only blocks new entries and scheduling.</p></div>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Latest records</h2></div></div><div id="recent-records" class="record-list empty-state">No records yet. Add a hike or bring across your existing Gym history.</div></div>
+      </section>
+      <section id="view-gym" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">GYM COMEBACK</p><h2>Your gym training</h2><p class="muted">Start or resume a session from your five-day base programme. Your entries save as you go.</p></div></div>
+        <div class="panel gym-workout-launch">
+          <div class="form-grid">
+            <label>Programme week<select id="gym-workout-week"></select></label>
+            <label>Programme day<select id="gym-workout-day">
+              <option value="1">Day 1 — Chest, Back &amp; Quads</option>
+              <option value="2">Day 2 — Shoulders, Arms &amp; Hamstrings</option>
+              <option value="3">Day 3 — Full Body</option>
+              <option value="4">Day 4 — Upper Body</option>
+              <option value="5">Day 5 — Lower Body &amp; Core</option>
+            </select></label>
+            <label>Workout date<input id="gym-workout-date" type="date" required></label>
+            <label>Programme length<select id="gym-programme-weeks"><option value="4">4 weeks</option><option value="8">8 weeks</option><option value="12">12 weeks</option></select></label>
+            <label>Planned days per week<select id="gym-days-per-week"><option value="2">2 days</option><option value="3">3 days</option><option value="4">4 days</option><option value="5">5 days</option></select></label>
+          </div>
+          <div class="gym-progression-panel" aria-live="polite"><strong id="gym-progression-title">Workout sequence</strong><p id="gym-progression-message" class="muted">Week 1, Day 1 starts your programme.</p><button id="gym-progression-override" class="secondary" type="button">Manually unlock selected workout</button></div>
+          <div class="form-actions gym-launch-actions"><button id="gym-workout-start" class="primary" type="button">Start / resume workout</button><span id="gym-workout-status" class="subtle" role="status" aria-live="polite">Choose your week and day to begin.</span></div>
+        </div>
+        <div id="gym-workout-active" class="gym-workout-active" hidden>
+          <div class="panel"><div class="section-heading"><div><p class="eyebrow">WORKOUT IN PROGRESS</p><h2 id="gym-workout-title">—</h2><p id="gym-workout-progress" class="muted"></p></div><button id="gym-workout-finish" class="primary" type="button" disabled>Finish workout</button></div><label class="gym-rest-alert-setting">End alert<select id="gym-rest-alert-mode"><option value="both">Sound + vibration</option><option value="sound">Sound only</option><option value="vibrate">Vibration only</option><option value="visual">Visual only</option></select></label><div id="gym-rest-timer" class="gym-rest-timer" hidden><p class="eyebrow">REST TIMER</p><strong id="gym-rest-countdown">01:30</strong><div class="gym-rest-progress"><span id="gym-rest-progress-bar"></span></div><p id="gym-rest-label" class="muted"></p><div class="gym-rest-actions"><button class="secondary" type="button" data-gym-action="rest-add">+15 seconds</button><button class="secondary" type="button" data-gym-action="rest-skip">Skip rest</button><button class="secondary" type="button" data-gym-action="rest-cancel">Cancel rest</button></div></div><div id="gym-workout-exercises" class="gym-workout-exercises"></div></div>
+        </div>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">GYM HISTORY</p><h2>Saved sessions</h2></div></div><div id="gym-records" class="record-list empty-state">No Gym sessions recorded yet.</div></div>
+      </section>
+      <section id="view-hiking" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">HIKING PREPARATION</p><h2>Record a hike</h2><p class="muted">Manual activity recording. GPS tracking is not part of this release.</p></div></div>
+        <form id="hiking-form" class="panel form-grid">
+          <label>Hike name<input name="title" required maxlength="100" placeholder="e.g. Mount Langi Ghiran"></label>
+          <label>Date<input name="date" type="date" required></label>
+          <label>Distance (km)<input name="distanceKm" type="number" min="0.01" step="0.01" placeholder="Optional"></label>
+          <label>Duration (minutes)<input name="durationMinutes" type="number" min="1" step="1" placeholder="Optional"></label>
+          <label>Elevation gain (m)<input name="elevationGainM" type="number" min="0" step="1" placeholder="Optional"></label>
+          <label>Route / trail<input name="routeName" maxlength="120" placeholder="Optional"></label>
+          <label>Terrain<input name="terrain" maxlength="80" placeholder="Optional"></label>
+          <label class="full">Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="How did it go?"></textarea></label>
+          <div class="full form-actions"><button class="primary" type="submit">Save completed hike</button></div>
+        </form>
+        <div class="panel"><div class="section-heading"><div><p class="eyebrow">HIKING HISTORY</p><h2>Recorded hikes</h2></div></div><div id="hiking-records" class="record-list empty-state">No hikes recorded yet.</div></div>
+      </section>
+      <section id="view-assessments" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">YOUR PROGRESS</p><h2>Assessments</h2><p class="muted">Record a starting point and compare it with later assessments. Only measurements you enter are compared.</p></div></div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">ORIGINAL STARTING POINT</p><h3>Baseline assessment</h3><p class="muted">This is your permanent starting snapshot. It can be created once and is never overwritten.</p></div><span id="baseline-status" class="subtle">Checking…</span></div>
+          <form id="baseline-form" class="form-grid">
+            <label>Assessment date<input name="date" type="date" required></label>
+            <label>Comfortable walking duration (minutes)<input name="comfortableWalkMinutes" type="number" min="0" step="0.1" placeholder="Optional"></label>
+            <label>Step-ups (repetitions)<input name="stepUpsReps" type="number" min="0" step="1" placeholder="Optional"></label>
+            <label>Single-leg balance (seconds)<input name="singleLegBalanceSeconds" type="number" min="0" step="0.1" placeholder="Optional"></label>
+            <label class="full">Notes<textarea name="notes" rows="2" maxlength="1000" placeholder="Optional notes about how this assessment felt"></textarea></label>
+            <div class="full form-actions"><button id="baseline-save" class="primary" type="submit">Save original baseline</button></div>
+          </form>
+        </div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">KEEP BUILDING</p><h3>Follow-up assessment</h3><p class="muted">Each follow-up is saved as a separate dated record. Follow-ups become available after your original baseline is saved.</p></div></div>
+          <p id="followup-status" class="muted" role="status">Save your original baseline before adding follow-up assessments.</p>
+          <form id="followup-form" class="form-grid">
+            <label>Assessment date<input name="date" type="date" required disabled></label>
+            <label>Comfortable walking duration (minutes)<input name="comfortableWalkMinutes" type="number" min="0" step="0.1" placeholder="Optional" disabled></label>
+            <label>Step-ups (repetitions)<input name="stepUpsReps" type="number" min="0" step="1" placeholder="Optional" disabled></label>
+            <label>Single-leg balance (seconds)<input name="singleLegBalanceSeconds" type="number" min="0" step="0.1" placeholder="Optional" disabled></label>
+            <label class="full">Notes<textarea name="notes" rows="2" maxlength="1000" placeholder="Optional notes" disabled></textarea></label>
+            <div class="full form-actions"><button class="primary" type="submit" disabled>Save follow-up assessment</button></div>
+          </form>
+        </div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">BEFORE &amp; NOW</p><h3>Compare assessments</h3><p class="muted">Choose any two saved dates, including your original baseline.</p></div></div>
+          <div class="form-grid comparison-controls">
+            <label>Before<select id="compare-first"></select></label>
+            <label>Now<select id="compare-second"></select></label>
+          </div>
+          <div id="assessment-comparison" class="comparison-results" aria-live="polite"><p class="empty-state">Save your original baseline, then add a follow-up assessment to start comparing your progress.</p></div>
+        </div>
+        <div class="panel assessment-panel">
+          <div class="section-heading"><div><p class="eyebrow">YOUR RECORD</p><h3>Assessment history</h3></div></div>
+          <div id="assessment-history" class="record-list empty-state">No assessments recorded yet.</div>
+        </div>
+      </section>
+      <section id="view-schedule" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">SHARED PLANNER</p><h2>Plan an activity</h2><p class="muted">Gym and Hiking stay distinct; this is a shared calendar only.</p></div></div>
+        <form id="schedule-form" class="panel form-grid">
+          <label>Activity<input name="title" required maxlength="100" placeholder="e.g. Upper body session"></label>
+          <label>Date<input name="date" type="date" required></label>
+          <label>Module<select name="moduleId"><option value="gym">Gym Comeback</option><option value="hiking">Hiking Preparation</option></select></label>
+          <label>Planned duration (minutes)<input name="durationMinutes" type="number" min="0" step="1" placeholder="Optional"></label>
+          <div class="full form-actions"><button class="primary" type="submit">Add to schedule</button></div>
+        </form>
+        <div class="panel training-overview">
+          <div class="section-heading"><div><p class="eyebrow">NEXT 30 DAYS</p><h2>Planning outlook</h2><p class="muted">Scheduled activities grouped by date. Gym and Hiking counts and planned durations stay separate.</p></div></div>
+          <div id="schedule-range-summary" class="module-grid"></div>
+          <div id="schedule-range-overview" class="record-list empty-state">Loading your planning outlook…</div>
+        </div>
+        <div class="panel"><div id="schedule-records" class="record-list empty-state">Nothing scheduled yet.</div></div>
+      </section>
+      <section id="view-data" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">YOUR DATA</p><h2>Backup &amp; migration</h2><p class="muted">Your records stay in this browser. Keep your own backup copy.</p></div></div>
+        <div class="panel">
+          <h3>Full V21.2 backup</h3><p class="muted">Export all app stores to a versioned JSON file.</p>
+          <button id="backup-download" class="primary">Download full backup</button>
+        </div>
+        <div class="panel" id="identity-upgrade-panel">
+          <h3>Canonical exercise identity foundation</h3>
+          <p class="muted">This additive database upgrade is separate from the V21.1 Gym data migration. A verified V1 safety backup must be downloaded and saved before the schema changes. The app then verifies a V2 backup/restore round trip.</p>
+          <p id="identity-upgrade-status" class="migration-summary" role="status">Checking database schema…</p>
+          <button id="identity-upgrade-backup" class="secondary">Download verified V1 safety backup</button>
+          <label id="identity-upgrade-confirm-wrap" class="check-row"><input id="identity-upgrade-confirm" type="checkbox" disabled> I have saved the safety backup and authorise the additive V6 identity schema upgrade.</label>
+          <button id="identity-upgrade-run" class="primary" disabled hidden>Upgrade identity foundation</button>
+        </div>
+        <div class="panel">
+          <h3>Restore preview</h3><p class="muted">Choose a Project Comeback JSON backup to see what would change. Nothing is restored until you explicitly confirm.</p>
+          <label>Backup file<input id="restore-file" type="file" accept="application/json,.json"></label>
+          <div id="restore-preview" class="preview-box" hidden></div>
+          <label id="restore-confirm-wrap" class="check-row" hidden><input id="restore-confirm" type="checkbox"> I have reviewed the restore actions above and understand which records will be replaced, merged, preserved or may cause conflicts.</label>
+          <button id="restore-apply" class="danger" disabled>Confirm restore</button>
+        </div>
+        <div class="panel">
+          <h3>Bring across V21.1 Gym data</h3>
+          <p class="muted">Migration is optional and never runs automatically. First download a safety snapshot of the original Gym localStorage data. The original V21.1 keys are retained.</p>
+          <div id="migration-status" class="migration-summary">Checking legacy storage…</div>
+          <button id="legacy-snapshot" class="secondary">Download legacy safety snapshot</button>
+          <label id="migration-confirm-wrap" class="check-row"><input id="migration-confirm" type="checkbox" disabled> I have saved the safety snapshot and explicitly want to migrate this data into V21.2.</label>
+          <button id="migration-run" class="primary" disabled>Run migration</button>
+          <div id="migration-result" class="preview-box" hidden></div>
+        </div>
+      </section>
+      <footer><span>PROJECT COMEBACK V21.2A</span><span>Local-first · Your data stays yours</span></footer>
+    </main>
+  </div>
+
+  <dialog id="gym-exercise-guide-dialog" class="gym-exercise-guide-dialog" aria-modal="true" aria-labelledby="gym-exercise-guide-title" aria-describedby="gym-exercise-guide-subtitle">
+    <div class="gym-exercise-guide-card">
+      <header class="gym-exercise-guide-header"><div><p class="eyebrow">EXERCISE REFERENCE</p><h2 id="gym-exercise-guide-title">Exercise guide</h2><p id="gym-exercise-guide-subtitle" class="muted"></p></div><button id="gym-exercise-guide-close" class="secondary" type="button" aria-label="Close exercise guide">Close</button></header>
+      <div id="gym-exercise-guide-content" class="gym-exercise-guide-content"></div>
+    </div>
+  </dialog>
+  <dialog id="gym-celebration-dialog" class="gym-celebration-dialog"
+          aria-labelledby="gym-celebration-title" aria-describedby="gym-celebration-description">
+    <div class="gym-celebration-card">
+      <div class="gym-celebration-heading">
+        <div>
+          <p class="eyebrow">SESSION COMPLETE · GYM COMEBACK</p>
+          <h2 id="gym-celebration-title">THAT'S A COMEBACK!</h2>
+        </div>
+        <button id="gym-celebration-dismiss" class="secondary gym-celebration-dismiss"
+                type="button" aria-label="Dismiss celebration">×</button>
+      </div>
+      <p id="gym-celebration-description" class="muted">Your workout has been saved. Take a moment to enjoy the win.</p>
+      <img id="gym-celebration-image" class="gym-celebration-image" alt="" hidden>
+      <p id="gym-celebration-session" class="gym-celebration-session"></p>
+      <div class="gym-celebration-progress" aria-hidden="true"><span></span></div>
+      <div class="gym-celebration-actions">
+        <button id="gym-celebration-skip" class="primary" type="button">Skip celebration</button>
+      </div>
+      <p class="gym-celebration-note">This closes automatically after six seconds. Your saved workout is already complete.</p>
+    </div>
+  </dialog>
+  <script src="./assets/database.js"></script>
+  <script src="./assets/integrity.js"></script>
+  <script src="./assets/exercise-identity.js"></script>
+  <script src="./assets/gym-base-programme.js"></script>
+  <script src="./assets/gym-workout.js"></script>
+  <script src="./assets/gym-progression.js"></script>
+  <script src="./assets/exercise-guide-crypto.js"></script>
+  <script src="./assets/exercise-guide-digests.js"></script>
+  <script src="./assets/exercise-guide-registry.js"></script>
+  <script src="./assets/exercise-guide.js"></script>
+  <script src="./assets/exercise-guide-runtime.js"></script>
+  <script src="./assets/catalogue-delivery.js"></script>
+  <script src="./assets/gym-migration.js"></script>
+  <script src="./assets/shared-migration.js"></script>
+  <script src="./assets/migration.js"></script>
+  <script src="./assets/module-registry.js"></script>
+  <script src="./assets/backup.js"></script>
+  <script src="./assets/programme-manager.js"></script>
+  <script src="./assets/workload-summary.js"></script>
+  <script src="./assets/assessment-manager.js"></script>
+  <script src="./app.js"></script>
+  <script src="./register.js"></script>
+</body>
+</html>
