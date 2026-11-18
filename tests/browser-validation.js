@@ -274,6 +274,8 @@ function server() {
     if (workoutGraph.week !== "1" || workoutGraph.storedWeek !== 1 || !workoutGraph.historyText.includes("Week 1 · Day 1") || !workoutGraph.historyText.includes("In progress") || workoutGraph.historyResumeButtons !== 1 || workoutGraph.exercises !== 7 || workoutGraph.sets !== 21 || workoutGraph.firstName !== "Chest Press Machine") {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
+    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
+    const firstCard = app.locator("#gym-workout-exercises .gym-exercise-card").first();
     console.log("[browser] Exercise guide dialog, unavailable state, focus and hold cancellation");
     const firstSetStateBeforeGuide=await firstCard.locator(".gym-set-row").first().locator(".gym-set-state").textContent();
     const guideButton=firstCard.locator("[data-guide-open]");
@@ -299,8 +301,7 @@ function server() {
     const firstSetStateAfterGuide=await firstCard.locator(".gym-set-row").first().locator(".gym-set-state").textContent();if(firstSetStateAfterGuide!==firstSetStateBeforeGuide)throw new Error("Guide interaction changed a workout set state.");
     console.log("PASS explicit Guide button, unavailable state, keyboard, Escape, focus restoration, hold and cancellation");
 
-    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
-    const firstCard = app.locator("#gym-workout-exercises .gym-exercise-card").first();
+
     await firstCard.locator("[data-gym-swap-name]").fill("Dumbbell Floor Press");
     await firstCard.locator("[data-gym-swap-equipment]").selectOption("available");
     await firstCard.locator('[data-gym-action="swap-save"]').click();
