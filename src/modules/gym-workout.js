@@ -312,7 +312,15 @@
       delete item.completedAt;
     });
     updateExerciseStatus(exercise);
-    await saveChanges(workout, [exercise.id], exercise.sets.filter(item => item.setNumber >= setNumber).map(item => item.id));
+    if (workout.session.restExerciseId === exercise.id && Number(workout.session.restSetNumber) >= setNumber) {
+      clearRest(workout.session);
+    }
+    await dbService().updateGymWorkoutBundle({
+      sessionId: workout.session.id,
+      session: workout.session,
+      exerciseRecords: [exercise],
+      setRecords: exercise.sets.filter(item => item.setNumber >= setNumber)
+    });
     return set;
   }
 
