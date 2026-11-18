@@ -8,7 +8,7 @@ const GUIDE_MANIFEST_URL="./assets/guides/manifest.v1.json";
 const GUIDE_MANIFEST_ID="gym-guide-artwork-v1";
 const GUIDE_ASSET_COUNT=41;
 const GUIDE_TOTAL_BYTES=2984584;
-const SHELL=["./","./index.html","./app.css","./app.js","./register.js","./manifest.webmanifest","./icon.svg","./assets/database.js","./assets/integrity.js","./assets/exercise-identity.js","./assets/gym-base-programme.js","./assets/gym-workout.js","./assets/gym-progression.js","./assets/catalogue-delivery.js","./assets/gym-migration.js","./assets/shared-migration.js","./assets/migration.js","./assets/module-registry.js","./assets/backup.js","./assets/programme-manager.js","./assets/workload-summary.js","./assets/assessment-manager.js"];
+const SHELL=["./","./index.html","./app.css","./app.js","./register.js","./manifest.webmanifest","./icon.svg","./assets/database.js","./assets/integrity.js","./assets/exercise-identity.js","./assets/gym-base-programme.js","./assets/gym-workout.js","./assets/gym-progression.js","./assets/exercise-guide.js","./assets/catalogue-delivery.js","./assets/gym-migration.js","./assets/shared-migration.js","./assets/migration.js","./assets/module-registry.js","./assets/backup.js","./assets/programme-manager.js","./assets/workload-summary.js","./assets/assessment-manager.js"];
 
 function guideHex(bytes){
  return [...new Uint8Array(bytes)].map(value=>value.toString(16).padStart(2,"0")).join("");

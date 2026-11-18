@@ -39,7 +39,9 @@ jobs:
         run: node --test tests/gym-progression.test.js
       - name: Run catalogue delivery and offline design contract
         run: node --test tests/catalogue-delivery-contract.test.js
-      - name: Run exercise guide state tests\n        run: node --test tests/exercise-guide.test.js\n      - name: Run guide artwork manifest integrity contract
+      - name: Run exercise guide state tests
+        run: node --test tests/exercise-guide.test.js
+      - name: Run guide artwork manifest integrity contract
         run: node --test tests/guide-assets-contract.test.js
       - name: Run guide artwork service-worker cache contract
         run: node --test tests/guide-assets-cache-contract.test.js

@@ -275,6 +275,7 @@ function server() {
       throw new Error("The Gym day 1 workout did not create the expected 7-exercise / 21-set graph: " + JSON.stringify(workoutGraph));
     }
     console.log("[browser] Exercise guide dialog, unavailable state, focus and hold cancellation");
+    const firstSetStateBeforeGuide=await firstCard.locator(".gym-set-row").first().locator(".gym-set-state").textContent();
     const guideButton=firstCard.locator("[data-guide-open]");
     await guideButton.click();
     if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("Exercise guide dialog did not open from its explicit button.");
@@ -295,6 +296,7 @@ function server() {
     if(!await app.locator("#gym-exercise-guide-dialog").evaluate(dialog=>dialog.open))throw new Error("450ms hold did not open the guide.");
     await app.mouse.up();await app.locator("#gym-exercise-guide-close").click();
     if(await firstCard.locator('[data-gym-action="start"]').first().count()!==1)throw new Error("Guide interactions changed workout set actions.");
+    const firstSetStateAfterGuide=await firstCard.locator(".gym-set-row").first().locator(".gym-set-state").textContent();if(firstSetStateAfterGuide!==firstSetStateBeforeGuide)throw new Error("Guide interaction changed a workout set state.");
     console.log("PASS explicit Guide button, unavailable state, keyboard, Escape, focus restoration, hold and cancellation");
 \n    console.log("[browser] Manual exercise swap, equipment status, restore, and persisted source-slot identity");
     const firstCard = app.locator("#gym-workout-exercises .gym-exercise-card").first();
