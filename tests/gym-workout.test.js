@@ -57,6 +57,21 @@ test("starting each source programme day creates the exact 7/7/6/6/6 exercise gr
   assert.equal(await db.count("setRecords"), 96);
 });
 
+test("programme week is saved and same date/day sessions resume only within the selected week", async () => {
+  const { db, workout } = await setup();
+  const week1 = await workout.startSession(1, "2026-11-18", { week: 1 });
+  const week1Resume = await workout.startSession(1, "2026-11-18", { week: 1 });
+  const week2 = await workout.startSession(1, "2026-11-18", { week: 2 });
+  assert.equal(week1Resume.resumed, true);
+  assert.equal(week1Resume.workout.session.id, week1.workout.session.id);
+  assert.equal(week2.created, true);
+  assert.notEqual(week2.workout.session.id, week1.workout.session.id);
+  assert.equal(week1.workout.session.week, 1);
+  assert.equal(week2.workout.session.week, 2);
+  assert.equal((await db.get("sessions", week2.workout.session.id)).week, 2);
+  assert.equal(await db.count("sessions"), 2);
+});
+
 test("starting the same day and date resumes the existing in-progress session instead of duplicating it", async () => {
   const { db, workout } = await setup();
   const first = await workout.startSession(1, "2026-11-18");
