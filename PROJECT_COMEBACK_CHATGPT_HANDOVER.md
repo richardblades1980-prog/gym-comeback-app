@@ -1,3 +1,30 @@
+# Project Comeback — G3.7.7 repository housekeeping audit (2026-11-18)
+
+- Active branch: `V21.2-development`; audit base `7b1b401bc3ac6648d2c050375f6f43ae3f0305f6`. Protected `main` was verified at `0d0527a6463c3cfd0fbb54d69123316c9a384b42` and remains untouched.
+- Repository guide alignment: documented the legacy root app, V21.2 entry point, canonical `src/` and browser mirrors, separate service-worker/cache ownership, data-safety boundaries and navigation.
+- `check.js`: 409-line / 109,733-character legacy workout-script snapshot; history shows an initial upload on 9 November 2026. It is not loaded by the inspected root `index.html` or `sw.js`, nor invoked by package/workflow commands. The reference search was not exhaustive; retained it without deletion, rename or relocation.
+- Asset comparison: 38 matching root/V21.2 guide asset pairs have identical Git blob SHAs. These copies are intentionally retained in separate app/package paths and cache scopes. Canonical source/browser mirrors remain protected by the parity check; no asset or bundle was changed.
+- Test organisation: retained the flat, purpose-named test files and the existing browser integration script. Added `tests/README.md` with test families, local commands and workflow navigation.
+- Navigation: added development-document links to root README; clarified the repository guide; added a handover navigation index and this checkpoint; recorded G3.7.7 in the functional roadmap.
+- No runtime code, data, tests, assets, service-worker cache version, main branch or deployment changed.
+- Exact-SHA browser and backup validation is required for this documentation commit. On resume, read the live Actions runs and match `head_sha`; never infer validation from a previous commit.
+
+## Quick navigation
+
+- [Operating rules](#1-non-negotiable-operating-rules)
+- [Approved product scope](#2-product-scope-and-approved-decisions)
+- [Architecture and key files](#3-current-architecture-and-key-files)
+- [Data safety and assessment rules](#4-data-safety-and-assessment-rules)
+- [Implemented functionality](#5-existing-functionality-already-implemented)
+- [GitHub workflow and tool use](#6-github-workflow-and-tool-use)
+- [Testing expectations](#7-testing-expectations)
+- [Living project record and update protocol](#10-living-project-record--update-this-continuously)
+- [Functional roadmap](docs/V21.2-GYM-WORKOUT-FUNCTIONAL-ROADMAP.md)
+- [Repository guide](docs/REPOSITORY-GUIDE.md)
+- [Test guide](tests/README.md)
+
+---
+
 # Project Comeback — G3.7.6 service-worker cache reliability checkpoint (2026-11-18)
 
 - Active development branch: `V21.2-development`; `main` unchanged, no deployment.

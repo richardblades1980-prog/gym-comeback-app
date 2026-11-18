@@ -7,6 +7,20 @@ Long-term vision: A family of personalised applications that help people prepare
 
 Guiding principle: NO STEREOTYPES. WHOOP WHOOP!
 
+## Development navigation
+
+This README is the strategic Project Comeback roadmap. For active V21.2 implementation, use the source-grounded development documents:
+
+- [Repository guide](docs/REPOSITORY-GUIDE.md) — repository layout, branch safety and file ownership.
+- [V21.2 functional-first Gym roadmap](docs/V21.2-GYM-WORKOUT-FUNCTIONAL-ROADMAP.md) — active implementation gates and scope.
+- [V21.2A architecture](docs/V21.2A-ARCHITECTURE.md) — approved architecture and data boundaries.
+- [Continuation handover](PROJECT_COMEBACK_CHATGPT_HANDOVER.md) — current verified state, decisions, validation and next actions.
+- [Test guide](tests/README.md) — local commands and CI test organisation.
+- [Install notes](README-INSTALL.txt) — legacy release and development safety instructions.
+
+The development branch is `V21.2-development`. The protected `main` branch is not the development target.
+
+
 ---
 
 1. Our Vision
