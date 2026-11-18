@@ -5,15 +5,23 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { indexedDB } = require("fake-indexeddb");
 
-function setup() {
+async function setup() {
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase("ProjectComebackDB");
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
   const sandbox = { window: { indexedDB } };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8"), sandbox);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/modules/gym-progression.js"), "utf8"), sandbox);
-  return { db: sandbox.window.ProjectComebackDB, progression: sandbox.window.ProjectComebackGymProgression };
+  const db = sandbox.window.ProjectComebackDB;
+  await db.open().then(connection => connection.close());
+  return { db, progression: sandbox.window.ProjectComebackGymProgression };
 }
 
 test("default and configurable plan preserve legacy 4/8/12 week and 2-5 day options", async () => {
-  const { db, progression } = setup();
+  const { db, progression } = await setup();
   assert.deepEqual(JSON.parse(JSON.stringify(await progression.getPlan())), { weeks: 4, daysPerWeek: 2 });
   await progression.savePlan({ weeks: 8, daysPerWeek: 5 });
   assert.deepEqual(JSON.parse(JSON.stringify(await progression.getPlan())), { weeks: 8, daysPerWeek: 5 });
@@ -67,7 +75,7 @@ test("history includes unfinished sessions and sorts newest first", async () => 
 });
 
 test("next workout advances days, then weeks, and stops at plan end", async () => {
-  const progression = setup().progression, plan = { weeks: 4, daysPerWeek: 3 };
+  const progression = (await setup()).progression, plan = { weeks: 4, daysPerWeek: 3 };
   assert.deepEqual(JSON.parse(JSON.stringify(await progression.nextWorkout(2, 2, plan))), { week: 2, day: 3 });
   assert.deepEqual(JSON.parse(JSON.stringify(await progression.nextWorkout(2, 3, plan))), { week: 3, day: 1 });
   assert.equal(await progression.nextWorkout(4, 3, plan), null);
