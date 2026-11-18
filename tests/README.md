@@ -53,3 +53,6 @@ Both workflows run on pushes and pull requests targeting `V21.2-development`. A 
 
 
 - **Async guide registry validation:** `node --test tests/exercise-guide-registry.test.js` covers schema v2 and cryptographic verification using the digest contracts. Registry is empty; production resolution integration is still a separate gate.
+
+
+- **Async exercise-guide registry (schema v2):** `node --test tests/exercise-guide-registry.test.js` uses real Web Crypto SHA-256. Reviews bind exact guide, assignment, and asset-set targets; asset-set review targets include exact manifest release. Guide content digest binds its exact selected `assetIds`, and the validator requires those IDs to be members of the bound manifest and locally verified. Crypto unavailable/rejected, tampering, stale source snapshot, conflicts, or review mismatches fail closed.
