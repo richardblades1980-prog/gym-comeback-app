@@ -43,6 +43,8 @@ jobs:
         run: node --test tests/exercise-guide.test.js
       - name: Run exercise guide registry validation tests
         run: node --test tests/exercise-guide-registry.test.js
+      - name: Run exercise guide review readiness source contract
+        run: node --test tests/exercise-guide-review-readiness.test.js
       - name: Run async exercise guide runtime tests
         run: node --test tests/exercise-guide-runtime.test.js
       - name: Run guide artwork manifest integrity contract
