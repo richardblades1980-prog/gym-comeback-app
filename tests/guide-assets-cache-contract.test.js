@@ -31,14 +31,23 @@ test("manifest and every exact asset byte, MIME and checksum are verified before
   assert.match(sw, /GUIDE_ASSET_COUNT\+1/);
 });
 
-test("published cache versions are immutable and failed installs preserve caches used by older workers", () => {
-  assert.match(sw, /publishedCacheExisted=cacheNames\.includes\(GUIDE_CACHE_NAME\)/);
-  assert.match(sw, /if\(createdPublishedCache&&!publishedCacheExisted\)await caches\.delete\(GUIDE_CACHE_NAME\)/);
-  assert.match(sw, /Existing guide cache is incomplete; publish a new guide cache version/);
-  assert.match(sw, /Never touch a cache an active worker could be using/);
-  assert.doesNotMatch(sw, /^\s*await caches\.delete\(GUIDE_CACHE_NAME\);/m);
-  assert.match(sw, /finally\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*\}/);
+test("published guide cache is reused only after full offline verification", () => {
+  assert.match(sw, /if\(cacheNames\.includes\(GUIDE_CACHE_NAME\)\)/);
+  assert.match(sw, /await verifyPublishedGuideCache\(existing\)/);
+  assert.match(sw, /for\(const asset of assets\)/);
+  assert.match(sw, /verifyGuideResponse\(cached,asset\)/);
+  assert.match(sw, /Existing guide cache inventory is incomplete/);
   assert.ok(sw.indexOf("await installGuideAssets()") < sw.indexOf("await self.skipWaiting()"));
+});
+test("new guide cache publication rolls back only its own incomplete namespace", () => {
+  assert.match(sw, /if\(createdPublishedCache\)await caches\.delete\(GUIDE_CACHE_NAME\)/);
+  assert.match(sw, /finally\{\s*await caches\.delete\(GUIDE_STAGE_CACHE\);\s*\}/);
+  assert.match(sw, /await verifyPublishedGuideCache\(published\)/);
+});
+test("activation claims clients before retiring prior immutable cache namespaces", () => {
+  const activation = sw.slice(sw.indexOf('self.addEventListener("activate"'), sw.indexOf('self.addEventListener("fetch"'));
+  assert.ok(activation.indexOf("await self.clients.claim()") < activation.indexOf("await Promise.all"));
+  assert.match(activation, /key\.startsWith\(GUIDE_CACHE_PREFIX\)&&key!==GUIDE_CACHE_NAME/);
 });
 
 test("empty guide registry is cached in the shell, not the dedicated artwork cache", () => {
