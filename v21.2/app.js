@@ -341,64 +341,47 @@ function renderGymHistory(sessions,exercises,sets){
 function renderGymJourney(sessions,exercises,sets){
  const target=$("gym-journey");
  const completed=sessions.filter(record=>record.status==="completed");
+ const summary=ProjectComebackGymProgression.summariseExerciseHistory(sessions,exercises,sets);
  const completedIds=new Set(completed.map(record=>record.id));
  const exerciseRows=exercises.filter(record=>completedIds.has(record.sessionId));
- const exerciseIds=new Set(exerciseRows.map(record=>record.id));
- const setRows=sets.filter(record=>completedIds.has(record.sessionId)&&exerciseIds.has(record.exerciseRecordId));
+ const setRows=sets.filter(record=>completedIds.has(record.sessionId));
  const numericRepSets=setRows.filter(record=>typeof record.reps==="string"&&/^\d+$/.test(record.reps.trim())&&Number(record.reps)>0);
  const totalReps=numericRepSets.reduce((sum,record)=>sum+Number(record.reps),0);
  const metric=(label,value,detail)=>'<div class="gym-journey-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>';
  if(!completed.length){target.innerHTML='<p class="empty-state">Your completed Gym sessions will appear here as you save training. Only completed sessions and their linked set records are included.</p>';return;}
- const sessionById=new Map(completed.map(record=>[record.id,record]));
- const groups=new Map();
- exerciseRows.forEach(exercise=>{
-  const rawName=String(exercise.name||"Unnamed exercise");
-  const name=rawName.trim()||"Unnamed exercise";
-  // Exercise names are historical identifiers here: do not merge case,
-  // punctuation or spacing variants without an explicit alias decision.
-  const key=rawName;
-  if(!groups.has(key))groups.set(key,{name,entries:[]});
-  const session=sessionById.get(exercise.sessionId);
-  const exerciseSets=setRows.filter(set=>set.exerciseRecordId===exercise.id).sort((a,b)=>Number(a.setNumber)-Number(b.setNumber));
-  groups.get(key).entries.push({date:session.date||"",sets:exerciseSets});
- });
- const history=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(group=>{
-  const entries=group.entries.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-  const datedLoads=new Map();
-  entries.forEach(entry=>{
-   if(!/^\d{4}-\d{2}-\d{2}$/.test(entry.date))return;
-   const loads=entry.sets.map(set=>Number(set.weight)).filter(value=>Number.isFinite(value)&&value>0);
-   if(!loads.length)return;
-   const heaviest=Math.max(...loads);
-   datedLoads.set(entry.date,Math.max(datedLoads.get(entry.date)||0,heaviest));
-  });
-  const loadPoints=[...datedLoads.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  const fmtLoad=value=>Number.isInteger(value)?String(value):String(Number(value.toFixed(2)));
-  let loadSummary="No dated positive load entries to compare yet.";
-  if(loadPoints.length===1)loadSummary="One dated heaviest recorded load: "+fmtLoad(loadPoints[0][1])+" kg. Add another dated session to compare.";
-  if(loadPoints.length>1){
-   const first=loadPoints[0],last=loadPoints[loadPoints.length-1],change=Number((last[1]-first[1]).toFixed(2));
-   loadSummary=loadPoints.length+" dated sessions with recorded loads · first "+fmtLoad(first[1])+" kg · latest "+fmtLoad(last[1])+" kg · change "+(change>0?"+":"")+fmtLoad(change)+" kg. These are recorded loads, not a one-rep maximum.";
-  }
-  const rows=entries.map(entry=>{
+ const history=summary.groups.map(group=>{
+  const sourceEntries=group.sourceEntries.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const rows=sourceEntries.map(entry=>{
    const date=entry.date?new Date(entry.date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"Date not recorded";
    const setText=entry.sets.length?entry.sets.map(set=>{
     const fields=[];
     fields.push(String(set.weight??"").trim()!==""?"Weight entry "+String(set.weight)+" kg":"Weight not recorded");
     fields.push(String(set.reps??"").trim()!==""?String(set.reps)+" reps":"Reps not recorded");
-    if(String(set.duration??"").trim()!=="")fields.push(String(set.duration)+" duration");
+    if(String(set.duration??"").trim()!=="")fields.push(String(set.duration)+" sec");
     return '<li>'+esc("Set "+String(set.setNumber)+": "+fields.join(" · "))+'</li>';
    }).join(""):'<li>No set details recorded</li>';
    return '<li><strong>'+esc(date)+'</strong><ul>'+setText+'</ul></li>';
   }).join("");
-  return '<section class="gym-exercise-history"><h4>'+esc(group.name)+'</h4><p>'+entries.length+' completed session'+(entries.length===1?"":"s")+' recorded</p><p class="gym-load-trend">'+esc(loadSummary)+'</p><ol>'+rows+'</ol></section>';
+  const substitutions=group.substitutions.map(entry=>{
+   const date=entry.date?new Date(entry.date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"Date not recorded";
+   const details=entry.sets.map(set=>{
+    const fields=[];
+    if(String(set.weight??"").trim()!=="")fields.push(String(set.weight)+" kg");
+    if(String(set.reps??"").trim()!=="")fields.push(String(set.reps)+" reps");
+    if(String(set.duration??"").trim()!=="")fields.push(String(set.duration)+" sec");
+    return "Set "+String(set.setNumber)+(fields.length?": "+fields.join(" · "):": no values recorded");
+   }).join("; ");
+   return '<li><strong>'+esc(date)+' — performed: '+esc(entry.performedExerciseName)+'</strong><small>'+esc(details||"No set values recorded")+'</small></li>';
+  }).join("");
+  const trend=group.sourceEntries.length?'<p class="gym-load-trend">'+esc(group.loadTrend)+'</p>':'<p class="gym-load-trend">No original-exercise progression data: all recorded entries for this source exercise were manual substitutions.</p>';
+  return '<section class="gym-exercise-history"><h4>'+esc(group.sourceLabel)+'</h4><p>'+group.sourceSessionCount+' original-exercise session'+(group.sourceSessionCount===1?"":"s")+' · '+group.sourceSetCount+' sets · '+group.recordedReps+' recorded reps'+(group.recordedDurationSetCount?' · '+group.durationSeconds+' sec recorded duration':'')+'</p>'+trend+(rows?'<ol>'+rows+'</ol>':'<p>No original exercise entries recorded.</p>')+(substitutions?'<div class="gym-substitution-history"><strong>Manual substitutions — excluded from this exercise trend</strong><ul>'+substitutions+'</ul></div>':'')+'</section>';
  }).join("");
  target.innerHTML='<div class="gym-journey-grid">'+[
-  metric("Completed sessions",String(completed.length),"Saved completed Gym sessions"),
-  metric("Exercises recorded",String(exerciseRows.length),"Exercises linked to completed sessions"),
-  metric("Sets recorded",String(setRows.length),"Sets linked to completed sessions"),
+  metric("Completed sessions",String(summary.completedSessionCount),"Saved completed Gym sessions"),
+  metric("Exercises recorded",String(summary.exerciseRecordCount),"Exercises linked to completed sessions"),
+  metric("Sets recorded",String(summary.setRecordCount),"Sets linked to completed sessions"),
   metric("Recorded repetitions",String(totalReps),numericRepSets.length+" of "+setRows.length+" sets include a numeric repetition count")
- ].join("")+'</div><p class="journey-data-note">Repetitions are added only where a positive whole-number count was explicitly saved. Weight entries below are shown exactly as saved; no unit or improvement is inferred.</p><div class="gym-exercise-history-list"><h4>Recorded exercise history</h4>'+(history||'<p class="empty-state">No completed exercise records yet.</p>')+'</div>';
+ ].join("")+'</div><p class="journey-data-note">Manual substitutions are displayed with the performed exercise and recorded values, but are excluded from the original programme exercise progression trend. Trends are descriptive recorded loads, not proof of improvement. Repetitions include only positive whole-number counts; no unit or improvement is inferred.</p><div class="gym-exercise-history-list"><h4>Recorded exercise history</h4>'+(history||'<p class="empty-state">No completed exercise records yet.</p>')+'</div>';
 }
 function renderHikingJourney(records){
  const target=$("hiking-journey");

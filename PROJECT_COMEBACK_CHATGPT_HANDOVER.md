@@ -1,3 +1,15 @@
+# G3.6b — Progression summaries implementation checkpoint (2026-11-18)
+
+- Implemented descriptive Gym exercise summaries in `ProjectComebackGymProgression.summariseExerciseHistory()` and mirrored the progression service byte-for-byte into `v21.2/assets/gym-progression.js`.
+- Gym Journey now reports completed session/exercise/set totals and retains its total recorded-repetition metric. Per-source exercise history includes completed original-exercise sessions, set count, valid whole-number reps, valid durations and dated positive-load trend points.
+- Manual substitutions are clearly listed with the performed label and saved values, but are excluded from original exercise trend calculations. No source label aliasing or fuzzy merging.
+- Load trend points use positive numeric loads from original exercises only; records on the same date collapse to the heaviest load for that date. Invalid, zero/negative and undated loads are excluded. Trend text says “recorded change” and does not imply improvement.
+- Added regression coverage for incomplete session filtering, exact source-name grouping, substitution separation, same-date aggregation, invalid/undated loads, valid reps/durations and bad input types.
+- No schema/store/index, backup format, migration, exercise identity/catalogue, service-worker cache or runtime deployment change.
+- Exact final commit requires browser and backup workflow PASS. Main remains untouched.
+
+---
+
 # Project Comeback — G3.7.7 repository housekeeping audit (2026-11-18)
 
 - Active branch: `V21.2-development`; audit base `7b1b401bc3ac6648d2c050375f6f43ae3f0305f6`. Protected `main` was verified at `0d0527a6463c3cfd0fbb54d69123316c9a384b42` and remains untouched.
