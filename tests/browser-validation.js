@@ -326,6 +326,8 @@ function server() {
     if (!Number.isFinite(extendedEnd) || extendedEnd < initialEnd + 15000) throw new Error("Rest timer end timestamp was not extended and persisted after +15: "+JSON.stringify({initialEnd,extendedEnd}));
     await app.locator('[data-gym-action="rest-skip"]').click();
     await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    await app.locator("#gym-rest-alert-mode").selectOption("visual");
+    if (await app.evaluate(() => localStorage.getItem("gym-comeback-rest-alert")) !== "visual") throw new Error("Rest alert preference did not persist locally.");
     const restPreset = app.locator('[data-gym-field="restSeconds"]').first();
     await restPreset.selectOption("120");
     await app.waitForFunction(async () => {
