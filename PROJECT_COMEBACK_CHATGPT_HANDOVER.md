@@ -1,3 +1,18 @@
+# Current handover — clean-start V21.2 trial decision (2026-11-19)
+
+- Active branch: `V21.2-development`.
+- Implementation/test checkpoint: `8193af338450d424271372b62b316358bf4df6bd`.
+- User approved a clean start for their own V21.2 trial. Do not import their V21.1 progress records for this trial; most are test records and they are content to begin again.
+- Safety rule: keep the V21.1 root app and every existing `gym-comeback-*` localStorage value untouched. Do not delete or overwrite them. V21.1 remains available as fallback.
+- Migration remains optional and explicit in V21.2 for other users. This choice is not a blanket waiver of a controlled migration rehearsal before offering a data-preserving upgrade to existing V21.1 users.
+- Added a clean-profile Chromium first-run test: empty user-data stores, only default Gym/Hiking module records, no migration marker, controls remain inactive, and reload remains clean.
+- Added a same-origin test with seeded V21.1 profile/workout/set-status values: V21.2 starts with empty user-data stores and no migration marker; original key/value pairs are byte-for-byte unchanged.
+- Browser [#44405002324 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44405002324) and backup [#44405002284 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44405002284) both passed on exact test SHA `8193af338450d424271372b62b316358bf4df6bd`.
+- This verifies local GitHub Pages-style automation only. V21.2 is not published to the selected host; no live V21.1 records were read, migrated or deleted, and no host settings/main branch changed.
+- Next: commit this decision into release-readiness/roadmap/phone-preview/handover docs, then run browser and backup workflows against the exact documentation commit. Thereafter the next release task is clean-start final-host planning, still requiring explicit publication/hosting approval.
+
+---
+
 ## G3.6b validation correction — browser assertion alignment (2026-11-18)
 
 - Implementation SHA `1ac54be10aa9e4b00f1061e33e6002561e8712f5`: backup validation [#44255446595 — PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44255446595). Browser [#44255446714 — FAIL] (https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44255446714) at the existing Gym Journey assertion, which expected pre-change wording rather than the new approved summary labels. The browser run reached Gym Journey and showed the updated summary, recorded sets, and trends; failure was the test's string contract.
