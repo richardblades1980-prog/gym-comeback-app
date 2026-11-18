@@ -75,3 +75,13 @@ test("browser validation confirms all 41 guide assets and serves guide artwork o
   assert.match(browser, /preservedGuideCache\.entries !== 42/);
   assert.match(browser, /preservedOfflineAsset/);
 });
+
+test("guide artwork fetch handler is cache-only and returns 404 when verified bytes are absent",()=>{
+ assert.match(sw,/cached\|\|new Response/);
+ assert.doesNotMatch(sw,/cached\|\|fetch\(request\)/);
+});
+test("app verifies exact cached artwork bytes before registry resolution",()=>{
+ const app=fs.readFileSync(path.join(root,"v21.2/app.js"),"utf8");
+ assert.match(app,/verifyLocalAssets\(manifest,caches,location\.href\)/);
+ assert.match(app,/verifiedAssetIds/);
+});
