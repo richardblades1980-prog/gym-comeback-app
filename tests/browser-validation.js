@@ -150,9 +150,9 @@ function server() {
         today: iso(today),
         future: addDays(1),
         afterTomorrow: addDays(2),
-        celebrationDay1: addDays(3),
-        celebrationDay2: addDays(4),
-        celebrationDay3: addDays(5)
+        celebrationDay1: addDays(20),
+        celebrationDay2: addDays(21),
+        celebrationDay3: addDays(22)
       };
     });
     if (await app.locator('[data-view="overview"]').getAttribute("aria-current") !== "page") {
@@ -385,6 +385,7 @@ function server() {
 
     console.log("[browser] Save-first six-second celebration, Skip/Dismiss and saved-record preservation");
     const originalCelebrationProfile = await app.evaluate(() => ProjectComebackDB.get("profile", "gym-profile"));
+    const originalGymCountBeforeCelebration = await app.evaluate(() => ProjectComebackDB.count("sessions"));
     const seedCompletedWorkoutForCelebration = async (day, date) => {
       const fixture = await app.evaluate(async ({ day, date }) => {
         const sessions = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]);
@@ -582,6 +583,11 @@ function server() {
       ],
       originalProfile: originalCelebrationProfile
     });
+    const gymCountAfterCelebrationCleanup = await app.evaluate(() => ProjectComebackDB.count("sessions"));
+    if (gymCountAfterCelebrationCleanup !== originalGymCountBeforeCelebration) {
+      throw new Error("Celebration browser fixture cleanup changed pre-existing Gym sessions: " +
+        JSON.stringify({ before: originalGymCountBeforeCelebration, after: gymCountAfterCelebrationCleanup }));
+    }
     await app.reload();
     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
     console.log("PASS saved state is committed before celebration, Day 1/Day 2/female hero selection, Skip/Dismiss, six-second auto-close, and no post-close data mutation");
