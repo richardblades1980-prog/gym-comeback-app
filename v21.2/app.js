@@ -15,39 +15,44 @@ function item(title,meta,tag){return '<div class="record-item"><div><strong>'+es
 let gymProgressionPlan={weeks:4,daysPerWeek:2};
 async function refreshGymProgressionControls(requestToken){
  const progression=ProjectComebackGymProgression;
- gymProgressionPlan=await progression.getPlan();
+ const plan=await progression.getPlan();
+ if(requestToken!==undefined&&requestToken!==gymWorkoutRefreshToken)return false;
+ gymProgressionPlan=plan;
  const weekSelect=$("gym-workout-week"),daySelect=$("gym-workout-day");
  const oldWeek=Number(weekSelect.value)||1,oldDay=Number(daySelect.value)||1;
- weekSelect.innerHTML=Array.from({length:gymProgressionPlan.weeks},(_,i)=>'<option value="'+(i+1)+'">Week '+(i+1)+'</option>').join("");
- weekSelect.value=String(Math.min(oldWeek,gymProgressionPlan.weeks));
- $("gym-programme-weeks").value=String(gymProgressionPlan.weeks);
- $("gym-days-per-week").value=String(gymProgressionPlan.daysPerWeek);
+ weekSelect.innerHTML=Array.from({length:plan.weeks},(_,i)=>'<option value="'+(i+1)+'">Week '+(i+1)+'</option>').join("");
+ weekSelect.value=String(Math.min(oldWeek,plan.weeks));
+ $("gym-programme-weeks").value=String(plan.weeks);
+ $("gym-days-per-week").value=String(plan.daysPerWeek);
  daySelect.value=String(oldDay);
- Array.from(daySelect.options).forEach(option=>{option.disabled=Number(option.value)>gymProgressionPlan.daysPerWeek;});
+ Array.from(daySelect.options).forEach(option=>{option.disabled=Number(option.value)>plan.daysPerWeek;});
  if(daySelect.selectedOptions[0]?.disabled)daySelect.value="1";
  const week=Number(weekSelect.value),day=Number(daySelect.value);
- const unlocked=await progression.isUnlocked(week,day,gymProgressionPlan);
+ const unlocked=await progression.isUnlocked(week,day,plan);
  const overrides=await progression.getManualUnlocks();
  const manual=overrides.some(item=>item.week===week&&item.day===day);
- const title=$("gym-progression-title"),message=$("gym-progression-message"),button=$("gym-progression-override");
- title.textContent=(unlocked?"Unlocked":"Locked")+" · Week "+week+" / Day "+day;
+ let messageText;
  if(unlocked&&!manual){
-  const next=await progression.nextWorkout(week,day,gymProgressionPlan);
-  message.textContent=next?("Available in sequence. Complete every set and save to unlock Week "+next.week+", Day "+next.day+"."):"Final workout of the programme is available.";
+  const next=await progression.nextWorkout(week,day,plan);
+  messageText=next?("Available in sequence. Complete every set and save to unlock Week "+next.week+", Day "+next.day+"."):"Final workout of the programme is available.";
  }else if(manual){
-  message.textContent="Manual beta unlock is active for this workout. You can relock it at any time.";
+  messageText="Manual beta unlock is active for this workout. You can relock it at any time.";
  }else{
-  const required=day>1?{week,day:day-1}:{week:week-1,day:gymProgressionPlan.daysPerWeek};
-  message.textContent=day>1?("Complete Week "+week+", Day "+(day-1)+" to unlock this workout, or manually unlock for testing."):(week>1?("Complete Week "+(week-1)+", Day "+gymProgressionPlan.daysPerWeek+" to unlock this week, or manually unlock for testing."):"Week 1, Day 1 starts your programme.");
+  messageText=day>1?("Complete Week "+week+", Day "+(day-1)+" to unlock this workout, or manually unlock for testing."):(week>1?("Complete Week "+(week-1)+", Day "+plan.daysPerWeek+" to unlock this week, or manually unlock for testing."):"Week 1, Day 1 starts your programme.");
  }
- button.textContent=manual?"Relock selected workout":unlocked?"Unlocked by sequence":"Manually unlock selected workout";
- button.disabled=unlocked&&!manual;
- const startButton=$("gym-workout-start"),selectedDate=$("gym-workout-date").value||today;
+ const selectedDate=$("gym-workout-date").value||today;
  const resumable=await ProjectComebackGymWorkout.findInProgress(day,selectedDate,week);
  if(requestToken!==undefined&&requestToken!==gymWorkoutRefreshToken)return unlocked;
+ const title=$("gym-progression-title"),message=$("gym-progression-message"),button=$("gym-progression-override");
+ title.textContent=(unlocked?"Unlocked":"Locked")+" · Week "+week+" / Day "+day;
+ message.textContent=messageText;
+ button.textContent=manual?"Relock selected workout":unlocked?"Unlocked by sequence":"Manually unlock selected workout";
+ button.disabled=unlocked&&!manual;
+ const startButton=$("gym-workout-start");
  startButton.disabled=!unlocked&&!resumable;
  startButton.textContent=resumable?"Resume workout":"Start / resume workout";
  button.onclick=async()=>{
+  if(Number(weekSelect.value)!==week||Number(daySelect.value)!==day)return;
   try{await progression.setManualUnlock(week,day,!manual);await refreshGymProgressionControls();notice(manual?"Manual unlock removed.":"Selected workout manually unlocked for testing.");}
   catch(error){notice(error.message,true);}
  };
