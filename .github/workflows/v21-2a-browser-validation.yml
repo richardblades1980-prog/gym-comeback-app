@@ -67,6 +67,8 @@ jobs:
         run: node --test tests/artwork-samples-contract.test.js
       - name: Run real IndexedDB identity persistence and backup compatibility tests
         run: node --test tests/identity-persistence.test.js
+      - name: Run typed user equipment inventory and restore safety tests
+        run: node --test tests/user-equipment-inventory.test.js
       - name: Restore Playwright browser binaries
         id: playwright-cache
         uses: actions/cache/restore@v4
