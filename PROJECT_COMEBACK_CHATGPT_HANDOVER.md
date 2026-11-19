@@ -1530,3 +1530,43 @@ Pages source remains `V21.2-pages-release-candidate / (root)`; deployment workfl
 **Next owner-trial step:** when ready, create one clearly disposable V21.2 test record, save it, reload and confirm it persists, then download a backup. Keep all V21.1 records/localStorage untouched and do not run migration. Home Screen/standalone and cold-offline checks remain separate.
 
 Protected `main` remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No V21.1 data was read, migrated, deleted or modified.
+
+---
+
+# Gym Comeback V21.2 — Live Gym trial feedback and development corrections (2026-11-19)
+
+## User's live workout test
+
+User reported:
+1. Next rows did not self-populate.
+2. Rest timer was not visible.
+3. Next set stayed locked until the previous set was marked complete — PASS.
+4. Weight/repetition fields could be edited before completion and a completed set could be undone — PASS.
+5. Finish workout appeared at the top — defect.
+6. Saved record remained after closing and reopening — PASS (user-reported live test).
+7. Backup download worked — PASS (user-reported live test).
+
+## Implemented on development only
+
+**Implementation SHA:** `c6359a05953aa7336a60387dfce7c4d2ca677bfe` on `V21.2-development`.
+
+- Restored V21.1-compatible previous-programme-week carry-forward for new sessions, keyed by exact `programmeSlotId` and set number. Copies only editable nonblank weight/reps/duration fields. Does not copy status/timestamps, does not use manually substituted exercise values, and never applies when resuming an existing session. Previous-week values remain editable.
+- Rest timer is rendered in the active exercise card, populated immediately after card render, and scrolled into view. Rest starts after a completed set whenever another set follows in the session, including the next exercise when the current exercise's final set is complete.
+- Moved Finish workout below the exercise list; narrow-screen footer button is full width.
+- V21.2 shell cache bumped v28 → v29.
+- Canonical service and offline mirror remain identical. No database schema/store/index or backup format change.
+
+## Validation
+
+- Browser [#44427684334 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44427684334) — exact SHA above.
+- Backup [#44427684323 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44427684323) — exact same SHA.
+- New unit/browser regressions verify exact-slot carry-forward, editable values, reset status, no resume overwrite, timer inside correct card, immediate label, between-exercise rest and Finish workout placement after exercise list.
+- Existing sequence lock, edit/undo, persistence, backup, migration, offline and service-worker isolation suites passed.
+
+## Meaning of “next rows”
+
+The legacy `check.js` source contains `prefillFromPreviousWeek`: values are copied from the most recent earlier programme week into the next week's blank fields, and remain editable. The legacy code does not copy set 1 directly into set 2/3 in the same live workout. Current V21.2 fix restores the former behaviour using immutable slot IDs. If the user's intended behaviour was the latter, confirm before implementing it as a separate feature.
+
+## Release boundary
+
+The fixes are committed to `V21.2-development` only. Published Pages branch `V21.2-pages-release-candidate` remains at `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`. Protected `main` remains at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No deployment or candidate update has occurred; obtain separate explicit approval before publishing these fixes. No live V21.1 data was read, migrated, deleted or modified.
