@@ -1,4 +1,19 @@
-# Current handover — post-Gym milestone Adaptive Brain audit (2026-11-19)
+# Current handover — Equipment and Exercise Library design (2026-11-19)
+
+- **Active development branch:** \`V21.2-development\`.
+- **Verified source checkpoint before this design pass:** \`31ef2ea323bced532d5fba765d2d8dffcc2ef56e\`. Browser validation [#44443355792 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44443355792) and backup validation [#44443355746 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44443355746) completed on that exact SHA.
+- **Current next-stage document:** \`docs/V21.2-EQUIPMENT-EXERCISE-LIBRARY-DESIGN.md\`. It records the live UI/storage/catalogue audit, proposed Gym Setup screens, separation of system equipment definitions from user equipment access, exercise movement metadata, programme versioning and the injury-aware alternative contract.
+- **Current app reality:** no Equipment or Exercise Library view; the Gym runner still uses the fixed source-preserved five-day base programme and manual free-text substitution. Catalogue delivery is implemented, but there is no approved production catalogue payload/manifest and no user-facing lookup UI.
+- **Important source inventory:** 42 optional-library rows, 32 source-programme slots, 10 base labels without direct optional-row matches, and 52 guide entries still requiring qualified human review. All source programme slots remain unassigned to canonical exercise IDs; the production guide registry remains empty.
+- **Injury-aware owner requirement:** a user-reported restriction (such as a pulled calf) persists across future sessions until explicitly updated; review direct and secondary loading plus stabilisation, balance, foot pressure, impact, propulsion, weight-bearing, positioning and bracing; offer only a reviewed alternative or explicit Remove/skip / Keep restricted; preserve original programme/history; never imply zero effect or medical clearance.
+- **Recommended sequence:** equipment-definition and exercise-metadata curation first; then equipment manager and library browser; then programme selector/builder; then persistent restrictions and fail-closed alternatives; Adaptive Brain only after those foundations.
+- **Data-safety boundary:** this is a design/documentation pass. No app code, schema, backup format, production catalogue, personal data, V21.1 source, Pages setting, deployment or merge is changed. Any new store/index, backup-format change or catalogue-payload expansion requires a separately reviewed scope gate.
+- **Protected / published boundaries:** \`main\` remains \`0d0527a6463c3cfd0fbb54d69123316c9a384b42\`; \`V21.2-pages-release-candidate\` remains \`a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd\`. Do not modify either or change Pages settings/deploy without separate explicit approval.
+- The dated handover snapshots below are historical project evidence; do not treat their “Next” sections as current when they conflict with this handover or the current development branch.
+
+---
+
+# Historical handover snapshot — post-Gym milestone Adaptive Brain audit (2026-11-19)
 
 - **Active development branch:** `V21.2-development`. The audit began from code checkpoint `cd782a72aacc1b80186e6dd27c870a57fc42e9c1`; browser [#44432764417 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432764417) and backup [#44432764243 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432764243) validated that exact pre-housekeeping checkpoint.
 - **Latest Gym implementation:** `69d337c9cc30044637f01f4ea7d59e51c58c9d36` (parent implementation `5dc5e1540e5ad2e9114767240b7368ef980147ee`). The Gym runner and dual-level set carry-forward are implemented. Set 1 is the only automatic within-exercise source; later manual fields are independently user-owned and do not cascade. Programme-week carry-forward matches exact immutable source programme slot and set number. A post-milestone review also corrected timed-set week carry-forward: it now copies `targetDuration`, never actual measured `duration`.

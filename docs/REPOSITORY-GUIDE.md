@@ -32,6 +32,7 @@ Do not delete or consolidate assets based only on matching names, file counts or
 - [Strategic Project Comeback roadmap](../README.md)
 - [V21.2 Gym functional roadmap](V21.2-GYM-WORKOUT-FUNCTIONAL-ROADMAP.md)
 - [Adaptive Brain historical rules audit](V21.2-ADAPTIVE-BRAIN-HISTORICAL-AUDIT.md) (design evidence; not implementation approval)
+- [Equipment and exercise library design](V21.2-EQUIPMENT-EXERCISE-LIBRARY-DESIGN.md) (source-grounded proposal; no selectors or production catalogue are implemented yet)
 - [V21.2A architecture](V21.2A-ARCHITECTURE.md)
 - [Continuation handover](../PROJECT_COMEBACK_CHATGPT_HANDOVER.md)
 - [Test guide](../tests/README.md)
