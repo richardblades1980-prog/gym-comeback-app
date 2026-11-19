@@ -259,6 +259,12 @@ function server() {
         cards: Array.from(document.querySelectorAll(".equipment-record")).map(card => ({
           location: card.dataset.locationId, id: card.dataset.equipmentId, text: card.textContent
         })),
+        database: await ProjectComebackDB.listUserEquipment("gym-profile"),
+        form: {
+          name: document.querySelector('#equipment-form [name="customName"]')?.value,
+          location: document.querySelector('#equipment-form [name="location"]')?.value,
+          orientation: document.querySelector('#equipment-form [name="orientation"]')?.value
+        },
         list: document.querySelector("#equipment-list")?.innerHTML,
         notice: document.querySelector("#notice")?.textContent
       }));
