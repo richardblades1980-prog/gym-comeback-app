@@ -13,7 +13,7 @@ function load() {
   return { db: window.ProjectComebackDB, backup: window.ProjectComebackBackup };
 }
 
-async function reset(db) {
+async function reset(db, backup) {
   await db.open();
   await new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(db.name);
@@ -22,6 +22,10 @@ async function reset(db) {
     request.onblocked = () => reject(new Error("Test database deletion was blocked."));
   });
   await db.open();
+  const safety = await backup.createLegacySafetyBackup();
+  await db.upgradeToV6(safety);
+  await backup.verifyIdentityUpgradeRoundTrip();
+  await db.put("profile", { id: "profile-main", displayName: "Test profile" });
 }
 
 function customRecord(id, overrides) {
@@ -56,8 +60,8 @@ function v1Envelope(backup, equipment) {
 }
 
 test("typed equipment API defaults unknown availability and keeps physical instances separate", async () => {
-  const { db } = load();
-  await reset(db);
+  const { db, backup } = load();
+  await reset(db, backup);
   const first = customRecord("machine-1", { availability: undefined, instanceLabel: "Left machine" });
   delete first.availability;
   await db.addUserEquipment(first);
@@ -72,8 +76,8 @@ test("typed equipment API defaults unknown availability and keeps physical insta
 });
 
 test("catalogue inventory requires exact retained release identity and cannot silently rebind", async () => {
-  const { db } = load();
-  await reset(db);
+  const { db, backup } = load();
+  await reset(db, backup);
   await db.add("catalogueReleases", {
     id: "catalogue-release-r1", catalogueId: "exercise-catalogue", version: 1, checksum: "sha256:test"
   });
@@ -104,8 +108,8 @@ test("catalogue inventory requires exact retained release identity and cannot si
 });
 
 test("typed equipment records cannot be spoofed through generic writes or hard-deleted", async () => {
-  const { db } = load();
-  await reset(db);
+  const { db, backup } = load();
+  await reset(db, backup);
   const record = customRecord("protected");
   await db.addUserEquipment(record);
   await assert.rejects(() => db.put("equipment", { id: record.id, legacyRawValue: "overwrite" }), /must be updated through the validated inventory contract/);
@@ -117,7 +121,7 @@ test("typed equipment records cannot be spoofed through generic writes or hard-d
 
 test("V1 restore preview and restore preserve validated typed inventory while replacing legacy equipment", async () => {
   const { db, backup } = load();
-  await reset(db);
+  await reset(db, backup);
   const legacyBefore = { id: "legacy-equipment-before", legacyKey: "gym-comeback-gear", legacyRawValue: "{\"gym\":[\"old\"]}", migratedFromLegacy: true };
   const typed = customRecord("keep-on-v1-restore");
   await db.put("equipment", legacyBefore);
@@ -148,7 +152,7 @@ test("V1 restore preview and restore preserve validated typed inventory while re
 
 test("V1 restore blocks an ID collision with typed inventory and leaves all data unchanged", async () => {
   const { db, backup } = load();
-  await reset(db);
+  await reset(db, backup);
   const typed = customRecord("collision");
   await db.addUserEquipment(typed);
   const incoming = v1Envelope(backup, [{ id: typed.id, legacyRawValue: "not the typed record" }]);
@@ -164,7 +168,7 @@ test("V1 restore blocks an ID collision with typed inventory and leaves all data
 
 test("V2 backup and restore round-trip typed and legacy equipment records exactly", async () => {
   const { db, backup } = load();
-  await reset(db);
+  await reset(db, backup);
   const legacy = { id: "legacy-gear", legacyKey: "gym-comeback-gear", legacyRawValue: "{\"home\":[\"mat\"]}", migratedFromLegacy: true };
   const typed = customRecord("v2-round-trip", {
     location: { id: "home", label: "Home" },
