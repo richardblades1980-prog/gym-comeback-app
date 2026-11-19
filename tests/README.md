@@ -5,7 +5,7 @@ Run tests from the repository root on `V21.2-development`. The project uses Node
 ## Test families
 
 - **Core/service tests:** Gym workout/progression, base programme, migration, IndexedDB, backup/restore, identity persistence, integrity, module registry, programme manager and workload summaries.
-- **Contract tests:** canonical exercise identity, catalogue delivery, equipment/exercise curation matrix, guide artwork/cache, review-only artwork samples and legacy exercise-name collisions.
+- **Contract tests:** canonical exercise identity, catalogue delivery, equipment/exercise curation matrix, catalogue schema/evidence review, guide artwork/cache, review-only artwork samples and legacy exercise-name collisions.
 - **Mirror check:** `tests/check-v21-2-bundle.js` verifies canonical source files match the browser bundles.
 - **Browser integration:** `tests/browser-validation.js` launches Chromium and checks the real V21.2 app, migration, persistence, workout flow, offline shell, cache behavior and related UI. Its sequential integration flow is intentionally kept intact during this housekeeping audit.
 - **Fixtures:** `tests/fixtures/` contains isolated migration and offline-shell fixtures; tests should not operate on real user data.
@@ -24,10 +24,10 @@ Run all Node test files:
 node --test tests/*.test.js
 ```
 
-Run the equipment/exercise curation matrix contract:
+Run the equipment/exercise curation matrix and catalogue schema contracts:
 
 ```sh
-node --test tests/equipment-exercise-curation-matrix.test.js
+node --test tests/equipment-exercise-curation-matrix.test.js tests/catalogue-schema-evidence-review.test.js
 ```
 
 Run the canonical/browser bundle check and app syntax check:

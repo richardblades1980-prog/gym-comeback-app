@@ -37,6 +37,8 @@ jobs:
         run: node --test tests/gym-base-programme.test.js
       - name: Run equipment and exercise curation matrix contract
         run: node --test tests/equipment-exercise-curation-matrix.test.js
+      - name: Run catalogue schema and evidence review contract
+        run: node --test tests/catalogue-schema-evidence-review.test.js
       - name: Run persisted Gym workout engine tests
         run: node --test tests/gym-workout.test.js
       - name: Run Gym progression and history service tests

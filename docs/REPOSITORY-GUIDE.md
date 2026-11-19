@@ -34,6 +34,7 @@ Do not delete or consolidate assets based only on matching names, file counts or
 - [Adaptive Brain historical rules audit](V21.2-ADAPTIVE-BRAIN-HISTORICAL-AUDIT.md) (design evidence; not implementation approval)
 - [Equipment and exercise library design](V21.2-EQUIPMENT-EXERCISE-LIBRARY-DESIGN.md) (source-grounded proposal; no selectors or production catalogue are implemented yet)
 - [Equipment and exercise curation matrix](V21.2-EQUIPMENT-EXERCISE-CURATION-MATRIX.md) (44 equipment choices, 42 exercise rows and 32 programme slots; all remain unreviewed/unassigned)
+- [Catalogue schema and evidence review](V21.2-CATALOGUE-SCHEMA-EVIDENCE-REVIEW.md) (proposed equipment payload v2, OR/AND equipment requirements and separate persistent restriction gate)
 - [V21.2A architecture](V21.2A-ARCHITECTURE.md)
 - [Continuation handover](../PROJECT_COMEBACK_CHATGPT_HANDOVER.md)
 - [Test guide](../tests/README.md)
