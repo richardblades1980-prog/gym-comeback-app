@@ -304,8 +304,8 @@
     if (value !== value.trim()) fail(field + " must be trimmed.");
     if ([...value].length > 1000) fail(field + " exceeds 1,000 Unicode characters.");
     if (/[\r\n\u0000-\u001f\u007f]/.test(value)) fail(field + " must be a single paragraph without control characters.");
-    if (/<[^>]*>|\\[[^\\]]+\\]\\([^)]*\\)|(^|\\s)#{1,6}\\s|(^|\\s)[>*]\\s|\\*\\*|__|~~|`{1,3}/m.test(value)) {
     if (/<[^>]*>|\[[^\]]+\]\([^)]*\)|^#{1,6}\s|^>\s|^[-*+]\s|\*\*|__|~~|`{1,3}|\*[^*]+\*|_[^_]+_/m.test(value)) {
+      fail(field + " must be plain text without HTML or Markdown.");
     }
   }
   async function validateDescriptionBinding(subject, field) {
