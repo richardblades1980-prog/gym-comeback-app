@@ -76,7 +76,7 @@ test("typed equipment API defaults unknown availability and keeps physical insta
   await assert.rejects(() => db.addUserEquipment(customRecord("wrong-owner", { profileId: "profile-missing" })), /existing profile/);
   await assert.rejects(() => db.addUserEquipment(customRecord("bad-location", {
     location: { id: "gym", label: "Gym", inferred: true }
-  })), /unsupported field/);
+  })), /invalid identity/);
   await assert.rejects(() => db.add("equipment", customRecord("generic-add")), /addUserEquipment/);
 });
 
