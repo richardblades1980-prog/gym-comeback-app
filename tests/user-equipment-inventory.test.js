@@ -28,22 +28,6 @@ async function reset(db, backup) {
   await db.put("profile", { id: "profile-main", displayName: "Test profile" });
 }
 
-function customRecord(id, overrides) {
-  return Object.assign({
-    id: "user-equipment:" + id,
-    recordType: "user-equipment-access",
-    schemaVersion: 1,
-    profileId: "profile-main",
-    moduleId: "gym",
-    itemKind: "custom",
-    customName: "User described machine",
-    location: { id: "gym", label: "Gym" },
-    availability: "unknown",
-    status: "active",
-    confirmedConfiguration: {}
-  }, overrides || {});
-}
-
 function v1Envelope(backup, equipment) {
   const data = Object.fromEntries(backup.legacyStores.map(name => [name, []]));
   data.profile = [{ id: "profile-main", displayName: "Test" }];
@@ -78,6 +62,71 @@ test("typed equipment API defaults unknown availability and keeps physical insta
     location: { id: "gym", label: "Gym", inferred: true }
   })), /invalid identity/);
   await assert.rejects(() => db.add("equipment", customRecord("generic-add")), /addUserEquipment/);
+});
+
+test("schema v1 records remain unchanged and schema v2 defaults weight status to unknown", async () => {
+  const { db, backup } = load();
+  await reset(db, backup);
+  const legacyTyped = customRecord("v1-unchanged");
+  await db.addUserEquipment(legacyTyped);
+  const savedV1 = await db.get("equipment", legacyTyped.id);
+  assert.equal(savedV1.schemaVersion, 1);
+  assert.equal(savedV1.weightInventory, undefined);
+  const v2 = customRecord("v2-unknown", { schemaVersion: 2 });
+  await db.addUserEquipment(v2);
+  const savedV2 = await db.get("equipment", v2.id);
+  assert.deepEqual(JSON.parse(JSON.stringify(savedV2.weightInventory)), { status: "unknown", entries: [] });
+  await assert.rejects(() => db.updateUserEquipment(Object.assign({}, savedV1, {
+    schemaVersion: 2, weightInventory: { status: "unknown", entries: [] }
+  })), /schemaVersion/);
+});
+
+test("schema v2 records validate free-weight quantities and round-trip integer grams", async () => {
+  const { db, backup } = load();
+  await reset(db, backup);
+  const record = customRecord("structured-free-weights", {
+    schemaVersion: 2,
+    customName: "Free weights inventory",
+    weightInventory: confirmedWeightInventory()
+  });
+  await db.addUserEquipment(record);
+  const saved = await db.get("equipment", record.id);
+  assert.deepEqual(JSON.parse(JSON.stringify(saved.weightInventory)), confirmedWeightInventory());
+  assert.equal(saved.weightInventory.entries[0].quantity, 2);
+  assert.equal(saved.weightInventory.entries[2].incrementMassGrams, 500);
+  assert.equal(saved.weightInventory.entries[3].massGrams, 20000);
+  const backupEnvelope = await backup.createBackup();
+  await db.updateUserEquipment(Object.assign({}, saved, { availability: "temporarily-unavailable" }));
+  await backup.restoreBackup(backupEnvelope, { confirmed: true });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(await db.get("equipment", record.id).then(row => row.weightInventory))),
+    confirmedWeightInventory()
+  );
+});
+
+test("schema v2 rejects ambiguous, fractional, incomplete and inconsistent weight data", async () => {
+  const { db, backup } = load();
+  await reset(db, backup);
+  const invalid = [
+    { status: "confirmed", entries: [] },
+    { status: "unknown", entries: [{ id: "not-known", kind: "fixed" }] },
+    { status: "confirmed", entries: [{ id: "fractional", kind: "fixed", equipmentType: "dumbbell", massGrams: 2500.5, quantity: 2, grouping: "matched-pairs" }] },
+    { status: "confirmed", entries: [{ id: "fractional-count", kind: "fixed", equipmentType: "dumbbell", massGrams: 2500, quantity: 2.5, grouping: "individual" }] },
+    { status: "confirmed", entries: [{ id: "odd-pair", kind: "fixed", equipmentType: "dumbbell", massGrams: 2500, quantity: 3, grouping: "matched-pairs" }] },
+    { status: "confirmed", entries: [{ id: "bad-range", kind: "adjustable-dumbbell", handleCount: 2, minimumMassGrams: 2500, maximumMassGrams: 10000, incrementMassGrams: 3000 }] },
+    { status: "confirmed", entries: [
+      { id: "duplicate", kind: "fixed", equipmentType: "dumbbell", massGrams: 2500, quantity: 2, grouping: "matched-pairs" },
+      { id: "duplicate", kind: "fixed", equipmentType: "dumbbell", massGrams: 5000, quantity: 2, grouping: "matched-pairs" }
+    ] }
+  ];
+  for (let i = 0; i < invalid.length; i++) {
+    await assert.rejects(() => db.addUserEquipment(customRecord("invalid-" + i, {
+      schemaVersion: 2, weightInventory: invalid[i]
+    })));
+  }
+  await assert.rejects(() => db.addUserEquipment(customRecord("v1-extra-weight-field", {
+    weightInventory: { status: "unknown", entries: [] }
+  })), /unsupported field/);
 });
 
 test("catalogue inventory requires exact retained release identity and cannot silently rebind", async () => {
@@ -128,7 +177,7 @@ test("V1 restore preview and restore preserve validated typed inventory while re
   const { db, backup } = load();
   await reset(db, backup);
   const legacyBefore = { id: "legacy-equipment-before", legacyKey: "gym-comeback-gear", legacyRawValue: "{\"gym\":[\"old\"]}", migratedFromLegacy: true };
-  const typed = customRecord("keep-on-v1-restore");
+  const typed = customRecord("keep-on-v1-restore", { schemaVersion: 2, weightInventory: confirmedWeightInventory() });
   await db.put("equipment", legacyBefore);
   await db.addUserEquipment(typed);
   const savedTyped = await db.get("equipment", typed.id);
@@ -178,9 +227,11 @@ test("V2 backup and restore round-trip typed and legacy equipment records exactl
   await reset(db, backup);
   const legacy = { id: "legacy-gear", legacyKey: "gym-comeback-gear", legacyRawValue: "{\"home\":[\"mat\"]}", migratedFromLegacy: true };
   const typed = customRecord("v2-round-trip", {
+    schemaVersion: 2,
     location: { id: "home", label: "Home" },
     availability: "temporarily-unavailable",
-    confirmedConfiguration: { loadingSystemId: "pin-selected-test", setupAttributeIds: ["adjustable-test"] }
+    confirmedConfiguration: { loadingSystemId: "pin-selected-test", setupAttributeIds: ["adjustable-test"] },
+    weightInventory: confirmedWeightInventory()
   });
   await db.put("equipment", legacy);
   await db.addUserEquipment(typed);
