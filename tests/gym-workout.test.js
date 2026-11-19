@@ -88,8 +88,9 @@ test("a new programme week pre-fills editable values by exact source slot withou
   assert.equal(nextWeek.prefillSummary.sourceWeeks[0], 1);
   assert.equal(nextExercise.sets[0].weight, "25");
   assert.equal(nextExercise.sets[0].reps, "10");
-  assert.equal(nextExercise.sets[1].weight, "27.5");
-  assert.equal(nextExercise.sets[1].reps, "8");
+  assert.equal(nextExercise.sets[1].weight, "25");
+  assert.equal(nextExercise.sets[1].reps, "10");
+  assert.equal(nextExercise.sets[1].fieldOrigins.weight, "first-set");
   assert.equal(nextExercise.sets[0].status, "not-started");
   assert.equal(nextExercise.sets[1].status, "locked");
   assert.equal(nextExercise.sets[0].startedAt, undefined);
@@ -111,6 +112,42 @@ test("starting the same day and date resumes the existing in-progress session in
   assert.equal(second.resumed, true);
   assert.equal(second.workout.session.id, first.workout.session.id);
   assert.equal(await db.count("sessions"), 1);
+});
+
+test("first-set values seed later unstarted sets while later manual edits remain independent", async () => {
+  const { db, workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const exercise = created.workout.exerciseRecords[0];
+
+  await workout.updateSetValues(created.workout, exercise.id, 1, { weight: "15", reps: "10" });
+  assert.deepEqual(exercise.sets.slice(1).map(set => [set.weight, set.reps]), [
+    ["15", "10"], ["15", "10"]
+  ]);
+  assert.equal(exercise.sets[1].fieldOrigins.weight, "first-set");
+  assert.equal(exercise.sets[2].fieldOrigins.reps, "first-set");
+  assert.equal(exercise.sets[1].status, "locked");
+  assert.equal(exercise.sets[2].status, "locked");
+  assert.equal(exercise.sets[1].startedAt, undefined);
+
+  await workout.startSet(created.workout, exercise.id, 1);
+  await workout.completeSet(created.workout, exercise.id, 1);
+  await workout.updateSetValues(created.workout, exercise.id, 2, { weight: "17" });
+  assert.equal(exercise.sets[1].weight, "17");
+  assert.equal(exercise.sets[1].fieldOrigins.weight, "user");
+  assert.equal(exercise.sets[2].weight, "15");
+
+  await workout.updateSetValues(created.workout, exercise.id, 1, { weight: "20" });
+  assert.equal(exercise.sets[1].weight, "17");
+  assert.equal(exercise.sets[2].weight, "20");
+  assert.equal(exercise.sets[2].fieldOrigins.weight, "first-set");
+
+  const loaded = await workout.loadSession(created.workout.session.id);
+  const savedExercise = loaded.exerciseRecords[0];
+  assert.deepEqual(savedExercise.sets.map(set => set.weight), ["20", "17", "20"]);
+  assert.equal(savedExercise.sets[1].fieldOrigins.weight, "user");
+  assert.equal(savedExercise.sets[2].fieldOrigins.weight, "first-set");
+  const savedRows = await db.getAllByIndex("setRecords", "by_session", created.workout.session.id);
+  assert.equal(savedRows.find(set => set.setNumber === 3 && set.exerciseRecordId === exercise.id).weight, "20");
 });
 
 test("set entry persists, later sets stay locked, completion unlocks the next set, and undo preserves entered values", async () => {

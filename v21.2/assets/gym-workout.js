@@ -7,7 +7,7 @@
   const PROGRAMME_ID = "gym-base-programme-source-v1";
   const MAX_SETS = 8;
   const REST_PRESETS = Object.freeze([45, 60, 75, 90, 120, 150, 180]);
-  const SET_STATUSES = Object.freeze(["locked", "not-started", "in-progress", "completed"]);
+  const SET_STATUSES = Object.freeze(["locked", "not-started", "in-progress", "completed"]);\n  const FIRST_SET_AUTOFILL_FIELDS = Object.freeze(["weight", "reps", "targetDuration"]);
 
   function requiredString(value, label) {
     if (typeof value !== "string" || !value.trim()) throw new Error(label + " is required.");
@@ -34,6 +34,30 @@
   }
   function sortSets(a, b) {
     return Number(a.setNumber) - Number(b.setNumber);
+  }
+  function hasStoredValue(value) {
+    return value !== undefined && value !== null && String(value).trim() !== "";
+  }
+  function setFieldOrigin(set, field, origin) {
+    set.fieldOrigins = Object.assign({}, set.fieldOrigins || {});
+    set.fieldOrigins[field] = origin;
+  }
+  function seedUnstartedSetsFromFirst(exercise, sets) {
+    const exerciseSets = sets.filter(set => set.exerciseRecordId === exercise.id).sort(sortSets);
+    const first = exerciseSets.find(set => set.setNumber === 1);
+    if (!first) return;
+    exerciseSets.filter(set => set.setNumber > 1 &&
+      (set.status === "locked" || set.status === "not-started")
+    ).forEach(target => {
+      FIRST_SET_AUTOFILL_FIELDS.forEach(field => {
+        if (!hasStoredValue(first[field])) return;
+        const origin = target.fieldOrigins && target.fieldOrigins[field];
+        if (origin === "user") return;
+        if (origin !== "first-set" && origin !== "previous-week" && hasStoredValue(target[field])) return;
+        target[field] = String(first[field]);
+        setFieldOrigin(target, field, "first-set");
+      });
+    });
   }
 
   async function loadSession(sessionId) {
@@ -192,10 +216,12 @@
           const value = priorSet[field];
           if (value !== undefined && value !== null && String(value).trim() !== "") {
             set[field] = String(value);
+            setFieldOrigin(set, field, "previous-week");
             copiedForExercise = true;
           }
         });
       });
+      seedUnstartedSetsFromFirst(exercise, setRecords);
       if (copiedForExercise) {
         prefilledExerciseCount += 1;
         prefilledWeeks.add(previous.week);
@@ -302,18 +328,33 @@
     const set = getSet(workout, exercise, setNumber);
     if (set.status === "locked") throw new Error("Complete the previous set before editing this set.");
     values = values || {};
+    const changedSets = new Map([[set.id, set]]);
+    const fieldOrigins = Object.assign({}, set.fieldOrigins || {});
     for (const field of ["weight", "reps", "duration", "targetDuration"]) {
-      if (Object.prototype.hasOwnProperty.call(values, field)) {
-        if (typeof values[field] !== "string") throw new Error(field + " must be entered as text.");
-        set[field] = values[field];
-        if (field === "duration") {
-          delete set.stopwatchStartedAt;
-          const seconds = Number(values[field]);
-          set.stopwatchElapsedMs = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : 0;
-        }
+      if (!Object.prototype.hasOwnProperty.call(values, field)) continue;
+      if (typeof values[field] !== "string") throw new Error(field + " must be entered as text.");
+      set[field] = values[field];
+      fieldOrigins[field] = "user";
+      if (field === "duration") {
+        delete set.stopwatchStartedAt;
+        const seconds = Number(values[field]);
+        set.stopwatchElapsedMs = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : 0;
+      }
+      if (set.setNumber === 1 && FIRST_SET_AUTOFILL_FIELDS.includes(field)) {
+        exercise.sets.filter(target => target.setNumber > 1 &&
+          (target.status === "locked" || target.status === "not-started")
+        ).forEach(target => {
+          const targetOrigin = target.fieldOrigins && target.fieldOrigins[field];
+          if (targetOrigin === "user") return;
+          if (targetOrigin !== "first-set" && targetOrigin !== "previous-week" && hasStoredValue(target[field])) return;
+          target[field] = values[field];
+          setFieldOrigin(target, field, "first-set");
+          changedSets.set(target.id, target);
+        });
       }
     }
-    await saveChanges(workout, [], [set.id]);
+    set.fieldOrigins = fieldOrigins;
+    await saveChanges(workout, [], Array.from(changedSets.keys()));
     return set;
   }
 
