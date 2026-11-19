@@ -246,9 +246,6 @@ function server() {
     null, { timeout: 10000 });
     await cleanStartPage.locator('.equipment-record[data-location-id="gym"]').getByRole("button", { name: "Temporarily unavailable" }).click();
     await cleanStartPage.waitForFunction(async () => (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0]?.availability === "temporarily-unavailable");
-    const unavailable = await cleanStartPage.evaluate(async () =>
-      (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0].availability);
-    if (unavailable !== "temporarily-unavailable") throw new Error("E1 availability change was not persisted.");
     cleanStartPage.once("dialog", dialog => dialog.accept());
     await cleanStartPage.locator('.equipment-record[data-location-id="home"]').getByRole("button", { name: "Retire" }).click();
     await cleanStartPage.waitForFunction(async () => (await ProjectComebackDB.listUserEquipment("gym-profile")).length === 1);
