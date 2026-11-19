@@ -15,7 +15,7 @@ test("C1 is a G2 HOLD and explicitly requires owner approval", () => {
 });
 
 test("v2 extends but does not rewrite the verified v1 catalogue release contract", () => {
-  assert.match(source, /existing v1 validation path/);
+  assert.match(source, /current v1 validation path/);
   assert.match(source, /A v1 release does not have structured equipment definitions/);
   assert.match(source, /A client that cannot read v2 must never be directed to a v2 manifest\/asset/);
   assert.match(source, /do not rewrite v1 manifests or release payloads/);
@@ -45,7 +45,7 @@ test("movement-demand metadata fails closed and is review-bound", () => {
   assert.match(source, /unknown\/incomplete/);
   assert.match(source, /reviewed candidate/);
   assert.match(source, /does not authenticate a reviewer or prove professional qualification/);
-  assert.match(source, /not medical clearance/);
+  assert.match(source, /provide medical clearance/);
 });
 
 test("C3 restrictions, UI, production asset, and Adaptive Brain are expressly excluded", () => {
