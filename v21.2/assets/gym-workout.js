@@ -403,7 +403,7 @@
       workout.session.restSetNumber = setNumber;
     } else clearRest(workout.session);
     await dbService().updateGymWorkoutBundle({ sessionId: workout.session.id, session: workout.session, exerciseRecords: [exercise], setRecords: [set, ...exercise.sets.filter(item => item.status === "not-started" && item.setNumber === setNumber + 1)] });
-    return { set, exerciseCompleted: exercise.status === "completed", restStarted: Boolean(nextSet && restSeconds > 0) };
+    return { set, exerciseCompleted: exercise.status === "completed", restStarted: Boolean(hasFollowingSet && restSeconds > 0) };
   }
 
   function clearRest(session) { delete session.restEndAt; delete session.restDurationSeconds; delete session.restExerciseId; delete session.restSetNumber; }
