@@ -2024,7 +2024,7 @@ function server() {
      });
      if (offlineV2CatalogueCheck.status !== "active" || offlineV2CatalogueCheck.releaseId !== "browser-catalogue-v2-r2" ||
          offlineV2CatalogueCheck.equipmentCount !== 1 || offlineV2CatalogueCheck.equipmentId !== "equipment-browser-machine" ||
-         !offlineV2CatalogueCheck.names.some(name => name.startsWith(ProjectComebackCatalogueDelivery.cachePrefix) && name.includes("browser-catalogue-v2-r2"))) {
+         !offlineV2CatalogueCheck.names.some(name => name.startsWith("project-comeback-v21-2a-catalogue-") && name.includes("browser-catalogue-v2-r2"))) {
        throw new Error("V2 equipment lookup did not survive a real offline app reload: " + JSON.stringify(offlineV2CatalogueCheck));
      }
      console.log("PASS v2 equipment-definition lookup survives a real offline app reload");
