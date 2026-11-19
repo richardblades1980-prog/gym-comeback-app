@@ -112,7 +112,7 @@ test("typed equipment records cannot be spoofed through generic writes or hard-d
   await reset(db, backup);
   const record = customRecord("protected");
   await db.addUserEquipment(record);
-  await assert.rejects(() => db.put("equipment", { id: record.id, legacyRawValue: "overwrite" }), /must be updated through the validated inventory contract/);
+  await assert.rejects(() => db.put("equipment", { id: record.id, legacyRawValue: "overwrite" }), /must be updated through updateUserEquipment/);
   await assert.rejects(() => db.remove("equipment", record.id), /cannot be hard-deleted/);
   await db.retireUserEquipment(record.id, "profile-main");
   assert.equal((await db.listUserEquipment("profile-main")).length, 0);
