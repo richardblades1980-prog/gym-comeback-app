@@ -313,7 +313,9 @@
       throw new Error("Records must have a stable, non-empty id.");
     }
     await assertProgrammeRecordMutable(name, record);
-    if (name === "equipment" && record.recordType === USER_EQUIPMENT_RECORD_TYPE) validateUserEquipmentAccessRecord(record);
+    if (name === "equipment" && record.recordType === USER_EQUIPMENT_RECORD_TYPE) {
+      throw new Error("Typed user equipment records must be created through addUserEquipment.");
+    }
     if (name === "identityReviewEvents") {
       if (record.eventSchemaVersion !== 1 || !record.profileId || !record.idempotencyKey || !record.actor ||
           typeof record.sourceExactValue !== "string" || !record.sourceNamespace ||
@@ -624,11 +626,9 @@
     await assertProgrammeRecordMutable(name, record);
     if (name === "equipment") {
       const existing = await get("equipment", record.id);
-      if (record.recordType === USER_EQUIPMENT_RECORD_TYPE) {
-        validateUserEquipmentAccessRecord(record);
-        if (existing && existing.recordType === USER_EQUIPMENT_RECORD_TYPE) assertUserEquipmentIdentityUnchanged(existing, record);
-      } else if (existing && existing.recordType === USER_EQUIPMENT_RECORD_TYPE) {
-        throw new Error("Typed user equipment records must be updated through the validated inventory contract.");
+      if ((record.recordType === USER_EQUIPMENT_RECORD_TYPE) ||
+          (existing && existing.recordType === USER_EQUIPMENT_RECORD_TYPE)) {
+        throw new Error("Typed user equipment records must be updated through updateUserEquipment.");
       }
     }
     const now = new Date().toISOString();
@@ -672,8 +672,11 @@
     const prepared = Object.assign({ status: "active", availability: "unknown", confirmedConfiguration: {} }, record);
     if (record && record.status && record.status !== "active") throw new Error("New user equipment records must start active.");
     validateUserEquipmentAccessRecord(prepared);
+    if (!await get("profile", prepared.profileId)) throw new Error("User equipment must belong to an existing profile.");
     await assertUserEquipmentCatalogueRelease(prepared);
-    return add("equipment", prepared);
+    const now = new Date().toISOString();
+    const saved = Object.assign({}, prepared, { createdAt: prepared.createdAt || now, updatedAt: now });
+    return withStore("equipment", "readwrite", store => requestResult(store.add(saved)));
   }
 
   async function updateUserEquipment(record) {
@@ -682,8 +685,10 @@
     if (!existing || existing.recordType !== USER_EQUIPMENT_RECORD_TYPE) throw new Error("Typed user equipment record was not found.");
     assertUserEquipmentIdentityUnchanged(existing, record);
     validateUserEquipmentAccessRecord(record);
+    if (!await get("profile", record.profileId)) throw new Error("User equipment must belong to an existing profile.");
     await assertUserEquipmentCatalogueRelease(record);
-    return put("equipment", record);
+    const saved = Object.assign({}, record, { createdAt: existing.createdAt, updatedAt: new Date().toISOString() });
+    return withStore("equipment", "readwrite", store => requestResult(store.put(saved)));
   }
 
   async function retireUserEquipment(id, profileId) {
