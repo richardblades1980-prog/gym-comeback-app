@@ -123,6 +123,8 @@
     });
     const targetCopy = Object.assign({}, target);
     delete targetCopy.reviewBinding;
+    delete targetCopy.description;
+    delete targetCopy.descriptionReviewBinding;
     const actualDigest = await sha256(new TextEncoder().encode(stableJson(targetCopy)));
     if (actualDigest !== binding.targetDigest) fail(field + " review target digest does not match the reviewed content.");
   }
