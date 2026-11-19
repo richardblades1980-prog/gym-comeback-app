@@ -88,18 +88,24 @@ test("a new programme week pre-fills editable values by exact source slot withou
   assert.equal(nextWeek.prefillSummary.sourceWeeks[0], 1);
   assert.equal(nextExercise.sets[0].weight, "25");
   assert.equal(nextExercise.sets[0].reps, "10");
-  assert.equal(nextExercise.sets[1].weight, "25");
-  assert.equal(nextExercise.sets[1].reps, "10");
-  assert.equal(nextExercise.sets[1].fieldOrigins.weight, "first-set");
+  assert.equal(nextExercise.sets[1].weight, "27.5");
+  assert.equal(nextExercise.sets[1].reps, "8");
+  assert.equal(nextExercise.sets[1].fieldOrigins.weight, "user");
+  assert.equal(nextExercise.sets[2].weight, "25");
+  assert.equal(nextExercise.sets[2].fieldOrigins.weight, "first-set");
   assert.equal(nextExercise.sets[0].status, "not-started");
   assert.equal(nextExercise.sets[1].status, "locked");
   assert.equal(nextExercise.sets[0].startedAt, undefined);
   assert.equal(nextExercise.sets[0].completedAt, undefined);
 
   await workout.updateSetValues(nextWeek.workout, nextExercise.id, 1, { weight: "30" });
+  assert.equal(nextExercise.sets[1].weight, "27.5");
+  assert.equal(nextExercise.sets[2].weight, "30");
   const resumed = await workout.startSession(1, "2026-11-19", { week: 2 });
   assert.equal(resumed.resumed, true);
   assert.equal(resumed.workout.exerciseRecords[0].sets[0].weight, "30");
+  assert.equal(resumed.workout.exerciseRecords[0].sets[1].weight, "27.5");
+  assert.equal(resumed.workout.exerciseRecords[0].sets[2].weight, "30");
   const original = await db.get("setRecords", priorExercise.sets[0].id);
   assert.equal(original.weight, "25");
 });

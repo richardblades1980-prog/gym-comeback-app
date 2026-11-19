@@ -54,7 +54,7 @@
         if (!hasStoredValue(first[field])) return;
         const origin = target.fieldOrigins && target.fieldOrigins[field];
         if (origin === "user") return;
-        if (origin !== "first-set" && origin !== "previous-week" && hasStoredValue(target[field])) return;
+        if (origin !== "first-set" && hasStoredValue(target[field])) return;
         target[field] = String(first[field]);
         setFieldOrigin(target, field, "first-set");
       });
@@ -217,7 +217,8 @@
           const value = priorSet[field];
           if (value !== undefined && value !== null && String(value).trim() !== "") {
             set[field] = String(value);
-            setFieldOrigin(set, field, "previous-week");
+            const priorOrigin = priorSet.fieldOrigins && priorSet.fieldOrigins[field];
+            setFieldOrigin(set, field, priorOrigin === "first-set" ? "first-set" : "user");
             copiedForExercise = true;
           }
         });
@@ -347,7 +348,7 @@
         ).forEach(target => {
           const targetOrigin = target.fieldOrigins && target.fieldOrigins[field];
           if (targetOrigin === "user") return;
-          if (targetOrigin !== "first-set" && targetOrigin !== "previous-week" && hasStoredValue(target[field])) return;
+          if (targetOrigin !== "first-set" && hasStoredValue(target[field])) return;
           target[field] = values[field];
           setFieldOrigin(target, field, "first-set");
           changedSets.set(target.id, target);
