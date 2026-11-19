@@ -73,6 +73,11 @@ test("typed equipment API defaults unknown availability and keeps physical insta
   assert.ok(rows.every(row => row.availability === "unknown"));
   assert.equal((await db.listUserEquipment("another-profile")).length, 0);
   assert.equal((await db.listUserEquipment("profile-main", "home")).length, 0);
+  await assert.rejects(() => db.addUserEquipment(customRecord("wrong-owner", { profileId: "profile-missing" })), /existing profile/);
+  await assert.rejects(() => db.addUserEquipment(customRecord("bad-location", {
+    location: { id: "gym", label: "Gym", inferred: true }
+  })), /unsupported field/);
+  await assert.rejects(() => db.add("equipment", customRecord("generic-add")), /addUserEquipment/);
 });
 
 test("catalogue inventory requires exact retained release identity and cannot silently rebind", async () => {
