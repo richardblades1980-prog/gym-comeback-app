@@ -735,7 +735,7 @@ $("equipment-form").addEventListener("submit",async event=>{
    if(instance)updated.instanceLabel=instance;else delete updated.instanceLabel;
    await ProjectComebackDB.updateUserEquipment(updated);
   }else{
-   const record={id:makeId("user-equipment"),recordType:"user-equipment-access",schemaVersion:1,profileId:"gym-profile",moduleId:"gym",itemKind:"custom",customName:name,location,availability,status:"active",confirmedConfiguration};
+   const record={id:"user-equipment:"+makeId("equipment"),recordType:"user-equipment-access",schemaVersion:1,profileId:"gym-profile",moduleId:"gym",itemKind:"custom",customName:name,location,availability,status:"active",confirmedConfiguration};
    if(instance)record.instanceLabel=instance;
    await ProjectComebackDB.addUserEquipment(record);
   }
