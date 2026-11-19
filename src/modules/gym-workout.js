@@ -390,9 +390,13 @@
     set.completedAt = new Date().toISOString();
     unlockNext(exercise);
     updateExerciseStatus(exercise);
-    const nextSet = exercise.sets.find(item => item.setNumber > setNumber && item.status === "not-started");
+    const exerciseIndex = workout.exerciseRecords.findIndex(item => item.id === exercise.id);
+    const nextSetInExercise = exercise.sets.some(item => item.setNumber > setNumber && item.status === "not-started");
+    const nextExerciseHasSet = workout.exerciseRecords.slice(exerciseIndex + 1)
+      .some(nextExercise => nextExercise.sets.some(item => item.status === "not-started"));
+    const hasFollowingSet = nextSetInExercise || nextExerciseHasSet;
     const restSeconds = Number(exercise.restSeconds) || 90;
-    if (nextSet && restSeconds > 0) {
+    if (hasFollowingSet && restSeconds > 0) {
       workout.session.restEndAt = Date.now() + restSeconds * 1000;
       workout.session.restDurationSeconds = restSeconds;
       workout.session.restExerciseId = exercise.id;

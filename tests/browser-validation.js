@@ -728,7 +728,15 @@ function server() {
     await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));
     await app.locator('[data-gym-action="rest-cancel"]').click();
     await app.waitForFunction(() => !document.querySelector("#gym-rest-timer"));
-    console.log("PASS persisted rest countdown, +15, skip/cancel, undo cleanup, and per-exercise rest override");
+    const thirdSetRow = firstExercise.locator(".gym-set-row").nth(2);
+    await thirdSetRow.locator('[data-gym-action="start"]').click();
+    await thirdSetRow.locator('[data-gym-action="complete"]').click();
+    await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));
+    const betweenExerciseTimer = await app.locator("#gym-rest-label").textContent();
+    if (!betweenExerciseTimer.includes("after set 3")) throw new Error("Rest timer did not start after the last set before the next exercise: " + betweenExerciseTimer);
+    await app.locator('[data-gym-action="rest-skip"]').click();
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer"));
+    console.log("PASS persisted rest countdown, +15, skip/cancel, undo cleanup, per-exercise rest override, and between-exercise rest");
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
 
     console.log("[browser] Save-first six-second celebration, Skip/Dismiss and saved-record preservation");

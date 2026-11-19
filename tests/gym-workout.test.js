@@ -258,6 +258,24 @@ test("smart rest starts on set completion, persists absolute end time, supports 
 });
 
 
+test("smart rest also starts after the last set when another exercise follows", async () => {
+  const { workout } = await setup();
+  const created = await workout.startSession(1, "2026-11-18");
+  const firstExercise = created.workout.exerciseRecords[0];
+  await workout.startSet(created.workout, firstExercise.id, 1);
+  await workout.completeSet(created.workout, firstExercise.id, 1);
+  await workout.skipRest(created.workout);
+  await workout.startSet(created.workout, firstExercise.id, 2);
+  await workout.completeSet(created.workout, firstExercise.id, 2);
+  await workout.skipRest(created.workout);
+  await workout.startSet(created.workout, firstExercise.id, 3);
+  const result = await workout.completeSet(created.workout, firstExercise.id, 3);
+  assert.equal(result.restStarted, true);
+  assert.ok(Number.isFinite(created.workout.session.restEndAt));
+  assert.equal(created.workout.session.restExerciseId, firstExercise.id);
+  assert.equal(created.workout.session.restSetNumber, 3);
+});
+
 test("finishing a workout commits first and leaves the live session retryable after a failed write", async () => {
   const { db, workout, window } = await setup();
   const created = await workout.startSession(1, "2026-11-18");
