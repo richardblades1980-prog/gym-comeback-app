@@ -38,7 +38,16 @@
         "movement_review_status": "incomplete"
       }
     ],
-    "Variations": [],
+    "Variations": [
+      {
+        "variation_id": "",
+        "proposal_key": "proposal-variation-001",
+        "parent_exercise_id_or_key": "proposal-exercise-001",
+        "name": "Test seated press variation",
+        "equipment_review_status": "incomplete",
+        "movement_review_status": "incomplete"
+      }
+    ],
     "Vocabulary": [
       {
         "category": "equipmentFamilies",
@@ -83,22 +92,27 @@
     "Movement Involvement": [],
     "Movement Coverage": [],
     "Movement Equipment Constraints": [],
-    "Alias Proposals": [
-      {
-        "subject_type": "exercise",
-        "subject_id_or_key": "proposal-exercise-001",
-        "alias_text": "Test alternate label",
-        "locale": "en-AU",
-        "alias_status": "proposed"
-      }
-    ],
     "Description Proposals": [
       {
+        "subject_type": "equipment",
+        "subject_id_or_key": "proposal-equipment-001",
+        "description": "Synthetic test-only equipment description.",
+        "description_status": "proposed",
+        "source_ref": "test-only:synthetic-equipment-description"
+      },
+      {
         "subject_type": "exercise",
         "subject_id_or_key": "proposal-exercise-001",
-        "description": "Synthetic test-only description.",
+        "description": "Synthetic test-only exercise description.",
         "description_status": "proposed",
-        "source_ref": "test-only:synthetic-description"
+        "source_ref": "test-only:synthetic-exercise-description"
+      },
+      {
+        "subject_type": "variation",
+        "subject_id_or_key": "proposal-variation-001",
+        "description": "Synthetic test-only variation description.",
+        "description_status": "proposed",
+        "source_ref": "test-only:synthetic-variation-description"
       }
     ],
     "Review Notes": [
@@ -129,8 +143,38 @@
       "expected": "conflict-no-auto-rebase"
     },
     {
-      "case": "description-alias-publish-on-current-v2",
-      "expected": "blocked-pending-schema-evolution"
+      "case": "description-publish-on-current-v2",
+      "expected": "blocked-pending-v3-reader"
+    },
+    {
+      "case": "description-over-1000-characters",
+      "expected": "hard-error"
+    },
+    {
+      "case": "description-html-or-markdown",
+      "expected": "hard-error"
+    },
+    {
+      "case": "description-edited-after-review",
+      "expected": "review-binding-invalidated"
+    },
+    {
+      "case": "v1-v2-reader-receives-v3-payload",
+      "expected": "unsupported-schema-rejected"
     }
-  ]
+  ],
+  "schemaDesign": {
+    "cataloguePayloadSchema": 3,
+    "descriptionSubjects": [
+      "equipment",
+      "exercise",
+      "variation"
+    ],
+    "descriptionOptional": true,
+    "maxUnicodeCharacters": 1000,
+    "format": "plain-text-single-paragraph",
+    "descriptionReviewBinding": "generated-by-trusted-publisher",
+    "generalCatalogueAliases": false,
+    "legacyExerciseAliasStore": "preserved-outside-workbook"
+  }
 }
