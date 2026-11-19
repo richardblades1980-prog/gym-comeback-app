@@ -195,6 +195,72 @@ function server() {
       throw new Error("Fresh V21.2 first run did not remain clean after reload: " + JSON.stringify(cleanStartReload));
     }
     console.log("PASS clean V21.2 start: all user-data stores empty, default modules only, migration untouched and original localStorage untouched");
+    console.log("[browser] E1 My Equipment fresh-profile, multiple-instance, edit, availability, retirement and reload checks");
+    await cleanStartPage.getByRole("button", { name: "My Equipment" }).click();
+    await cleanStartPage.locator("#equipment-workspace").waitFor({ state: "visible" });
+    if (await cleanStartPage.evaluate(() => ProjectComebackDB.get("profile", "gym-profile").then(Boolean)) !== true) {
+      throw new Error("E1 did not initialise the stable local Gym profile on a clean install.");
+    }
+    const equipmentForm = cleanStartPage.locator("#equipment-form");
+    await equipmentForm.locator('[name="customName"]').fill("Leg press");
+    await equipmentForm.locator('[name="instanceLabel"]').fill("45-degree gym machine");
+    await equipmentForm.locator('[name="location"]').selectOption("gym");
+    await equipmentForm.locator('[name="loadingSystem"]').selectOption("plate-loaded");
+    await equipmentForm.locator('[name="movementMechanics"]').selectOption("fixed-path");
+    await equipmentForm.locator('[name="orientation"]').selectOption("45-degree");
+    await equipmentForm.locator('[name="availability"]').selectOption("available");
+    await equipmentForm.getByRole("button", { name: "Save equipment" }).click();
+    await cleanStartPage.locator(".equipment-record").first().waitFor();
+    await equipmentForm.locator('[name="customName"]').fill("Leg press");
+    await equipmentForm.locator('[name="instanceLabel"]').fill("Horizontal home machine");
+    await equipmentForm.locator('[name="location"]').selectOption("home");
+    await equipmentForm.locator('[name="loadingSystem"]').selectOption("pin-selected");
+    await equipmentForm.locator('[name="movementMechanics"]').selectOption("converging");
+    await equipmentForm.locator('[name="orientation"]').selectOption("horizontal");
+    await equipmentForm.locator('[name="availability"]').selectOption("unknown");
+    await cleanStartPage.getByRole("button", { name: "Save equipment" }).click();
+    if (await cleanStartPage.locator(".equipment-record").count() !== 2) {
+      throw new Error("E1 did not preserve two separate physical instances of the same equipment type.");
+    }
+    const separateInstances = await cleanStartPage.evaluate(async () => {
+      const rows = await ProjectComebackDB.listUserEquipment("gym-profile");
+      return rows.map(row => ({ location: row.location.id, loading: row.confirmedConfiguration.loadingSystemId,
+        mechanics: row.confirmedConfiguration.movementMechanicsId, orientation: row.confirmedConfiguration.orientationId }));
+    });
+    if (separateInstances.length !== 2 ||
+        !separateInstances.some(row => row.location === "gym" && row.loading === "plate-loaded" && row.orientation === "45-degree") ||
+        !separateInstances.some(row => row.location === "home" && row.loading === "pin-selected" && row.orientation === "horizontal")) {
+      throw new Error("E1 mixed equipment instance locations or independently confirmed configuration: " + JSON.stringify(separateInstances));
+    }
+    await cleanStartPage.locator(".equipment-record").nth(1).getByRole("button", { name: "Edit" }).click();
+    await equipmentForm.locator('[name="customName"]').fill("Home leg press");
+    await equipmentForm.locator('[name="orientation"]').selectOption("vertical");
+    await cleanStartPage.getByRole("button", { name: "Save changes" }).click();
+    if (!(await cleanStartPage.locator(".equipment-record").nth(1).textContent()).includes("Home leg press")) {
+      throw new Error("E1 equipment edit did not update the selected instance.");
+    }
+    await cleanStartPage.locator(".equipment-record").first().getByRole("button", { name: "Temporarily unavailable" }).click();
+    const unavailable = await cleanStartPage.evaluate(async () =>
+      (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0].availability);
+    if (unavailable !== "temporarily-unavailable") throw new Error("E1 availability change was not persisted.");
+    cleanStartPage.once("dialog", dialog => dialog.accept());
+    await cleanStartPage.locator(".equipment-record").nth(1).getByRole("button", { name: "Retire" }).click();
+    const retired = await cleanStartPage.evaluate(async () => ({
+      active: (await ProjectComebackDB.listUserEquipment("gym-profile")).length,
+      records: await ProjectComebackDB.getAll("equipment")
+    }));
+    if (retired.active !== 1 || !retired.records.some(row => row.recordType === "user-equipment-access" &&
+        row.customName === "Home leg press" && row.status === "retired")) {
+      throw new Error("E1 retirement deleted the record or left it active.");
+    }
+    await cleanStartPage.reload();
+    await cleanStartPage.waitForFunction(() => document.querySelector("#connection-state")?.textContent === "Local database ready");
+    await cleanStartPage.getByRole("button", { name: "My Equipment" }).click();
+    await cleanStartPage.locator("#equipment-workspace").waitFor({ state: "visible" });
+    if (await cleanStartPage.locator(".equipment-record").count() !== 1) {
+      throw new Error("E1 active equipment did not persist after reload.");
+    }
+    console.log("PASS E1 equipment instances remain separate, edits and availability persist, retirement is non-destructive, reload retains active inventory");
     await cleanStartContext.close();
     cleanStartContext = null;
 
@@ -280,6 +346,19 @@ function server() {
         JSON.stringify({ noMigrationWithExistingData, legacySnapshotBeforeV21_2 }));
     }
     console.log("PASS same-origin clean start leaves existing V21.1 localStorage byte-for-byte intact and starts V21.2 user stores empty without an import marker");
+    await v21Page.getByRole("button", { name: "My Equipment" }).click();
+    await v21Page.locator("#equipment-profile-status").waitFor();
+    const migrationGate = await v21Page.evaluate(async () => ({
+      status: document.querySelector("#equipment-profile-status").textContent,
+      workspaceHidden: document.querySelector("#equipment-workspace").hidden,
+      profiles: await ProjectComebackDB.count("profile"),
+      equipment: await ProjectComebackDB.count("equipment")
+    }));
+    if (!migrationGate.status.includes("awaiting migration") || !migrationGate.workspaceHidden ||
+        migrationGate.profiles !== 0 || migrationGate.equipment !== 0) {
+      throw new Error("E1 created a default profile or allowed equipment writes before legacy migration: " + JSON.stringify(migrationGate));
+    }
+    console.log("PASS E1 blocks default-profile creation and equipment writes while legacy Gym data awaits migration");
 
     const coexistence = await legacyPage.evaluate(async () => {
       const rootCacheName = "gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset";
