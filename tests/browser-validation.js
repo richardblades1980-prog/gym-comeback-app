@@ -303,7 +303,7 @@ function server() {
         !coexistence.rootIndexIsLegacy || !coexistence.v21IndexWasNotStoredAsRootIndex ||
         coexistence.sentinel !== "preserve-me" ||
         !v21Controller.endsWith("/gym-comeback-app/v21.2/sw.js") ||
-        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v28") ||
+        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v29") ||
         !coexistenceCacheNames.includes("project-comeback-v21-2a-guides-v1")) {
       throw new Error("V21.1 and V21.2 workers/caches did not coexist without intercepting or overwriting one another: " +
         JSON.stringify({ coexistence, v21Controller, coexistenceCacheNames }));
@@ -340,7 +340,7 @@ function server() {
     if (rootUpdate.state !== "activated" ||
         !rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset-v2") ||
         rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset") ||
-        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v28") ||
+        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v29") ||
         !rootUpdate.cacheNames.includes("project-comeback-v21-2a-guides-v1") ||
         rootUpdate.sentinel !== "preserve-me" ||
         !v21ControllerAfterRootUpdate.endsWith("/gym-comeback-app/v21.2/sw.js")) {
