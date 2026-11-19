@@ -1570,3 +1570,55 @@ The legacy `check.js` source contains `prefillFromPreviousWeek`: values are copi
 ## Release boundary
 
 The fixes are committed to `V21.2-development` only. Published Pages branch `V21.2-pages-release-candidate` remains at `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`. Protected `main` remains at `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No deployment or candidate update has occurred; obtain separate explicit approval before publishing these fixes. No live V21.1 data was read, migrated, deleted or modified.
+
+---
+
+# Gym Comeback V21.2 — Owner-confirmed dual-level set auto-population (2026-11-19)
+
+## Confirmed behaviour
+
+The owner explicitly confirmed **both** programme-week carry-forward and Set 1 auto-population within each exercise.
+
+### Programme week to programme week
+
+- Match the same source programme slot using immutable `programmeSlotId`.
+- Copy each prior set's own weight/reps/duration values to the corresponding set number.
+- Carry a manual per-set override forward independently; a prior Set 2 at 17 kg remains Set 2 at 17 kg next week.
+- Carry the first-set automatic origin as automatic, so those fields remain eligible to follow Set 1.
+- Never overwrite/resume an existing session or copy set status/timestamps.
+
+### Within the active exercise
+
+- Set 1 is the default source for later sets of that same exercise.
+- Weight and reps copy to all later locked/not-started sets. For timed exercises, target duration may copy; actual measured duration does not.
+- Automatic fields show “From Set 1 · editable”.
+- Editing a later set marks the edited field as user-owned. That value does not flow to subsequent sets.
+- Changing Set 1 updates only later fields still marked as automatic defaults. User-owned values stay put.
+- Started/completed sets are not touched. Existing set-order locking is unchanged.
+
+### Implementation details
+
+- Per-field provenance stored in existing set-record objects, e.g. `fieldOrigins.weight = "first-set"` or `"user"`.
+- No database schema/version/store/index or backup-format change.
+- Source engine and offline bundle are identical.
+- V21.2 shell cache is v30.
+
+## Adaptive Brain approval contract
+
+The owner requires every adaptive suggestion to notify them and wait for explicit approval. Future recommendation UI must show the reason and exact before/after proposal and offer Apply/OK or Keep current/Dismiss. A proposal is advisory until accepted. Applying a confirmed proposal may adjust Set 1 and the fields still marked as automatic defaults only; never override a user's independent set edit or a started/completed set. Deteriorating symptoms block progression advice.
+
+The archived V10/V19.4/V20 documentation defines advisory progression triggers and symptom precedence, but not a full validated decrease algorithm. No decrease thresholds or additional clinical rules are to be invented.
+
+**Current V21.2 runtime boundary:** progression is currently a descriptive summary, not a live Adaptive Brain proposal/apply engine. This implementation delivers the set auto-population and override behaviour; adaptive recommendation/approval UI remains a separate source-grounded design milestone.
+
+## Exact-SHA validation
+
+Implementation SHA: `5dc5e1540e5ad2e9114767240b7368ef980147ee`.
+
+- Browser [#44432198149 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432198149).
+- Backup [#44432198210 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432198210).
+- Tests cover Set 1 seed, independent later-set edit, Set 1 changing without overwriting manual values, persistence after reload, and cross-week manual override preservation.
+
+## Publication boundary
+
+This remains development-only. Candidate `V21.2-pages-release-candidate` is still `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`. Protected `main` remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`. No deployment, main merge or live-data access/update occurred.
