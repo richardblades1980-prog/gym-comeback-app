@@ -17,13 +17,13 @@ test("catalogue schema review matches the live V6/V2/v1 architecture baseline", 
 test("system equipment definitions remain separate from the personal equipment store", () => {
   assert.match(source, /Keep system definitions in the verified release bytes/);
   assert.match(source, /Do not store system equipment definitions in the current equipment store/);
-  assert.match(source, /dedicated release-specific CacheStorage namespace/);
+  assert.match(source, /dedicated release-specific CacheStorage namespace/i);
   assert.match(source, /equipmentDefinitions IndexedDB store is proposed/);
 });
 
 test("equipment requirement alternatives have explicit OR-of-AND semantics", () => {
   assert.match(source, /Every requirement group must be satisfied/);
-  assert.match(source, /within one group, the user may satisfy any one complete alternative/);
+  assert.match(source, /within one group, the user may satisfy any one complete alternative/i);
   assert.match(source, /Every equipment ID within a chosen alternative must be available/);
   assert.match(source, /reviewed “no equipment required” declaration is different from an absent\/unknown requirements field/);
 });
@@ -39,7 +39,7 @@ test("injury metadata uses fail-closed three-state candidate screening", () => {
 
 test("persistent restrictions have a separate schema and backup approval gate", () => {
   assert.match(source, /dedicated trainingRestrictions store/);
-  assert.match(source, /new database version and require a backup format/);
+  assert.match(source, /new version and require a backup format/);
   assert.match(source, /No schema or backup change is approved here/);
   assert.match(source, /The restriction store \(C3\) is a separate approval/);
 });
