@@ -365,7 +365,7 @@
       integrityDiagnostics,
       stores, preservedStores: preservedStores.map(store => store.name), preservedStoreDetails: preservedStores,
       warning: parsed.sourceFormatVersion === 1
-        ? "V1 restore replaces original V1 data. On V6, validated typed C2 equipment inventory is preserved while legacy equipment data is replaced; V6 identity stores remain untouched. Restore safety snapshots are bounded to the newest three."
+        ? "V1 restore replaces original V1 data. On V6, validated typed C2 equipment inventory is preserved while legacy equipment data is replaced; V6 identity stores are preserved untouched. Restore safety snapshots are bounded to the newest three."
         : "Replace stores are overwritten. Append/merge stores retain existing history, skip identical records, append new records, and stop on immutable conflicts. A pre-restore safety snapshot is saved in metadata."
     };
   }
@@ -441,6 +441,7 @@
         tx.onabort = () => reject(tx.error || new Error("Restore transaction aborted; existing data remains unchanged."));
         tx.onerror = () => reject(tx.error || new Error("Restore transaction failed; existing data remains unchanged."));
       });
+      let preservedEquipment = [];
       const failTransaction = async message => {
         try { tx.abort(); } catch (ignored) {}
         try { await done; } catch (ignored) {}
@@ -448,7 +449,6 @@
       };
 
       try {
-        let preservedEquipment = [];
         if (parsed.sourceFormatVersion === 1 && db.version >= 6 && typeof dbApi.isUserEquipmentAccessRecord === "function") {
           const liveEquipment = await requestResult(tx.objectStore("equipment").getAll());
           preservedEquipment = liveEquipment.filter(record => dbApi.isUserEquipmentAccessRecord(record));
