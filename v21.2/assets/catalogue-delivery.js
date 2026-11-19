@@ -65,7 +65,6 @@
     if (!Number.isInteger(manifest.byteLength) || manifest.byteLength < 2) fail("byteLength is invalid.");
     if (!Number.isInteger(manifest.entryCount) || manifest.entryCount < 0) fail("entryCount is invalid.");
     if (manifest.variationCount !== undefined && (!Number.isInteger(manifest.variationCount) || manifest.variationCount < 0)) fail("variationCount is invalid.");
-    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V3) rejectV3VocabularyDescriptions(document);
     if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 || manifest.schemaVersion === PAYLOAD_SCHEMA_V3) {
       if (!Number.isInteger(manifest.variationCount) || !Number.isInteger(manifest.equipmentDefinitionCount) ||
           manifest.equipmentDefinitionCount < 0 || !Number.isInteger(manifest.vocabularyEntryCount) ||
@@ -409,6 +408,7 @@
       if (!definitionIds.has(variation.exerciseDefinitionId)) fail("variation parent does not exist in this release.");
       variationIds.add(variation.id);
     }
+    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V3) rejectV3VocabularyDescriptions(document);
     if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 || manifest.schemaVersion === PAYLOAD_SCHEMA_V3) {
       await validateV2Payload(document, manifest, definitionIds, variationIds);
     }
