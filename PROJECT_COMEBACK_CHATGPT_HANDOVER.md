@@ -1,4 +1,4 @@
-# Historical handover snapshot — post-Gym milestone Adaptive Brain audit (2026-11-19)
+# Current handover — post-Gym milestone Adaptive Brain audit (2026-11-19)
 
 - **Active development branch:** `V21.2-development`. The audit began from code checkpoint `cd782a72aacc1b80186e6dd27c870a57fc42e9c1`; browser [#44432764417 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432764417) and backup [#44432764243 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432764243) validated that exact pre-housekeeping checkpoint.
 - **Latest Gym implementation:** `69d337c9cc30044637f01f4ea7d59e51c58c9d36` (parent implementation `5dc5e1540e5ad2e9114767240b7368ef980147ee`). The Gym runner and dual-level set carry-forward are implemented. Set 1 is the only automatic within-exercise source; later manual fields are independently user-owned and do not cascade. Programme-week carry-forward matches exact immutable source programme slot and set number. A post-milestone review also corrected timed-set week carry-forward: it now copies `targetDuration`, never actual measured `duration`.
