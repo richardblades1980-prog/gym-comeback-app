@@ -1,0 +1,136 @@
+{
+  "fixtureStatus": "TEST ONLY — NOT A PRODUCTION CATALOGUE OR APPROVAL",
+  "workbookSchema": "library-workbook-v1",
+  "catalogueId": "exercise-catalogue",
+  "baseReleaseId": "fixture-empty-base",
+  "baseReleaseVersion": 0,
+  "locale": "en-AU",
+  "sheets": {
+    "Equipment": [
+      {
+        "equipment_id": "",
+        "proposal_key": "proposal-equipment-001",
+        "canonical_name": "Test Selectorised Press",
+        "family_id": "family-test-machine",
+        "review_status": "proposed"
+      }
+    ],
+    "Equipment Sources": [
+      {
+        "equipment_id_or_proposal_key": "proposal-equipment-001",
+        "source_ref": "test-only:synthetic-equipment-source"
+      }
+    ],
+    "Equipment Configuration": [
+      {
+        "equipment_id_or_proposal_key": "proposal-equipment-001",
+        "attribute": "loadingSystemIds",
+        "vocabulary_term_id": "loading-test-pin"
+      }
+    ],
+    "Exercises": [
+      {
+        "exercise_id": "",
+        "proposal_key": "proposal-exercise-001",
+        "canonical_name": "Test Press Movement",
+        "kind": "system",
+        "equipment_review_status": "incomplete",
+        "movement_review_status": "incomplete"
+      }
+    ],
+    "Variations": [],
+    "Vocabulary": [
+      {
+        "category": "equipmentFamilies",
+        "term_id": "",
+        "proposal_key": "proposal-family-001",
+        "label": "Test machine family"
+      },
+      {
+        "category": "equipmentLoadingSystems",
+        "term_id": "",
+        "proposal_key": "proposal-loading-001",
+        "label": "Test pin-selected loading"
+      },
+      {
+        "category": "bodyRegions",
+        "term_id": "",
+        "proposal_key": "proposal-body-001",
+        "label": "Test upper body region"
+      },
+      {
+        "category": "muscles",
+        "term_id": "",
+        "proposal_key": "proposal-muscle-001",
+        "label": "Test chest muscle term"
+      },
+      {
+        "category": "movementPatterns",
+        "term_id": "",
+        "proposal_key": "proposal-pattern-001",
+        "label": "Test horizontal press pattern"
+      }
+    ],
+    "Equipment Requirements": [],
+    "Equipment Constraints": [],
+    "Movement Profiles": [
+      {
+        "subject_type": "exercise",
+        "subject_id_or_key": "proposal-exercise-001",
+        "review_status": "incomplete"
+      }
+    ],
+    "Movement Involvement": [],
+    "Movement Coverage": [],
+    "Movement Equipment Constraints": [],
+    "Alias Proposals": [
+      {
+        "subject_type": "exercise",
+        "subject_id_or_key": "proposal-exercise-001",
+        "alias_text": "Test alternate label",
+        "locale": "en-AU",
+        "alias_status": "proposed"
+      }
+    ],
+    "Description Proposals": [
+      {
+        "subject_type": "exercise",
+        "subject_id_or_key": "proposal-exercise-001",
+        "description": "Synthetic test-only description.",
+        "description_status": "proposed",
+        "source_ref": "test-only:synthetic-description"
+      }
+    ],
+    "Review Notes": [
+      {
+        "subject_type": "exercise",
+        "subject_id_or_key": "proposal-exercise-001",
+        "change_summary": "Synthetic proposal for workbook parser tests.",
+        "evidence_ref": "test-only:fixture",
+        "reviewer_note": "Not approved; never publish."
+      }
+    ]
+  },
+  "negativeCases": [
+    {
+      "case": "unknown-muscle-id",
+      "expected": "hard-error"
+    },
+    {
+      "case": "duplicate-equipment-id",
+      "expected": "hard-error"
+    },
+    {
+      "case": "immutable-id-changed",
+      "expected": "hard-error"
+    },
+    {
+      "case": "stale-base-release",
+      "expected": "conflict-no-auto-rebase"
+    },
+    {
+      "case": "description-alias-publish-on-current-v2",
+      "expected": "blocked-pending-schema-evolution"
+    }
+  ]
+}
