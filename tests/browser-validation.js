@@ -233,7 +233,7 @@ function server() {
         !separateInstances.some(row => row.location === "home" && row.loading === "pin-selected" && row.orientation === "horizontal")) {
       throw new Error("E1 mixed equipment instance locations or independently confirmed configuration: " + JSON.stringify(separateInstances));
     }
-    await cleanStartPage.locator(".equipment-record").nth(1).getByRole("button", { name: "Edit" }).click();
+    await cleanStartPage.locator('.equipment-record[data-location-id="home"]').getByRole("button", { name: "Edit" }).click();
     await equipmentForm.locator('[name="customName"]').fill("Home leg press");
     await equipmentForm.locator('[name="orientation"]').selectOption("vertical");
     await cleanStartPage.getByRole("button", { name: "Save changes" }).click();
@@ -252,17 +252,17 @@ function server() {
       }));
       throw new Error("E1 edit did not persist: " + JSON.stringify(diagnostic));
     }
-    await cleanStartPage.waitForFunction(() => document.querySelectorAll(".equipment-record")[1]?.textContent.includes("Home leg press"), null, { timeout: 10000 });
-    if (!(await cleanStartPage.locator(".equipment-record").nth(1).textContent()).includes("Home leg press")) {
+    await cleanStartPage.waitForFunction(() => document.querySelector('.equipment-record[data-location-id="home"]')?.textContent.includes("Home leg press"), null, { timeout: 10000 });
+    if (!(await cleanStartPage.locator('.equipment-record[data-location-id="home"]').textContent()).includes("Home leg press")) {
       throw new Error("E1 equipment edit did not update the selected instance.");
     }
-    await cleanStartPage.locator(".equipment-record").first().getByRole("button", { name: "Temporarily unavailable" }).click();
+    await cleanStartPage.locator('.equipment-record[data-location-id="gym"]').getByRole("button", { name: "Temporarily unavailable" }).click();
     await cleanStartPage.waitForFunction(async () => (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0]?.availability === "temporarily-unavailable");
     const unavailable = await cleanStartPage.evaluate(async () =>
       (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0].availability);
     if (unavailable !== "temporarily-unavailable") throw new Error("E1 availability change was not persisted.");
     cleanStartPage.once("dialog", dialog => dialog.accept());
-    await cleanStartPage.locator(".equipment-record").nth(1).getByRole("button", { name: "Retire" }).click();
+    await cleanStartPage.locator('.equipment-record[data-location-id="home"]').getByRole("button", { name: "Retire" }).click();
     await cleanStartPage.waitForFunction(async () => (await ProjectComebackDB.listUserEquipment("gym-profile")).length === 1);
     const retired = await cleanStartPage.evaluate(async () => ({
       active: (await ProjectComebackDB.listUserEquipment("gym-profile")).length,
