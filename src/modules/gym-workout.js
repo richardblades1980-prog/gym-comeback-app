@@ -73,6 +73,44 @@
     return existing.length ? loadSession(existing[0].id) : null;
   }
 
+  async function findPreviousWeekValues(day, week) {
+    if (week <= 1) return new Map();
+    const db = dbService();
+    const sessions = (await db.getAll("sessions"))
+      .filter(session => session.moduleId === "gym" &&
+        Number(session.day) === day &&
+        Number(session.week || 1) < week &&
+        session.programmeSourceId === PROGRAMME_ID &&
+        (session.status === "in-progress" || session.status === "completed"))
+      .sort((a, b) =>
+        Number(b.week || 1) - Number(a.week || 1) ||
+        String(b.date || "").localeCompare(String(a.date || "")) ||
+        String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""))
+      );
+    const snapshots = await Promise.all(sessions.map(async session => {
+      const [exercises, sets] = await Promise.all([
+        db.getAllByIndex("exerciseRecords", "by_session", session.id),
+        db.getAllByIndex("setRecords", "by_session", session.id)
+      ]);
+      return { session, exercises, sets };
+    }));
+    const valuesBySlot = new Map();
+    snapshots.forEach(snapshot => {
+      snapshot.exercises.forEach(exercise => {
+        const slotId = exercise.programmeSlotId;
+        if (!slotId || exercise.substitution || exercise.performedExerciseName || valuesBySlot.has(slotId)) return;
+        const sets = snapshot.sets.filter(set => set.exerciseRecordId === exercise.id).sort(sortSets);
+        const hasValues = sets.some(set =>
+          ["weight", "reps", "duration"].some(field =>
+            set[field] !== undefined && set[field] !== null && String(set[field]).trim() !== ""
+          )
+        );
+        if (hasValues) valuesBySlot.set(slotId, { week: Number(snapshot.session.week || 1), sets });
+      });
+    });
+    return valuesBySlot;
+  }
+
   async function startSession(day, date, options) {
     options = options || {};
     const programme = programmeService();
@@ -102,6 +140,9 @@
     };
     const exerciseRecords = [];
     const setRecords = [];
+    const previousWeekValues = await findPreviousWeekValues(day, week);
+    const prefilledWeeks = new Set();
+    let prefilledExerciseCount = 0;
     sourceDay.slots.forEach((slot, index) => {
       const exerciseId = makeId("gym-exercise");
       const exercise = {
@@ -140,10 +181,35 @@
         });
       }
     });
+    exerciseRecords.forEach(exercise => {
+      const previous = previousWeekValues.get(exercise.programmeSlotId);
+      if (!previous) return;
+      let copiedForExercise = false;
+      setRecords.filter(set => set.exerciseRecordId === exercise.id).forEach(set => {
+        const priorSet = previous.sets.find(item => Number(item.setNumber) === Number(set.setNumber));
+        if (!priorSet) return;
+        ["weight", "reps", "duration"].forEach(field => {
+          const value = priorSet[field];
+          if (value !== undefined && value !== null && String(value).trim() !== "") {
+            set[field] = String(value);
+            copiedForExercise = true;
+          }
+        });
+      });
+      if (copiedForExercise) {
+        prefilledExerciseCount += 1;
+        prefilledWeeks.add(previous.week);
+      }
+    });
+    const prefillSummary = prefilledExerciseCount ? {
+      exerciseCount: prefilledExerciseCount,
+      sourceWeeks: Array.from(prefilledWeeks).sort((a, b) => b - a)
+    } : null;
     const saved = await dbService().createGymWorkoutBundle({ session, exerciseRecords, setRecords });
     return {
       created: true,
       resumed: false,
+      prefillSummary,
       workout: {
         session: saved.session,
         exerciseRecords: saved.exerciseRecords.map(exercise => Object.assign({}, exercise, {

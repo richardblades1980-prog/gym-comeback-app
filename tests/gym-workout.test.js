@@ -72,6 +72,37 @@ test("programme week is saved and same date/day sessions resume only within the 
   assert.equal(await db.count("sessions"), 2);
 });
 
+test("a new programme week pre-fills editable values by exact source slot without copying set status", async () => {
+  const { db, workout } = await setup();
+  const prior = await workout.startSession(1, "2026-11-18", { week: 1 });
+  const priorExercise = prior.workout.exerciseRecords[0];
+  await workout.updateSetValues(prior.workout, priorExercise.id, 1, { weight: "25", reps: "10" });
+  await workout.startSet(prior.workout, priorExercise.id, 1);
+  await workout.completeSet(prior.workout, priorExercise.id, 1);
+  await workout.startSet(prior.workout, priorExercise.id, 2);
+  await workout.updateSetValues(prior.workout, priorExercise.id, 2, { weight: "27.5", reps: "8" });
+
+  const nextWeek = await workout.startSession(1, "2026-11-19", { week: 2 });
+  const nextExercise = nextWeek.workout.exerciseRecords[0];
+  assert.equal(nextWeek.prefillSummary.exerciseCount, 1);
+  assert.equal(nextWeek.prefillSummary.sourceWeeks[0], 1);
+  assert.equal(nextExercise.sets[0].weight, "25");
+  assert.equal(nextExercise.sets[0].reps, "10");
+  assert.equal(nextExercise.sets[1].weight, "27.5");
+  assert.equal(nextExercise.sets[1].reps, "8");
+  assert.equal(nextExercise.sets[0].status, "not-started");
+  assert.equal(nextExercise.sets[1].status, "locked");
+  assert.equal(nextExercise.sets[0].startedAt, undefined);
+  assert.equal(nextExercise.sets[0].completedAt, undefined);
+
+  await workout.updateSetValues(nextWeek.workout, nextExercise.id, 1, { weight: "30" });
+  const resumed = await workout.startSession(1, "2026-11-19", { week: 2 });
+  assert.equal(resumed.resumed, true);
+  assert.equal(resumed.workout.exerciseRecords[0].sets[0].weight, "30");
+  const original = await db.get("setRecords", priorExercise.sets[0].id);
+  assert.equal(original.weight, "25");
+});
+
 test("starting the same day and date resumes the existing in-progress session instead of duplicating it", async () => {
   const { db, workout } = await setup();
   const first = await workout.startSession(1, "2026-11-18");
