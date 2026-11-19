@@ -456,7 +456,7 @@ test("v3 installs reviewed descriptions for equipment, exercises and variations 
   assert.equal(status.release.descriptionCount, 3);
   const equipment = await runtime.window.ProjectComebackCatalogueDelivery.lookupEquipment("Selectorised");
   assert.equal(equipment[0].description, "A selectorised resistance machine for controlled strength exercises.");
-  const exercise = await runtime.window.ProjectComebackCatalogueDelivery.lookup("Fixture Press")[0];
+  const exercise = (await runtime.window.ProjectComebackCatalogueDelivery.lookup("Fixture Press"))[0];
   assert.equal(exercise.description, "A seated upper-body pressing exercise using supported resistance.");
   assert.equal(exercise.variations[0].description, "A seated setup that provides back support during the press.");
 });
