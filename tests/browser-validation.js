@@ -354,7 +354,9 @@ function server() {
     }
     console.log("PASS same-origin clean start leaves existing V21.1 localStorage byte-for-byte intact and starts V21.2 user stores empty without an import marker");
     await v21Page.getByRole("button", { name: "My Equipment" }).click();
-    await v21Page.locator("#equipment-profile-status").waitFor();
+    await v21Page.waitForFunction(() =>
+      document.querySelector("#equipment-profile-status")?.textContent.includes("awaiting migration"),
+    null, { timeout: 10000 });
     const migrationGate = await v21Page.evaluate(async () => ({
       status: document.querySelector("#equipment-profile-status").textContent,
       workspaceHidden: document.querySelector("#equipment-workspace").hidden,
