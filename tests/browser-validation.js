@@ -668,18 +668,29 @@ function server() {
         !resumedWorkout.nextSetEnabled || !resumedWorkout.thirdSetLocked) {
       throw new Error("Workout values or set state did not survive reload/resume: " + JSON.stringify(resumedWorkout));
     }
+    const workoutControlPlacement = await app.evaluate(() => {
+      const exercises = document.querySelector("#gym-workout-exercises");
+      const finish = document.querySelector("#gym-workout-finish");
+      return { finishAfterExercises: Boolean(exercises && finish &&
+        (exercises.compareDocumentPosition(finish) & Node.DOCUMENT_POSITION_FOLLOWING)) };
+    });
+    if (!workoutControlPlacement.finishAfterExercises) {
+      throw new Error("Finish workout control is not placed after the exercise list: " + JSON.stringify(workoutControlPlacement));
+    }
     console.log("[browser] Smart rest timer recovery and controls");
-    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
+    await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));
+    const restPlacement = await app.locator("#gym-rest-timer").evaluate(node => ({ inline: Boolean(node.closest(".gym-exercise-card")), exercise: node.closest(".gym-exercise-card")?.querySelector("h3")?.textContent }));
+    if (!restPlacement.inline) throw new Error("Rest timer was not placed beside the exercise being rested: " + JSON.stringify(restPlacement));
     const initialEnd = await app.evaluate(async date => (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress")?.restEndAt, testDates.today);
     await app.locator('[data-gym-action="rest-add"]').click();
-    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden === false);
+    await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));
     const extendedEnd = await app.evaluate(async date => {
       const session = await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date]);
       return session.find(item => item.status === "in-progress")?.restEndAt;
     }, testDates.today);
     if (!Number.isFinite(extendedEnd) || extendedEnd < initialEnd + 15000) throw new Error("Rest timer end timestamp was not extended and persisted after +15: "+JSON.stringify({initialEnd,extendedEnd}));
     await app.locator('[data-gym-action="rest-skip"]').click();
-    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer"));
     await app.locator("#gym-rest-alert-mode").selectOption("visual");
     if (await app.evaluate(() => localStorage.getItem("gym-comeback-rest-alert")) !== "visual") throw new Error("Rest alert preference did not persist locally.");
     const restPreset = app.locator('[data-gym-field="restSeconds"]').first();
@@ -691,7 +702,7 @@ function server() {
     const secondSetRow = firstExercise.locator(".gym-set-row").nth(1);
     await secondSetRow.locator('[data-gym-action="start"]').click();
     await secondSetRow.locator('[data-gym-action="complete"]').click();
-    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
+    await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));
     const timerLabel = await app.locator("#gym-rest-label").textContent();
     if (!timerLabel.includes("after set 2")) throw new Error("Rest timer did not identify the completed set: " + timerLabel);
     const undoButton = secondSetRow.locator('[data-gym-action="undo"]');
@@ -701,7 +712,7 @@ function server() {
     };
     if (undoTarget.setNumber !== "2") throw new Error("Browser undo control is not targeting set 2: " + JSON.stringify(undoTarget));
     await undoButton.click();
-    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer"));
     const undoRestState = await app.evaluate(async ({ date, exerciseId }) => {
       const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress");
       const exercise = await ProjectComebackDB.get("exerciseRecords", exerciseId);
@@ -714,9 +725,9 @@ function server() {
       throw new Error("Undoing a completed set did not clear its rest state: " + JSON.stringify({undoTarget,undoRestState}));
     }
     await secondSetRow.locator('[data-gym-action="complete"]').click();
-    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer").hidden);
+    await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));
     await app.locator('[data-gym-action="rest-cancel"]').click();
-    await app.waitForFunction(() => document.querySelector("#gym-rest-timer").hidden);
+    await app.waitForFunction(() => !document.querySelector("#gym-rest-timer"));
     console.log("PASS persisted rest countdown, +15, skip/cancel, undo cleanup, and per-exercise rest override");
     console.log("PASS Gym day 1 starts, persists entered weight/reps, enforces set order and resumes after reload");
 

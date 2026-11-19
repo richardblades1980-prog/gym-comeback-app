@@ -1,6 +1,6 @@
 function cacheResponseBestEffort(cacheName,request,response){return caches.open(cacheName).then(cache=>cache.put(request,response)).catch(()=>undefined);}
 const CACHE_PREFIX="project-comeback-v21-2a-shell-";
-const CACHE_NAME=CACHE_PREFIX+"v28";
+const CACHE_NAME=CACHE_PREFIX+"v29";
 const GUIDE_CACHE_PREFIX="project-comeback-v21-2a-guides-";
 const GUIDE_CACHE_NAME=GUIDE_CACHE_PREFIX+"v1";
 const GUIDE_STAGE_CACHE=GUIDE_CACHE_NAME+"-staging";
