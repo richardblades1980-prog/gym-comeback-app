@@ -1,4 +1,16 @@
-# Current handover — branch-based GitHub Pages release candidate (2026-11-19)
+# Historical handover snapshot — post-Gym milestone Adaptive Brain audit (2026-11-19)
+
+- **Active development branch:** `V21.2-development`. The audit began from code checkpoint `cd782a72aacc1b80186e6dd27c870a57fc42e9c1`; browser [#44432764417 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432764417) and backup [#44432764243 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44432764243) validated that exact pre-housekeeping checkpoint.
+- **Latest Gym implementation:** `5dc5e1540e5ad2e9114767240b7368ef980147ee`. The Gym runner and dual-level set carry-forward are implemented. Set 1 is the only automatic within-exercise source; later manual fields are independently user-owned and do not cascade. Programme-week carry-forward matches exact immutable source programme slot and set number.
+- **Post-milestone housekeeping:** added `docs/V21.2-ADAPTIVE-BRAIN-HISTORICAL-AUDIT.md`; added it to repository navigation; refreshed the functional roadmap's current status; added a V2 backup/restore regression for `fieldOrigins` provenance. These are documentation/test changes only. The final resulting branch HEAD must have exact-SHA browser and backup PASS before this housekeeping checkpoint is called validated.
+- **Adaptive Brain status:** not implemented. V10/V19.4 progression history and V20 daily readiness history have been audited as separate systems. The existing `readiness` store and V1/V2 backup support are present, but V21.2 has no live daily readiness check-in, RIR/symptom-response capture or adaptive proposal/apply engine. The next step is a design decision gate, not implementation. Do not invent reduction thresholds or reuse the old V20.7 later-set cascade.
+- **Owner approval contract:** every proposal must explain its reason and exact before/after values and wait for Apply/OK. Dismiss/Keep current is a no-op. Applying may affect Set 1 and fields still marked as automatic only. User-owned fields and started/completed sets are never overwritten. Worsening symptoms block progression advice.
+- **Protected / published boundaries:** `main` remains `0d0527a6463c3cfd0fbb54d69123316c9a384b42`; published Pages candidate remains `V21.2-pages-release-candidate` at `a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd`. Do not modify either, change Pages settings or deploy without separate explicit approval. The owner's V21.2 trial is clean-start; keep all V21.1 localStorage/data untouched.
+- The dated handover snapshots below are retained as historical project evidence. Their original “Current handover” headings have been renamed so they cannot be mistaken for the live state.
+
+---
+
+# Historical handover snapshot — branch-based GitHub Pages release candidate (2026-11-19)
 
 - User confirmed GitHub Pages source mode: **Deploy from a branch**. The selected source branch and folder remain to be confirmed from Settings → Pages.
 - Dedicated candidate branch: V21.2-pages-release-candidate, created from protected main SHA 0d0527a6463c3cfd0fbb54d69123316c9a384b42.
@@ -15,7 +27,7 @@ Check the exact selected branch and folder in repository Settings → Pages and 
 
 ---
 
-# Current handover — V21.2 PWA assets and Pages trial planning (2026-11-19)
+# Historical handover snapshot — V21.2 PWA assets and Pages trial planning (2026-11-19)
 
 - Active branch: `V21.2-development`.
 - PWA icon/manifest implementation and test commit: `c2ac43b6d23219b67396daf7cfa89578127f34eb`.
@@ -37,7 +49,7 @@ The prior clean-start decision remains in force: no V21.1 migration or record de
 
 ---
 
-# Current handover — clean-start V21.2 trial decision (2026-11-19)
+# Historical handover snapshot — clean-start V21.2 trial decision (2026-11-19)
 
 - Active branch: `V21.2-development`.
 - Implementation/test checkpoint: `8193af338450d424271372b62b316358bf4df6bd`.
