@@ -123,7 +123,8 @@ function renderGymWorkout(){
    : '';
   return '<article class="gym-exercise-card"><div class="gym-exercise-heading"><div><h3 class="gym-guide-heading" tabindex="0" role="button" aria-haspopup="dialog" aria-controls="gym-exercise-guide-dialog" data-guide-heading data-exercise-id="'+esc(exercise.id)+'">'+esc(exerciseDisplayName)+'</h3><p>'+esc(exercise.substitution?"Manual substitution — exercise details are not verified.":(exercise.description||""))+'</p><button class="secondary gym-guide-open" type="button" data-guide-open data-exercise-id="'+esc(exercise.id)+'">Exercise guide</button></div><div class="gym-exercise-settings"><label>Rest period<select data-gym-field="restSeconds" data-exercise-id="'+esc(exercise.id)+'">'+restOptions+'</select></label><span class="subtle">'+esc(exercise.status.replace("-"," "))+'</span></div></div>'+swapPanel+sets+restTimerMarkup+'</article>';
  }).join("");
- if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
+ updateGymRestDisplay();
+  if(gymStopwatchRenderInterval)clearInterval(gymStopwatchRenderInterval);
  if(gymRestRenderInterval)clearInterval(gymRestRenderInterval);
  gymStopwatchRenderInterval=null;
  if(workout.exerciseRecords.some(exercise=>(exercise.sets||[]).some(set=>Number.isFinite(Number(set.stopwatchStartedAt))&&Number(set.stopwatchStartedAt)>0))){
