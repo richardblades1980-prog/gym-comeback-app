@@ -1,16 +1,17 @@
-# Current handover — catalogue schema and evidence review (2026-11-19)
+# Current handover — Catalogue Payload v2 G2 gate prepared (2026-11-19)
 
 - **Active development branch:** V21.2-development.
-- **Last fully validated checkpoint:** bd94374dde22a43ee3372efe306360fc33fb2528. Browser [#44447716722 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44447716722) and backup [#44447716703 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44447716703) passed on that exact SHA.
-- **Curation matrix:** docs/V21.2-EQUIPMENT-EXERCISE-CURATION-MATRIX.md reconciles 44 legacy equipment choices, 42 optional exercise rows and 32 original programme slots. All 42 remain UNREVIEWED and all 32 remain UNASSIGNED; no IDs or catalogue content were created.
-- **Current schema/evidence proposal:** docs/V21.2-CATALOGUE-SCHEMA-EVIDENCE-REVIEW.md recommends adding system equipment definitions to a versioned verified release asset/cache, keeping the current equipment store for user/legacy inventory, using explicit OR-of-AND equipment requirement groups, and using fail-closed reviewed movement-demand profiles for injury-aware matching.
-- **Restriction data boundary:** readiness is not persistent injury state. The design recommends a dedicated trainingRestrictions store and separate database/backup gate. It is not approved or implemented. The catalogue payload v2 gate and persistent-restriction gate must remain separate.
-- **Tests:** equipment/exercise curation and catalogue schema/evidence contract tests are included in both browser and backup validation workflows.
-- **Next decision:** review the bounded catalogue payload v2 proposal (C1). Equipment definitions are not to be written into the personal equipment store. No app selectors, production IDs, catalogue records or injury restriction records exist yet.
-- **Current runtime:** V21.2 has no Equipment or Exercise Library view and no programme builder. Gym still uses the original source-preserved five-day programme with manual free-text substitutions. The production exercise catalogue and guide registry remain unpopulated.
-- **Data-safety boundary:** this phase is design and contract testing only. No runtime code, IndexedDB store/index/version, backup format, personal records, production catalogue asset, V21.1 source, service-worker cache, Pages setting, deployment or merge is changed.
+- **Last fully validated checkpoint before this gate increment:** b8e7af2eee69d34a18a506fc6d46c4beb0e9af86. Both browser and backup workflows passed on that exact SHA.
+- **Current gate:** docs/V21.2-G2-CATALOGUE-PAYLOAD-V2-GATE.md. Status is **HOLD pending explicit owner decision**. It proposes a v2 immutable catalogue payload with equipment definitions, structured equipment requirement groups and qualified-review-bound movement-demand metadata.
+- **Boundaries if passed:** system equipment definitions stay in the exact verified release asset/cache; IndexedDB stays schema v6; full backup stays V2; v1 releases remain readable. No equipment definitions are written into the personal equipment store.
+- **Fail-closed injury metadata:** missing/incomplete/stale movement demand is unknown; known conflicts are excluded; reviewed candidates are only possible alternatives, never a guarantee or medical clearance.
+- **Separate restriction gate:** persistent user-reported training restrictions need their own store/database/backup gate (C3). C3 is expressly excluded from C1 and must not be bundled into the catalogue gate.
+- **C1 scope exclusions:** no production v2 payload, no real catalogue IDs, no selectors/library/programme-builder UI, no new IndexedDB store/index/version, no backup-format change, no restriction store or Adaptive Brain. Preparing this document does not pass the gate.
+- **Prerequisite curation:** docs/V21.2-EQUIPMENT-EXERCISE-CURATION-MATRIX.md reconciles 44 equipment choices, 42 optional exercises and 32 source slots. The exercise rows remain UNREVIEWED and all source slots UNASSIGNED.
+- **Runtime status:** V21.2 still has no Equipment or Exercise Library view or programme builder. The Gym runner remains the fixed source-preserved five-day base programme with manual free-text substitutions. Production catalogue and guide registry remain unpopulated.
+- **Data-safety boundary:** design and contract tests only. No app runtime code, database schema, backup format, production data, V21.1 source, service-worker cache, Pages setting, deployment or merge is changed.
 - **Protected / published boundaries:** main remains 0d0527a6463c3cfd0fbb54d69123316c9a384b42; V21.2-pages-release-candidate remains a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd. Keep both untouched absent separate explicit approval.
-- The dated handover snapshots below are historical evidence; their old “Next” instructions are superseded where they conflict with this current handover.
+- **Exact-SHA browser and backup validation is required for this final gate-document commit.** Do not amend the gate after validation; any material scope change reopens it and requires another gate review.
 
 
 ---
