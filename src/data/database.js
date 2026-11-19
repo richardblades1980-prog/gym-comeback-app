@@ -660,10 +660,20 @@
       .filter(record => validateUserEquipmentAccessRecord(record) && (record.status || "active") === "active");
   }
 
+  async function assertUserEquipmentCatalogueRelease(record) {
+    if (record.itemKind !== "catalogue") return;
+    const release = await get("catalogueReleases", record.catalogueReleaseId);
+    if (!release || release.catalogueId !== record.catalogueId || Number(release.version) !== record.catalogueVersion) {
+      throw new Error("User equipment references a catalogue release that is not retained with the exact catalogue version.");
+    }
+  }
+
   async function addUserEquipment(record) {
-    validateUserEquipmentAccessRecord(record);
-    if (record.status && record.status !== "active") throw new Error("New user equipment records must start active.");
-    return add("equipment", Object.assign({ status: "active", availability: "unknown", confirmedConfiguration: {} }, record));
+    const prepared = Object.assign({ status: "active", availability: "unknown", confirmedConfiguration: {} }, record);
+    if (record && record.status && record.status !== "active") throw new Error("New user equipment records must start active.");
+    validateUserEquipmentAccessRecord(prepared);
+    await assertUserEquipmentCatalogueRelease(prepared);
+    return add("equipment", prepared);
   }
 
   async function updateUserEquipment(record) {
@@ -671,6 +681,8 @@
     const existing = await get("equipment", record.id);
     if (!existing || existing.recordType !== USER_EQUIPMENT_RECORD_TYPE) throw new Error("Typed user equipment record was not found.");
     assertUserEquipmentIdentityUnchanged(existing, record);
+    validateUserEquipmentAccessRecord(record);
+    await assertUserEquipmentCatalogueRelease(record);
     return put("equipment", record);
   }
 
@@ -881,7 +893,10 @@
     addUserEquipment,
     updateUserEquipment,
     retireUserEquipment,
-    isUserEquipmentAccessRecord: record => !!record && record.recordType === USER_EQUIPMENT_RECORD_TYPE && validateUserEquipmentAccessRecord(record),
+    isUserEquipmentAccessRecord: record => {
+      try { return !!record && record.recordType === USER_EQUIPMENT_RECORD_TYPE && validateUserEquipmentAccessRecord(record); }
+      catch (error) { return false; }
+    },
     importLegacySnapshot,
     commitLegacyMigration
   });
