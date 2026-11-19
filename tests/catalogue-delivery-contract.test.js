@@ -101,6 +101,13 @@ test("production delivery service verifies immutable assets and exposes offline 
   assert.match(deliverySource,/project-comeback-v21-2a-catalogue-/);
   assert.match(deliverySource,/async function installRelease/);
   assert.match(deliverySource,/async function lookup/);
+  assert.match(deliverySource,/const PAYLOAD_SCHEMA_V2 = 2/);
+  assert.match(deliverySource,/async function lookupEquipment/);
+  assert.match(deliverySource,/controlledVocabulariesReviewBinding/);
+  assert.match(deliverySource,/equipmentDefinitionCount/);
+  assert.match(deliverySource,/vocabularyEntryCount/);
+  assert.match(deliverySource,/movementDemandProfile/);
+  assert.match(deliverySource,/review target digest does not match/);
   assert.match(deliverySource,/catalogueReleases.*exerciseDefinitions.*exerciseVariations.*metadata/s);
   assert.match(deliverySource,/active-exercise-catalogue-release/);
   assert.match(deliverySource,/assetVerificationStatus: "verified"/);
@@ -116,6 +123,8 @@ test("production delivery service verifies immutable assets and exposes offline 
 test("real browser validation seeds a verified fixture and checks offline catalogue lookup", () => {
   assert.match(browserSource,/ProjectComebackCatalogueDelivery\.installRelease/);
   assert.match(browserSource,/ProjectComebackCatalogueDelivery\.lookup/);
+  assert.match(browserSource,/ProjectComebackCatalogueDelivery\.lookupEquipment/);
+  assert.match(browserSource,/browser-catalogue-v2-r2/);
   assert.match(browserSource,/Verified catalogue lookup or release cache did not survive a real offline app reload/);
 });
 test("source characterization: V2 backup retains release metadata and snapshots, not system asset bytes", () => {

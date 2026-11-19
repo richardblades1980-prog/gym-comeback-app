@@ -47,6 +47,8 @@ jobs:
         run: node --test tests/gym-progression.test.js
       - name: Run catalogue delivery and offline design contract
         run: node --test tests/catalogue-delivery-contract.test.js
+      - name: Run v2 catalogue delivery and equipment lookup tests
+        run: node --test tests/catalogue-delivery-v2.test.js
       - name: Run exercise guide state tests
         run: node --test tests/exercise-guide.test.js
       - name: Run exercise guide registry validation tests

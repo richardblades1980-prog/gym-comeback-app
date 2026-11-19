@@ -1,17 +1,15 @@
-# Current handover — Catalogue Payload v2 G2 gate prepared (2026-11-19)
+# Current handover — C1 catalogue v2 implementation (2026-11-19)
 
 - **Active development branch:** V21.2-development.
-- **Last fully validated checkpoint before this gate increment:** b8e7af2eee69d34a18a506fc6d46c4beb0e9af86. Both browser and backup workflows passed on that exact SHA.
-- **Current gate:** docs/V21.2-G2-CATALOGUE-PAYLOAD-V2-GATE.md. Status is **HOLD pending explicit owner decision**. It proposes a v2 immutable catalogue payload with equipment definitions, structured equipment requirement groups and qualified-review-bound movement-demand metadata.
-- **Boundaries if passed:** system equipment definitions stay in the exact verified release asset/cache; IndexedDB stays schema v6; full backup stays V2; v1 releases remain readable. No equipment definitions are written into the personal equipment store.
-- **Fail-closed injury metadata:** missing/incomplete/stale movement demand is unknown; known conflicts are excluded; reviewed candidates are only possible alternatives, never a guarantee or medical clearance.
-- **Separate restriction gate:** persistent user-reported training restrictions need their own store/database/backup gate (C3). C3 is expressly excluded from C1 and must not be bundled into the catalogue gate.
-- **C1 scope exclusions:** no production v2 payload, no real catalogue IDs, no selectors/library/programme-builder UI, no new IndexedDB store/index/version, no backup-format change, no restriction store or Adaptive Brain. Preparing this document does not pass the gate.
-- **Prerequisite curation:** docs/V21.2-EQUIPMENT-EXERCISE-CURATION-MATRIX.md reconciles 44 equipment choices, 42 optional exercises and 32 source slots. The exercise rows remain UNREVIEWED and all source slots UNASSIGNED.
-- **Runtime status:** V21.2 still has no Equipment or Exercise Library view or programme builder. The Gym runner remains the fixed source-preserved five-day base programme with manual free-text substitutions. Production catalogue and guide registry remain unpopulated.
-- **Data-safety boundary:** design and contract tests only. No app runtime code, database schema, backup format, production data, V21.1 source, service-worker cache, Pages setting, deployment or merge is changed.
-- **Protected / published boundaries:** main remains 0d0527a6463c3cfd0fbb54d69123316c9a384b42; V21.2-pages-release-candidate remains a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd. Keep both untouched absent separate explicit approval.
-- **Exact-SHA browser and backup validation is required for this final gate-document commit.** Do not amend the gate after validation; any material scope change reopens it and requires another gate review.
+- **Owner decision:** C1 Catalogue Payload v2 G2 gate was explicitly passed by the user on 19 November 2026. Approval is limited to the v2 loader/validator and offline equipment-definition lookup API described in docs/V21.2-G2-CATALOGUE-PAYLOAD-V2-GATE.md.
+- **Last fully validated pre-implementation checkpoint:** 468ffccfbc5ab22e782dbe0828620f2a5d7103e3. Browser [#44450715226 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44450715226) and backup [#44450715205 PASS](https://github.com/richardblades1980-prog/gym-comeback-app/actions/runs/44450715205) passed on that exact SHA.
+- **C1 implementation scope:** add catalogue payload schema v2 while retaining v1; validate exact counts, equipment definitions, cross-type IDs, controlled-vocabulary references, OR-of-AND equipment requirements and review digest bindings; expose lookupEquipment() from the exact verified active release asset/cache.
+- **Injury metadata contract:** each definition and variation declares complete/incomplete movement-demand metadata. Complete requires every coverage array and a review binding; incomplete remains fail-closed for future injury-aware recommendations. This is not the persistent user restriction record.
+- **Test coverage:** new isolated service tests cover v1 read compatibility, v2 install, requirement semantics, vocabulary/equipment references, digest rejection, offline lookup, exact-URL refetch, cache corruption and no writes to the personal equipment store. Chromium integration installs a test-only v1 then v2 release and checks equipment lookup through a real offline reload.
+- **Data constraints:** keep IndexedDB schema v6 and backup V2; no new store/index/migration. System equipment definitions live only in the verified release asset/cache. No production catalogue content, canonical exercise IDs, reviewer approvals or user-facing selectors are created.
+- **Explicit exclusions:** persistent trainingRestrictions store (C3), changes to readiness, personal equipment UI, Exercise Library UI, programme builder, Adaptive Brain, production catalogue asset, release GC, remote delivery/signing, Pages settings, deployment and merge remain outside C1.
+- **Validation status for current implementation commit:** pending until both browser and backup workflows finish on the exact new branch HEAD. Do not call C1 technically complete before then.
+- **Protected boundaries:** main remains 0d0527a6463c3cfd0fbb54d69123316c9a384b42; V21.2-pages-release-candidate remains a721d7eab7fd0fa57a9f19a094cbc6c2ac24b4dd. Keep both untouched absent separate approval.
 
 
 ---

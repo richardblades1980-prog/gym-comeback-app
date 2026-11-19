@@ -1839,14 +1839,19 @@ function server() {
       };
       const installed = await ProjectComebackCatalogueDelivery.installRelease(manifest, bytes);
       const matches = await ProjectComebackCatalogueDelivery.lookup("Browser Test Squat");
+      let v1EquipmentUnavailable = false;
+      try { await ProjectComebackCatalogueDelivery.lookupEquipment(""); }
+      catch (error) { v1EquipmentUnavailable = /schema v1 catalogue release/.test(error.message); }
       const cacheNames = await caches.keys();
       return {
         installed, matchCount: matches.length, canonicalName: matches[0]?.canonicalName,
+        v1EquipmentUnavailable,
         catalogueCaches: cacheNames.filter(name => name.startsWith(ProjectComebackCatalogueDelivery.cachePrefix))
       };
     });
     if (catalogueOnlineCheck.installed.status !== "active" || catalogueOnlineCheck.matchCount !== 1 ||
-        catalogueOnlineCheck.canonicalName !== "Browser Test Squat" || catalogueOnlineCheck.catalogueCaches.length !== 1) {
+        catalogueOnlineCheck.canonicalName !== "Browser Test Squat" || !catalogueOnlineCheck.v1EquipmentUnavailable ||
+         catalogueOnlineCheck.catalogueCaches.length !== 1) {
       throw new Error("Verified catalogue release did not materialise or become queryable: " + JSON.stringify(catalogueOnlineCheck));
     }
     console.log("[browser] Real app offline reload");
@@ -1873,6 +1878,157 @@ function server() {
       throw new Error("Verified catalogue lookup or release cache did not survive a real offline app reload: " + JSON.stringify(offlineCatalogueCheck));
     }
     console.log("PASS verified catalogue materialisation, lookup and separate release cache survive offline reload");
+
+     console.log("PASS verified v1 exercise lookup and separate release cache survive offline reload");
+
+     console.log("[browser] Install v2 test-only equipment catalogue");
+     await appContext.setOffline(false);
+     const v2CatalogueCheck = await app.evaluate(async () => {
+       const vocabKeys = [
+         "bodyRegions", "muscles", "jointActions", "movementPatterns", "bodyPositions",
+         "supportPoints", "stabilisationDemands", "balanceDemands", "footContactDemands",
+         "footPressureDemands", "weightBearingDemands", "impactDemands", "propulsionDemands",
+         "bracingDemands", "equipmentFamilies", "equipmentLoadingSystems",
+         "equipmentMovementMechanics", "equipmentOrientations", "equipmentSetupAttributes"
+       ];
+       const vocab = Object.fromEntries(vocabKeys.map(key => [key, []]));
+       vocab.version = 1;
+       vocab.bodyRegions = [{ id: "body-upper-test", label: "Upper body (test only)" }];
+       vocab.muscles = [{ id: "muscle-chest-test", label: "Chest (test only)" }];
+       vocab.equipmentFamilies = [
+         { id: "family-machine-test", label: "Machine (test only)" },
+         { id: "family-free-test", label: "Free weight (test only)" },
+         { id: "family-bench-test", label: "Bench (test only)" }
+       ];
+       vocab.equipmentLoadingSystems = [
+         { id: "loading-pin-test", label: "Pin-selected (test only)" },
+         { id: "loading-free-test", label: "Free weight (test only)" }
+       ];
+       vocab.equipmentMovementMechanics = [{ id: "mechanic-fixed-test", label: "Fixed path (test only)" }];
+       vocab.equipmentOrientations = [{ id: "orientation-horizontal-test", label: "Horizontal (test only)" }];
+       vocab.equipmentSetupAttributes = [{ id: "setup-adjustable-test", label: "Adjustable (test only)" }];
+       const stableJson = value => Array.isArray(value)
+         ? "[" + value.map(stableJson).join(",") + "]"
+         : value && typeof value === "object"
+           ? "{" + Object.keys(value).sort().map(key => JSON.stringify(key) + ":" + stableJson(value[key])).join(",") + "}"
+           : JSON.stringify(value);
+       const digest = async value => {
+         const bytes = new TextEncoder().encode(stableJson(value));
+         const hash = await crypto.subtle.digest("SHA-256", bytes);
+         return "sha256:" + [...new Uint8Array(hash)].map(part => part.toString(16).padStart(2, "0")).join("");
+       };
+       const bind = async (value, label) => Object.assign({}, value, {
+         reviewBinding: {
+           targetDigest: await digest(value), reviewRecordId: "review-" + label,
+           reviewerScopeId: "test-only-browser-scope", decision: "approved",
+           evidenceRefs: ["test-only:browser-evidence:" + label]
+         }
+       });
+       const equipmentDefinitions = [
+         await bind({
+           id: "equipment-browser-machine", canonicalName: "Browser Test Machine",
+           familyId: "family-machine-test", reviewStatus: "approved",
+           loadingSystemIds: ["loading-pin-test"], movementMechanicIds: ["mechanic-fixed-test"],
+           orientationIds: ["orientation-horizontal-test"], setupAttributeIds: [],
+           sourceRefs: ["test-only:browser-machine"]
+         }, "machine"),
+         await bind({
+           id: "equipment-browser-dumbbells", canonicalName: "Browser Test Dumbbells",
+           familyId: "family-free-test", reviewStatus: "approved",
+           loadingSystemIds: ["loading-free-test"], movementMechanicIds: [],
+           orientationIds: [], setupAttributeIds: [], sourceRefs: ["test-only:browser-dumbbells"]
+         }, "dumbbells"),
+         await bind({
+           id: "equipment-browser-bench", canonicalName: "Browser Test Adjustable Bench",
+           familyId: "family-bench-test", reviewStatus: "approved",
+           loadingSystemIds: [], movementMechanicIds: [], orientationIds: [],
+           setupAttributeIds: ["setup-adjustable-test"], sourceRefs: ["test-only:browser-bench"]
+         }, "bench")
+       ];
+       const equipmentRequirements = await bind({
+         reviewStatus: "reviewed-required",
+         groups: [{
+           id: "group-browser-equipment",
+           alternatives: [
+             { equipmentDefinitionIds: ["equipment-browser-machine"], configurationConstraints: [] },
+             { equipmentDefinitionIds: ["equipment-browser-dumbbells", "equipment-browser-bench"], configurationConstraints: [] }
+           ]
+         }]
+       }, "requirements");
+       const coverageKeys = [
+         "primaryInvolvement", "secondaryInvolvement", "otherRelevantInvolvement",
+         "jointActionIds", "movementPatternIds", "bodyPositionIds", "supportPointIds",
+         "stabilisationDemandIds", "balanceDemandIds", "footContactDemandIds",
+         "footPressureDemandIds", "weightBearingDemandIds", "impactDemandIds",
+         "propulsionDemandIds", "setupBracingDemandIds", "equipmentConfigurationConstraints"
+       ];
+       const coverage = Object.fromEntries(coverageKeys.map(key => [key, []]));
+       coverage.primaryInvolvement = [{ bodyRegionIds: ["body-upper-test"], muscleIds: ["muscle-chest-test"] }];
+       const movementDemandProfile = await bind({ reviewStatus: "complete", coverage }, "movement");
+       const controlledVocabulariesReviewBinding = {
+         targetDigest: await digest(vocab), reviewRecordId: "review-browser-vocab",
+         reviewerScopeId: "test-only-browser-vocab-scope", decision: "approved",
+         evidenceRefs: ["test-only:browser-vocabulary-source"]
+       };
+       const payload = {
+         catalogueId: "exercise-catalogue", releaseId: "browser-catalogue-v2-r2",
+         version: 2, schemaVersion: 2,
+         definitions: [{
+           id: "exercise-browser-v2-press", kind: "system", canonicalName: "Browser Test Press",
+           equipmentRequirements, movementDemandProfile
+         }],
+         variations: [], equipmentDefinitions,
+         controlledVocabularies: vocab, controlledVocabulariesReviewBinding
+       };
+       const bytes = new TextEncoder().encode(JSON.stringify(payload));
+       const hash = await crypto.subtle.digest("SHA-256", bytes);
+       const checksum = "sha256:" + [...new Uint8Array(hash)].map(part => part.toString(16).padStart(2, "0")).join("");
+       const vocabularyEntryCount = vocabKeys.reduce((count, key) => count + vocab[key].length, 0);
+       const manifest = {
+         id: payload.releaseId, catalogueId: payload.catalogueId, releaseId: payload.releaseId,
+         version: payload.version, schemaVersion: payload.schemaVersion,
+         assetUrl: "./catalogues/exercise/" + payload.releaseId + "/" + checksum.slice(7) + ".json",
+         contentType: "application/json", byteLength: bytes.byteLength, checksum,
+         entryCount: payload.definitions.length, variationCount: payload.variations.length,
+         equipmentDefinitionCount: payload.equipmentDefinitions.length, vocabularyEntryCount
+       };
+       const installed = await ProjectComebackCatalogueDelivery.installRelease(manifest, bytes);
+       const equipment = await ProjectComebackCatalogueDelivery.lookupEquipment("Browser Test Machine");
+       const exercises = await ProjectComebackCatalogueDelivery.lookup("Browser Test Press");
+       const personalEquipmentRows = await ProjectComebackDB.getAll("equipment");
+       return {
+         installed, equipmentCount: equipment.length, equipmentId: equipment[0]?.id,
+         exerciseName: exercises[0]?.canonicalName,
+         personalStoreHasSystemDefinition: personalEquipmentRows.some(row => row.id === "equipment-browser-machine")
+       };
+     });
+     if (v2CatalogueCheck.installed.status !== "active" || v2CatalogueCheck.equipmentCount !== 1 ||
+         v2CatalogueCheck.equipmentId !== "equipment-browser-machine" ||
+         v2CatalogueCheck.exerciseName !== "Browser Test Press" ||
+         v2CatalogueCheck.personalStoreHasSystemDefinition) {
+       throw new Error("V2 catalogue install/equipment lookup failed or wrote system data to personal equipment: " + JSON.stringify(v2CatalogueCheck));
+     }
+     console.log("PASS v2 equipment definitions validate and look up from the verified catalogue release");
+
+     await appContext.setOffline(true);
+     await app.reload();
+     await app.waitForFunction(() => document.querySelector("#connection-state").textContent === "Local database ready");
+     const offlineV2CatalogueCheck = await app.evaluate(async () => {
+       const status = await ProjectComebackCatalogueDelivery.getStatus();
+       const equipment = await ProjectComebackCatalogueDelivery.lookupEquipment("Browser Test Machine");
+       return {
+         status: status.status, releaseId: status.release?.releaseId,
+         equipmentCount: equipment.length, equipmentId: equipment[0]?.id,
+         names: await caches.keys()
+       };
+     });
+     if (offlineV2CatalogueCheck.status !== "active" || offlineV2CatalogueCheck.releaseId !== "browser-catalogue-v2-r2" ||
+         offlineV2CatalogueCheck.equipmentCount !== 1 || offlineV2CatalogueCheck.equipmentId !== "equipment-browser-machine" ||
+         !offlineV2CatalogueCheck.names.some(name => name.startsWith(ProjectComebackCatalogueDelivery.cachePrefix) && name.includes("browser-catalogue-v2-r2"))) {
+       throw new Error("V2 equipment lookup did not survive a real offline app reload: " + JSON.stringify(offlineV2CatalogueCheck));
+     }
+     console.log("PASS v2 equipment-definition lookup survives a real offline app reload");
+
 
     await appContext.close();
     appContext = null;
