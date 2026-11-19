@@ -7,11 +7,11 @@ const path = require("node:path");
 const file = path.join(__dirname, "..", "docs", "V21.2-G2-CATALOGUE-PAYLOAD-V2-GATE.md");
 const source = fs.readFileSync(file, "utf8");
 
-test("C1 is a G2 HOLD and explicitly requires owner approval", () => {
+test("C1 is a G2 PASS and implementation scope is explicit", () => {
   assert.match(source, /Classification:\*\* G2/);
-  assert.match(source, /Status:\*\* \*\*HOLD/);
-  assert.match(source, /Owner decision:\*\* HOLD/);
-  assert.match(source, /No implementation is authorised by preparing this gate/);
+  assert.match(source, /Status:\*\* \*\*PASS/);
+  assert.match(source, /Owner decision:\*\* PASS/);
+  assert.match(source, /Implementation authority:\*\* C1 authorises only the v2 catalogue loader\/validator/);
 });
 
 test("v2 extends but does not rewrite the verified v1 catalogue release contract", () => {

@@ -47,7 +47,7 @@ function bindReview(target, id) {
   });
 }
 function countVocabulary(vocab) {
-  return V2_VOCABULARY_KEYS.reduce((count, key) => count + vocab[key].length, 0);
+  return V2_VOCABULARY_KEYS.reduce((count, key) => count + (Array.isArray(vocab[key]) ? vocab[key].length : 0), 0);
 }
 function makeVocabulary() {
   const vocab = { version: 1 };
@@ -394,7 +394,7 @@ test("v2 equipment lookup re-fetches the exact immutable asset when cache bytes 
     requested = { url, options };
     return new Response(bytes, { status: 200, headers: { "content-type": "application/json" } });
   };
-  const equipment = await runtime.window.ProjectComebackCatalogueDelivery.lookupEquipment("Fixture Machine");
+  const equipment = await runtime.window.ProjectComebackCatalogueDelivery.lookupEquipment("Selectorised");
   assert.equal(equipment.length, 1);
   assert.equal(equipment[0].id, "equipment-fixture-machine");
   assert.equal(requested.url, manifest.assetUrl);
