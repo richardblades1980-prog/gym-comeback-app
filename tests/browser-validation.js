@@ -252,7 +252,18 @@ function server() {
       }));
       throw new Error("E1 edit did not persist: " + JSON.stringify(diagnostic));
     }
-    await cleanStartPage.waitForFunction(() => document.querySelector('.equipment-record[data-location-id="home"]')?.textContent.includes("Home leg press"), null, { timeout: 10000 });
+    try {
+      await cleanStartPage.waitForFunction(() => document.querySelector('.equipment-record[data-location-id="home"]')?.textContent.includes("Home leg press"), null, { timeout: 10000 });
+    } catch (error) {
+      const diagnostic = await cleanStartPage.evaluate(() => ({
+        cards: Array.from(document.querySelectorAll(".equipment-record")).map(card => ({
+          location: card.dataset.locationId, id: card.dataset.equipmentId, text: card.textContent
+        })),
+        list: document.querySelector("#equipment-list")?.innerHTML,
+        notice: document.querySelector("#notice")?.textContent
+      }));
+      throw new Error("E1 updated DB but did not refresh the matching card: " + JSON.stringify(diagnostic));
+    }
     if (!(await cleanStartPage.locator('.equipment-record[data-location-id="home"]').textContent()).includes("Home leg press")) {
       throw new Error("E1 equipment edit did not update the selected instance.");
     }
