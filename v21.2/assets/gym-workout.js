@@ -7,7 +7,8 @@
   const PROGRAMME_ID = "gym-base-programme-source-v1";
   const MAX_SETS = 8;
   const REST_PRESETS = Object.freeze([45, 60, 75, 90, 120, 150, 180]);
-  const SET_STATUSES = Object.freeze(["locked", "not-started", "in-progress", "completed"]);\n  const FIRST_SET_AUTOFILL_FIELDS = Object.freeze(["weight", "reps", "targetDuration"]);
+  const SET_STATUSES = Object.freeze(["locked", "not-started", "in-progress", "completed"]);
+  const FIRST_SET_AUTOFILL_FIELDS = Object.freeze(["weight", "reps", "targetDuration"]);
 
   function requiredString(value, label) {
     if (typeof value !== "string" || !value.trim()) throw new Error(label + " is required.");
