@@ -204,7 +204,7 @@
 
   function validateUserEquipmentAccessRecord(record) {
     if (!record || typeof record !== "object" || Array.isArray(record) ||
-        record.recordType !== USER_EQUIPMENT_RECORD_TYPE || record.schemaVersion !== 1 ||
+        record.recordType !== USER_EQUIPMENT_RECORD_TYPE || ![1, 2].includes(record.schemaVersion) ||
         typeof record.id !== "string" || !record.id.startsWith("user-equipment:") ||
         typeof record.profileId !== "string" || !record.profileId.trim() ||
         record.moduleId !== "gym" || !["catalogue", "custom"].includes(record.itemKind) ||
@@ -220,6 +220,7 @@
       "location", "instanceLabel", "availability", "status", "confirmedConfiguration", "createdAt", "updatedAt"]);
     const catalogue = new Set(["equipmentDefinitionId", "catalogueId", "catalogueReleaseId", "catalogueVersion"]);
     const custom = new Set(["customName"]);
+    if (record.schemaVersion === 2) common.add("weightInventory");
     const allowed = new Set([...common, ...(record.itemKind === "catalogue" ? catalogue : custom)]);
     if (Object.keys(record).some(key => !allowed.has(key))) {
       throw new Error("User equipment access record contains an unsupported field.");
@@ -257,11 +258,78 @@
          new Set(config.setupAttributeIds).size !== config.setupAttributeIds.length)) {
       throw new Error("Confirmed setup attributes must be unique non-empty IDs.");
     }
+    if (record.schemaVersion === 2) validateUserEquipmentWeightInventory(record.weightInventory);
+    return true;
+  }
+
+  const WEIGHT_INVENTORY_STATUSES = new Set(["unknown", "not-applicable", "confirmed"]);
+  const WEIGHT_GROUPINGS = new Set(["individual", "matched-pairs"]);
+
+  function validateUserEquipmentWeightInventory(inventory) {
+    if (!inventory || typeof inventory !== "object" || Array.isArray(inventory) ||
+        Object.keys(inventory).some(key => !["status", "entries"].includes(key)) ||
+        !WEIGHT_INVENTORY_STATUSES.has(inventory.status) || !Array.isArray(inventory.entries)) {
+      throw new Error("User equipment weight inventory requires an explicit status and entries array.");
+    }
+    if (inventory.status !== "confirmed") {
+      if (inventory.entries.length !== 0) throw new Error("Unknown or not-applicable weight inventory cannot contain weight entries.");
+      return true;
+    }
+    if (inventory.entries.length === 0) throw new Error("Confirmed weight inventory must contain at least one physical weight entry.");
+    const ids = new Set();
+    const positiveInteger = value => Number.isSafeInteger(value) && value > 0;
+    const optionalCompatibility = entry => entry.compatibilityGroup === undefined ||
+      (typeof entry.compatibilityGroup === "string" && !!entry.compatibilityGroup.trim());
+    for (const entry of inventory.entries) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
+          typeof entry.id !== "string" || !entry.id.trim() || ids.has(entry.id)) {
+        throw new Error("Weight inventory entries require unique, non-empty IDs.");
+      }
+      ids.add(entry.id);
+      if (entry.kind === "fixed") {
+        const allowed = ["id", "kind", "equipmentType", "massGrams", "quantity", "grouping"];
+        if (Object.keys(entry).some(key => !allowed.includes(key)) ||
+            !["dumbbell", "kettlebell", "medicine-ball"].includes(entry.equipmentType) ||
+            !positiveInteger(entry.massGrams) || !positiveInteger(entry.quantity) ||
+            !WEIGHT_GROUPINGS.has(entry.grouping) ||
+            (entry.grouping === "matched-pairs" && entry.quantity % 2 !== 0)) {
+          throw new Error("Fixed-weight entries require a supported type, positive integer grams and physical quantity; matched pairs must be even.");
+        }
+      } else if (entry.kind === "adjustable-dumbbell") {
+        const allowed = ["id", "kind", "handleCount", "minimumMassGrams", "maximumMassGrams", "incrementMassGrams"];
+        if (Object.keys(entry).some(key => !allowed.includes(key)) ||
+            ![1, 2].includes(entry.handleCount) ||
+            !positiveInteger(entry.minimumMassGrams) || !positiveInteger(entry.maximumMassGrams) ||
+            !positiveInteger(entry.incrementMassGrams) || entry.maximumMassGrams < entry.minimumMassGrams ||
+            (entry.maximumMassGrams - entry.minimumMassGrams) % entry.incrementMassGrams !== 0) {
+          throw new Error("Adjustable dumbbells require one or two handles and a valid integer-gram range with real increments.");
+        }
+      } else if (entry.kind === "bar") {
+        const allowed = ["id", "kind", "barType", "massGrams", "quantity", "compatibilityGroup"];
+        if (Object.keys(entry).some(key => !allowed.includes(key)) ||
+            !["barbell", "ez-curl-bar"].includes(entry.barType) ||
+            !positiveInteger(entry.massGrams) || !positiveInteger(entry.quantity) ||
+            !optionalCompatibility(entry)) {
+          throw new Error("Bar entries require a supported bar type, positive integer grams and physical quantity.");
+        }
+      } else if (entry.kind === "plate") {
+        const allowed = ["id", "kind", "massGrams", "quantity", "grouping", "compatibilityGroup"];
+        if (Object.keys(entry).some(key => !allowed.includes(key)) ||
+            !positiveInteger(entry.massGrams) || !positiveInteger(entry.quantity) ||
+            !WEIGHT_GROUPINGS.has(entry.grouping) ||
+            (entry.grouping === "matched-pairs" && entry.quantity % 2 !== 0) ||
+            !optionalCompatibility(entry)) {
+          throw new Error("Plate entries require positive integer grams, physical quantity and valid grouping.");
+        }
+      } else {
+        throw new Error("Weight inventory contains an unsupported entry kind.");
+      }
+    }
     return true;
   }
 
   function assertUserEquipmentIdentityUnchanged(existing, incoming) {
-    for (const field of ["id", "profileId", "itemKind", "createdAt"]) {
+    for (const field of ["id", "profileId", "itemKind", "schemaVersion", "createdAt"]) {
       if (existing[field] !== incoming[field]) throw new Error("User equipment identity field cannot be changed: " + field);
     }
     if (existing.itemKind === "catalogue") {
@@ -676,6 +744,9 @@
 
   async function addUserEquipment(record) {
     const prepared = Object.assign({ status: "active", availability: "unknown", confirmedConfiguration: {} }, record);
+    if (prepared.schemaVersion === 2 && prepared.weightInventory === undefined) {
+      prepared.weightInventory = { status: "unknown", entries: [] };
+    }
     if (record && record.status && record.status !== "active") throw new Error("New user equipment records must start active.");
     validateUserEquipmentAccessRecord(prepared);
     if (!await get("profile", prepared.profileId)) throw new Error("User equipment must belong to an existing profile.");
