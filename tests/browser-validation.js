@@ -219,6 +219,7 @@ function server() {
     await equipmentForm.locator('[name="orientation"]').selectOption("horizontal");
     await equipmentForm.locator('[name="availability"]').selectOption("unknown");
     await cleanStartPage.getByRole("button", { name: "Save equipment" }).click();
+    await cleanStartPage.waitForFunction(() => document.querySelectorAll(".equipment-record").length === 2, null, { timeout: 10000 });
     if (await cleanStartPage.locator(".equipment-record").count() !== 2) {
       throw new Error("E1 did not preserve two separate physical instances of the same equipment type.");
     }
@@ -236,15 +237,18 @@ function server() {
     await equipmentForm.locator('[name="customName"]').fill("Home leg press");
     await equipmentForm.locator('[name="orientation"]').selectOption("vertical");
     await cleanStartPage.getByRole("button", { name: "Save changes" }).click();
+    await cleanStartPage.waitForFunction(() => document.querySelectorAll(".equipment-record")[1]?.textContent.includes("Home leg press"), null, { timeout: 10000 });
     if (!(await cleanStartPage.locator(".equipment-record").nth(1).textContent()).includes("Home leg press")) {
       throw new Error("E1 equipment edit did not update the selected instance.");
     }
     await cleanStartPage.locator(".equipment-record").first().getByRole("button", { name: "Temporarily unavailable" }).click();
+    await cleanStartPage.waitForFunction(async () => (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0]?.availability === "temporarily-unavailable");
     const unavailable = await cleanStartPage.evaluate(async () =>
       (await ProjectComebackDB.listUserEquipment("gym-profile", "gym"))[0].availability);
     if (unavailable !== "temporarily-unavailable") throw new Error("E1 availability change was not persisted.");
     cleanStartPage.once("dialog", dialog => dialog.accept());
     await cleanStartPage.locator(".equipment-record").nth(1).getByRole("button", { name: "Retire" }).click();
+    await cleanStartPage.waitForFunction(async () => (await ProjectComebackDB.listUserEquipment("gym-profile")).length === 1);
     const retired = await cleanStartPage.evaluate(async () => ({
       active: (await ProjectComebackDB.listUserEquipment("gym-profile")).length,
       records: await ProjectComebackDB.getAll("equipment")
