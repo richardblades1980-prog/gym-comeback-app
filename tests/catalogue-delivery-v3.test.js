@@ -470,7 +470,7 @@ test("v3 rejects missing locale, count mismatch, absent/stale bindings and inval
     ["markdown", p => { bindDescription(p.definitions[0], "**Press**", "markdown"); }, /plain text without HTML or Markdown/],
     ["single emphasis", p => { bindDescription(p.definitions[0], "*Press*", "single-emphasis"); }, /plain text without HTML or Markdown/],
     ["whitespace", p => { bindDescription(p.definitions[0], " Press ", "whitespace"); }, /must be trimmed/],
-    ["control/newline", p => { bindDescription(p.definitions[0], "Press\\nmovement", "newline"); }, /single paragraph without control characters/],
+    ["control/newline", p => { bindDescription(p.definitions[0], "Press\nmovement", "newline"); }, /single paragraph without control characters/],
     ["unicode length", p => { bindDescription(p.definitions[0], "😀".repeat(1001), "long"); }, /exceeds 1,000 Unicode characters/],
     ["stale digest", p => { p.definitions[0].descriptionReviewBinding.targetDigest = "sha256:" + "0".repeat(64); }, /description review target digest does not match/]
   ];
