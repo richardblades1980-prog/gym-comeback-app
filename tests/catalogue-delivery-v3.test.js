@@ -494,6 +494,8 @@ test("v3 manifest rejects missing descriptionCount and v1/v2 reject v3 payload f
   bindDescription(v2.definitions[0], "A description that must require schema v3.", "v2");
   const v2item = makeManifest(v2);
   await assert.rejects(runtime.window.ProjectComebackCatalogueDelivery.installRelease(v2item.manifest, new Uint8Array(v2item.bytes)), /v2 payloads cannot contain catalogue descriptions/);
+  const countMismatch = { ...manifest, descriptionCount: manifest.descriptionCount + 1 };
+  await assert.rejects(runtime.window.ProjectComebackCatalogueDelivery.installRelease(countMismatch, new Uint8Array(bytes)), /description count does not match/);
   const unsupported = { ...manifest, schemaVersion: 4 };
   await assert.throws(() => runtime.window.ProjectComebackCatalogueDelivery.validateManifest(unsupported), /unsupported manifest\/payload schema version/);
 });
