@@ -28,6 +28,35 @@ async function reset(db, backup) {
   await db.put("profile", { id: "profile-main", displayName: "Test profile" });
 }
 
+function customRecord(id, overrides) {
+  return Object.assign({
+    id: "user-equipment:" + id,
+    recordType: "user-equipment-access",
+    schemaVersion: 1,
+    profileId: "profile-main",
+    moduleId: "gym",
+    itemKind: "custom",
+    customName: "User described machine",
+    location: { id: "gym", label: "Gym" },
+    availability: "unknown",
+    status: "active",
+    confirmedConfiguration: {}
+  }, overrides || {});
+}
+
+function confirmedWeightInventory() {
+  return {
+    status: "confirmed",
+    entries: [
+      { id: "fixed-db-5kg", kind: "fixed", equipmentType: "dumbbell", massGrams: 5000, quantity: 2, grouping: "matched-pairs" },
+      { id: "kettlebell-12kg", kind: "fixed", equipmentType: "kettlebell", massGrams: 12000, quantity: 1, grouping: "individual" },
+      { id: "adjustable-db-pair", kind: "adjustable-dumbbell", handleCount: 2, minimumMassGrams: 2500, maximumMassGrams: 24000, incrementMassGrams: 500 },
+      { id: "olympic-bar", kind: "bar", barType: "barbell", massGrams: 20000, quantity: 1, compatibilityGroup: "olympic-50mm" },
+      { id: "olympic-plates-2-5", kind: "plate", massGrams: 2500, quantity: 4, grouping: "matched-pairs", compatibilityGroup: "olympic-50mm" }
+    ]
+  };
+}
+
 function v1Envelope(backup, equipment) {
   const data = Object.fromEntries(backup.legacyStores.map(name => [name, []]));
   data.profile = [{ id: "profile-main", displayName: "Test" }];
