@@ -198,6 +198,73 @@
     }
   }
 
+  const USER_EQUIPMENT_RECORD_TYPE = "user-equipment-access";
+  const USER_EQUIPMENT_AVAILABILITY = new Set(["available", "temporarily-unavailable", "unknown"]);
+  const USER_EQUIPMENT_STATUS = new Set(["active", "retired"]);
+
+  function validateUserEquipmentAccessRecord(record) {
+    if (!record || typeof record !== "object" || Array.isArray(record) ||
+        record.recordType !== USER_EQUIPMENT_RECORD_TYPE || record.schemaVersion !== 1 ||
+        typeof record.id !== "string" || !record.id.startsWith("user-equipment:") ||
+        typeof record.profileId !== "string" || !record.profileId.trim() ||
+        record.moduleId !== "gym" || !["catalogue", "custom"].includes(record.itemKind) ||
+        !record.location || typeof record.location !== "object" ||
+        typeof record.location.id !== "string" || !record.location.id.trim() ||
+        typeof record.location.label !== "string" || !record.location.label.trim() ||
+        !USER_EQUIPMENT_AVAILABILITY.has(record.availability) ||
+        !USER_EQUIPMENT_STATUS.has(record.status || "active")) {
+      throw new Error("User equipment access record has an invalid identity, owner, location, status or availability.");
+    }
+    const common = new Set(["id", "recordType", "schemaVersion", "profileId", "moduleId", "itemKind",
+      "location", "instanceLabel", "availability", "status", "confirmedConfiguration", "createdAt", "updatedAt"]);
+    const catalogue = new Set(["equipmentDefinitionId", "catalogueId", "catalogueReleaseId", "catalogueVersion"]);
+    const custom = new Set(["customName"]);
+    const allowed = new Set([...common, ...(record.itemKind === "catalogue" ? catalogue : custom)]);
+    if (Object.keys(record).some(key => !allowed.has(key))) {
+      throw new Error("User equipment access record contains an unsupported field.");
+    }
+    if (record.instanceLabel !== undefined && (typeof record.instanceLabel !== "string" || !record.instanceLabel.trim())) {
+      throw new Error("User equipment instance labels must be non-empty text when supplied.");
+    }
+    if (record.itemKind === "catalogue") {
+      if (typeof record.equipmentDefinitionId !== "string" || !record.equipmentDefinitionId ||
+          typeof record.catalogueId !== "string" || !record.catalogueId ||
+          typeof record.catalogueReleaseId !== "string" || !record.catalogueReleaseId ||
+          !Number.isInteger(record.catalogueVersion) || record.catalogueVersion < 1) {
+        throw new Error("Catalogue equipment records require an exact definition and immutable release identity.");
+      }
+    } else if (typeof record.customName !== "string" || !record.customName.trim()) {
+      throw new Error("Custom equipment records require a user-entered name.");
+    }
+    const config = record.confirmedConfiguration === undefined ? {} : record.confirmedConfiguration;
+    if (!config || typeof config !== "object" || Array.isArray(config) ||
+        Object.keys(config).some(key => !["loadingSystemId", "movementMechanicsId", "orientationId", "setupAttributeIds"].includes(key))) {
+      throw new Error("Confirmed equipment configuration contains unsupported attributes.");
+    }
+    for (const key of ["loadingSystemId", "movementMechanicsId", "orientationId"]) {
+      if (config[key] !== undefined && (typeof config[key] !== "string" || !config[key].trim())) {
+        throw new Error("Confirmed equipment configuration values must be non-empty IDs.");
+      }
+    }
+    if (config.setupAttributeIds !== undefined &&
+        (!Array.isArray(config.setupAttributeIds) || config.setupAttributeIds.some(value => typeof value !== "string" || !value) ||
+         new Set(config.setupAttributeIds).size !== config.setupAttributeIds.length)) {
+      throw new Error("Confirmed setup attributes must be unique non-empty IDs.");
+    }
+    return true;
+  }
+
+  function assertUserEquipmentIdentityUnchanged(existing, incoming) {
+    for (const field of ["id", "profileId", "itemKind", "createdAt"]) {
+      if (existing[field] !== incoming[field]) throw new Error("User equipment identity field cannot be changed: " + field);
+    }
+    if (existing.itemKind === "catalogue") {
+      for (const field of ["equipmentDefinitionId", "catalogueId", "catalogueReleaseId", "catalogueVersion"]) {
+        if (existing[field] !== incoming[field]) throw new Error("Catalogue equipment release identity cannot be rebound: " + field);
+      }
+    }
+  }
+
   async function withStore(name, mode, work) {
     validateStore(name);
     const db = await open();
@@ -246,6 +313,7 @@
       throw new Error("Records must have a stable, non-empty id.");
     }
     await assertProgrammeRecordMutable(name, record);
+    if (name === "equipment" && record.recordType === USER_EQUIPMENT_RECORD_TYPE) validateUserEquipmentAccessRecord(record);
     if (name === "identityReviewEvents") {
       if (record.eventSchemaVersion !== 1 || !record.profileId || !record.idempotencyKey || !record.actor ||
           typeof record.sourceExactValue !== "string" || !record.sourceNamespace ||
@@ -554,6 +622,15 @@
       throw new Error("Records must have a stable, non-empty id.");
     }
     await assertProgrammeRecordMutable(name, record);
+    if (name === "equipment") {
+      const existing = await get("equipment", record.id);
+      if (record.recordType === USER_EQUIPMENT_RECORD_TYPE) {
+        validateUserEquipmentAccessRecord(record);
+        if (existing && existing.recordType === USER_EQUIPMENT_RECORD_TYPE) assertUserEquipmentIdentityUnchanged(existing, record);
+      } else if (existing && existing.recordType === USER_EQUIPMENT_RECORD_TYPE) {
+        throw new Error("Typed user equipment records must be updated through the validated inventory contract.");
+      }
+    }
     const now = new Date().toISOString();
     const saved = Object.assign({}, record, {
       createdAt: record.createdAt || now,
@@ -566,7 +643,55 @@
     if (IMMUTABLE_STORES.has(name)) throw new Error("Store " + name + " is append-only and records cannot be deleted.");
     if (name === "exerciseDefinitions" || name === "exerciseVariations") throw new Error("Exercise definitions and variations are retained by ID; retire them by changing status instead of deleting.");
     await assertProgrammeRecordMutable(name, id);
+    if (name === "equipment") {
+      const existing = await get("equipment", id);
+      if (existing && existing.recordType === USER_EQUIPMENT_RECORD_TYPE) {
+        throw new Error("Typed user equipment records cannot be hard-deleted; retire the record instead.");
+      }
+    }
     return withStore(name, "readwrite", store => requestResult(store.delete(id)));
+  }
+
+  async function listUserEquipment(profileId, locationId) {
+    if (typeof profileId !== "string" || !profileId.trim()) throw new Error("A profile ID is required to list user equipment.");
+    const records = await getAll("equipment");
+    return records.filter(record => record.recordType === USER_EQUIPMENT_RECORD_TYPE &&
+      record.profileId === profileId && (!locationId || record.location.id === locationId))
+      .filter(record => validateUserEquipmentAccessRecord(record) && (record.status || "active") === "active");
+  }
+
+  async function assertUserEquipmentCatalogueRelease(record) {
+    if (record.itemKind !== "catalogue") return;
+    const release = await get("catalogueReleases", record.catalogueReleaseId);
+    if (!release || release.catalogueId !== record.catalogueId || Number(release.version) !== record.catalogueVersion) {
+      throw new Error("User equipment references a catalogue release that is not retained with the exact catalogue version.");
+    }
+  }
+
+  async function addUserEquipment(record) {
+    const prepared = Object.assign({ status: "active", availability: "unknown", confirmedConfiguration: {} }, record);
+    if (record && record.status && record.status !== "active") throw new Error("New user equipment records must start active.");
+    validateUserEquipmentAccessRecord(prepared);
+    await assertUserEquipmentCatalogueRelease(prepared);
+    return add("equipment", prepared);
+  }
+
+  async function updateUserEquipment(record) {
+    validateUserEquipmentAccessRecord(record);
+    const existing = await get("equipment", record.id);
+    if (!existing || existing.recordType !== USER_EQUIPMENT_RECORD_TYPE) throw new Error("Typed user equipment record was not found.");
+    assertUserEquipmentIdentityUnchanged(existing, record);
+    validateUserEquipmentAccessRecord(record);
+    await assertUserEquipmentCatalogueRelease(record);
+    return put("equipment", record);
+  }
+
+  async function retireUserEquipment(id, profileId) {
+    const existing = await get("equipment", id);
+    if (!existing || existing.recordType !== USER_EQUIPMENT_RECORD_TYPE || existing.profileId !== profileId) {
+      throw new Error("Typed user equipment record was not found for this profile.");
+    }
+    return updateUserEquipment(Object.assign({}, existing, { status: "retired" }));
   }
 
   async function count(name) {
@@ -764,6 +889,14 @@
     count,
     getMeta,
     setMeta,
+    listUserEquipment,
+    addUserEquipment,
+    updateUserEquipment,
+    retireUserEquipment,
+    isUserEquipmentAccessRecord: record => {
+      try { return !!record && record.recordType === USER_EQUIPMENT_RECORD_TYPE && validateUserEquipmentAccessRecord(record); }
+      catch (error) { return false; }
+    },
     importLegacySnapshot,
     commitLegacyMigration
   });
