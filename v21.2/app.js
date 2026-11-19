@@ -102,7 +102,7 @@ function renderGymWorkout(){
  $("gym-workout-exercises").innerHTML=workout.exerciseRecords.map(exercise=>{
   const exerciseDisplayName=exercise.performedExerciseName||exercise.name;
   const sets=exercise.sets.map(set=>{
-   const locked=set.status==="locked",done=set.status==="completed";
+   const locked=set.status==="locked",done=set.status==="completed";const autoFilled=Object.values(set.fieldOrigins||{}).includes("first-set");
    const repField=exercise.recordingMode==="reps"||exercise.recordingMode==="timed-reps"
     ?'<label>Reps<input type="number" min="0" step="1" value="'+esc(set.reps)+'" data-gym-field="reps" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'" aria-label="'+esc(exerciseDisplayName)+' set '+set.setNumber+' repetitions" '+(locked?'disabled':'')+'></label>':"";
    const timed=exercise.recordingMode==="timed-hold"||exercise.recordingMode==="timed-reps";
@@ -113,7 +113,7 @@ function renderGymWorkout(){
     done?'<button class="secondary" type="button" data-gym-action="undo" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Undo completion</button>':
     set.status==="in-progress"?'<button class="primary" type="button" data-gym-action="complete" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Set completed</button>':
     '<button class="secondary" type="button" data-gym-action="start" data-exercise-id="'+esc(exercise.id)+'" data-set-number="'+set.setNumber+'">Start set</button>';
-   return '<div class="gym-set-row"><div class="gym-set-heading"><strong>Set '+set.setNumber+'</strong><span class="gym-set-state">'+esc(set.status.replace("-"," "))+'</span></div><div class="gym-set-fields">'+weightField+repField+durationField+'</div><div class="gym-set-action">'+action+'</div></div>';
+   return '<div class="gym-set-row"><div class="gym-set-heading"><strong>Set '+set.setNumber+'</strong><span class="gym-set-state">'+esc(set.status.replace("-"," "))+'</span><small class="gym-set-autofill-note" '+(autoFilled?'':'hidden')+'>From Set 1 · editable</small></div><div class="gym-set-fields">'+weightField+repField+durationField+'</div><div class="gym-set-action">'+action+'</div></div>';
   }).join("");
   const restOptions=ProjectComebackGymWorkout.restPresets.map(seconds=>'<option value="'+seconds+'"'+(Number(exercise.restSeconds||90)===seconds?' selected':'')+'>'+seconds+' sec</option>').join("");
   const swapDisabled=exercise.status!=="not-started"||exercise.sets.some(set=>set.status==="in-progress"||set.status==="completed"||set.startedAt||set.completedAt||[set.weight,set.reps,set.duration,set.targetDuration].some(value=>value!==undefined&&value!==null&&String(value).trim()!==""));
@@ -239,7 +239,23 @@ async function handleGymWorkoutField(event){
  try{
   input.disabled=true;
   if(input.dataset.gymField==="restSeconds")await ProjectComebackGymWorkout.setExerciseRest(activeGymWorkout,input.dataset.exerciseId,Number(input.value));
-  else await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,input.dataset.exerciseId,Number(input.dataset.setNumber),{[input.dataset.gymField]:input.value});
+  else {
+   const exerciseId=input.dataset.exerciseId,setNumber=Number(input.dataset.setNumber),field=input.dataset.gymField;
+   await ProjectComebackGymWorkout.updateSetValues(activeGymWorkout,exerciseId,setNumber,{[field]:input.value});
+   const exercise=activeGymWorkout.exerciseRecords.find(item=>item.id===exerciseId);
+   const card=input.closest(".gym-exercise-card");
+   const rows=card?card.querySelectorAll(".gym-set-row"):[];
+   exercise.sets.forEach(set=>{
+    const row=rows[set.setNumber-1];
+    if(!row)return;
+    if(setNumber===1&&set.setNumber>1&&["weight","reps","targetDuration"].includes(field)){
+     const target=row.querySelector('[data-gym-field="'+field+'"]');
+     if(target)target.value=set[field]||"";
+    }
+    const note=row.querySelector(".gym-set-autofill-note");
+    if(note)note.hidden=!Object.values(set.fieldOrigins||{}).includes("first-set");
+   });
+  }
   $("gym-workout-status").textContent="Saved locally.";
  }catch(error){notice(error.message,true);}
  finally{input.disabled=false;}

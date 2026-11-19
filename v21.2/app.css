@@ -28,7 +28,7 @@
 .gym-set-row{padding:12px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:80px minmax(0,1fr) auto;align-items:center;gap:12px}
 .gym-set-heading{display:grid;gap:4px}
 .gym-set-heading strong{font-size:13px}
-.gym-set-state{color:var(--muted);font-size:11px}
+.gym-set-state{color:var(--muted);font-size:11px}\n.gym-set-autofill-note{color:var(--accent);font-size:10px;line-height:1.3}
 .gym-set-fields{display:flex;gap:9px;flex-wrap:wrap}
 .gym-set-fields label{display:grid;gap:4px;color:var(--muted);font-size:10px}
 .gym-set-fields input{width:94px;min-height:36px;padding:7px 8px;font-size:13px}
