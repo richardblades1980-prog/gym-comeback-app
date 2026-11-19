@@ -55,7 +55,7 @@ test("empty guide registry is cached in the shell, not the dedicated artwork cac
   assert.equal(registry.schemaVersion, 2);
   assert.deepEqual(registry.guides, []);
   assert.ok(sw.includes("./assets/exercise-guide-registry.v2.json"));
-  assert.ok(sw.includes('const CACHE_NAME=CACHE_PREFIX+"v28";'));
+  assert.ok(sw.includes('const CACHE_NAME=CACHE_PREFIX+"v29";'));
 });
 
 test("guide artwork requests bypass generic shell caching", () => {
