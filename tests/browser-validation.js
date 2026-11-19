@@ -1846,7 +1846,7 @@ function server() {
       return {
         installed, matchCount: matches.length, canonicalName: matches[0]?.canonicalName,
         v1EquipmentUnavailable,
-        catalogueCaches: cacheNames.filter(name => name.startsWith(ProjectComebackCatalogueDelivery.cachePrefix))
+        catalogueCaches: cacheNames.filter(name => name.startsWith("project-comeback-v21-2a-catalogue-"))
       };
     });
     if (catalogueOnlineCheck.installed.status !== "active" || catalogueOnlineCheck.matchCount !== 1 ||
