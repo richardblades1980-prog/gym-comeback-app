@@ -299,11 +299,18 @@
     for (const name of names) {
       const current = currentRecords[name], incoming = parsed.data.data[name];
       const merge = HISTORY_MERGE_STORES.has(name);
-      const currentById = new Map(current.map(record => [String(record.id), record]));
+      const preserveTypedEquipment = parsed.sourceFormatVersion === 1 && currentVersion >= 6 && name === "equipment";
+      const isTypedEquipment = record => preserveTypedEquipment && typeof dbApi.isUserEquipmentAccessRecord === "function" &&
+        dbApi.isUserEquipmentAccessRecord(record);
+      const preservedEquipment = preserveTypedEquipment ? current.filter(isTypedEquipment) : [];
+      const replaceCurrent = preserveTypedEquipment ? current.filter(record => !isTypedEquipment(record)) : current;
+      const currentById = new Map(replaceCurrent.map(record => [String(record.id), record]));
       const incomingIds = new Set(incoming.map(record => String(record.id)));
+      const preservedIds = new Set(preservedEquipment.map(record => String(record.id)));
       let unchanged = 0, changed = 0, added = 0, conflicts = 0, idempotencySkipped = 0;
       for (const record of incoming) {
         const existing = currentById.get(String(record.id));
+        if (preservedIds.has(String(record.id))) { conflicts++; continue; }
         if (!existing) {
           if (merge && name === "identityReviewEvents") {
             const byKey = current.find(item => item.profileId === record.profileId && item.idempotencyKey === record.idempotencyKey);
@@ -314,17 +321,23 @@
         else if (merge) { changed++; conflicts++; }
         else changed++;
       }
-      const removed = merge ? 0 : current.filter(record => !incomingIds.has(String(record.id))).length;
+      const removed = merge ? 0 : replaceCurrent.filter(record => !incomingIds.has(String(record.id))).length;
+      const behavior = preserveTypedEquipment ? "replace-preserve-typed" : (merge ? "merge-preserve" : "replace");
       stores[name] = {
-        behavior: merge ? "merge-preserve" : "replace",
-        action: merge ? "Merge incoming records; preserve existing history" : "Replace existing records with incoming records",
-        description: merge
-          ? "Existing records remain. Identical records are skipped; new records are appended; immutable conflicts stop the restore."
-          : name === "metadata"
-            ? "Existing metadata is replaced. Restore also writes one pre-restore safety snapshot."
-            : "Existing records are cleared and incoming records are written.",
+        behavior,
+        action: preserveTypedEquipment
+          ? "Replace legacy equipment records; preserve validated typed user inventory"
+          : (merge ? "Merge incoming records; preserve existing history" : "Replace existing records with incoming records"),
+        description: preserveTypedEquipment
+          ? "Legacy equipment records are replaced from the V1 backup. Validated typed C2 inventory records already on this V6 device are retained; ID collisions stop the restore."
+          : (merge
+            ? "Existing records remain. Identical records are skipped; new records are appended; immutable conflicts stop the restore."
+            : name === "metadata"
+              ? "Existing metadata is replaced. Restore also writes one pre-restore safety snapshot."
+              : "Existing records are cleared and incoming records are written."),
         current: current.length, incoming: incoming.length, added, changed, unchanged, removed,
-        conflicts, idempotencySkipped, projected: conflicts ? null : (merge ? current.length + added : incoming.length + (name === "metadata" ? 1 : 0))
+        preserved: preservedEquipment.length, conflicts, idempotencySkipped,
+        projected: conflicts ? null : (merge ? current.length + added : incoming.length + preservedEquipment.length + (name === "metadata" ? 1 : 0))
       };
     }
     if (stores.metadata && !stores.metadata.conflicts) {
@@ -352,7 +365,7 @@
       integrityDiagnostics,
       stores, preservedStores: preservedStores.map(store => store.name), preservedStoreDetails: preservedStores,
       warning: parsed.sourceFormatVersion === 1
-        ? "V1 restore replaces only the original V1 stores. Where V6 identity stores exist, they are preserved untouched. Restore safety snapshots are bounded to the newest three and do not recursively contain prior restore snapshots."
+        ? "V1 restore replaces original V1 data. On V6, validated typed C2 equipment inventory is preserved while legacy equipment data is replaced; V6 identity stores remain untouched. Restore safety snapshots are bounded to the newest three."
         : "Replace stores are overwritten. Append/merge stores retain existing history, skip identical records, append new records, and stop on immutable conflicts. A pre-restore safety snapshot is saved in metadata."
     };
   }
@@ -435,6 +448,15 @@
       };
 
       try {
+        let preservedEquipment = [];
+        if (parsed.sourceFormatVersion === 1 && db.version >= 6 && typeof dbApi.isUserEquipmentAccessRecord === "function") {
+          const liveEquipment = await requestResult(tx.objectStore("equipment").getAll());
+          preservedEquipment = liveEquipment.filter(record => dbApi.isUserEquipmentAccessRecord(record));
+          const incomingIds = new Set((parsed.data.data.equipment || []).map(record => String(record.id)));
+          if (preservedEquipment.some(record => incomingIds.has(String(record.id)))) {
+            await failTransaction("Restore stopped: a V1 equipment ID conflicts with retained typed user inventory.");
+          }
+        }
         for (const name of restoreStores) {
           if (!HISTORY_MERGE_STORES.has(name)) tx.objectStore(name).clear();
         }
@@ -465,6 +487,9 @@
             store.add(record);
           }
         }
+        for (const record of preservedEquipment) {
+          await requestResult(tx.objectStore("equipment").add(record));
+        }
         const metadataStore = tx.objectStore("metadata");
         const incomingMetadata = parsed.data.data.metadata || [];
         // Preserve the current pre-identity-upgrade snapshot if present.
@@ -488,7 +513,8 @@
         counts: parsed.validation.counts,
         totalRecords: parsed.validation.totalRecords,
         safetySnapshotStored: true,
-        historyStoresMerged: parsed.sourceFormatVersion === 2 ? ["identityReviewEvents", "catalogueReleases", "exerciseDefinitions", "exerciseVariations", "programmeVersions", "programmeDays", "programmeSlots"] : []
+        historyStoresMerged: parsed.sourceFormatVersion === 2 ? ["identityReviewEvents", "catalogueReleases", "exerciseDefinitions", "exerciseVariations", "programmeVersions", "programmeDays", "programmeSlots"] : [],
+        preservedUserEquipmentCount: preservedEquipment.length
       };
     } finally {
       db.close();
