@@ -30,6 +30,7 @@
       <nav class="tabs" aria-label="Main navigation">
         <button class="tab active" data-view="overview" aria-current="page">Overview</button>
         <button class="tab" data-view="gym">Gym</button>
+        <button class="tab" data-view="equipment">My Equipment</button>
         <button class="tab" data-view="hiking">Hiking</button>
         <button class="tab" data-view="assessments">Assessments</button>
         <button class="tab" data-view="schedule">Schedule</button>
@@ -98,6 +99,31 @@
           </div>
         </div>
         <div class="panel"><div class="section-heading"><div><p class="eyebrow">GYM HISTORY</p><h2>Saved sessions</h2></div></div><div id="gym-records" class="record-list empty-state">No Gym sessions recorded yet.</div></div>
+      </section>
+      <section id="view-equipment" class="view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">GYM SETUP</p><h2>My Equipment</h2><p class="muted">Record the equipment available at each location. Each machine instance and each confirmed characteristic is stored separately.</p></div></div>
+        <div id="equipment-profile-status" class="panel" role="status" aria-live="polite">Checking your local Gym profile and migration status…</div>
+        <div id="equipment-workspace" hidden>
+          <div class="panel">
+            <div class="section-heading"><div><p class="eyebrow">ADD OR EDIT</p><h3 id="equipment-form-title">Add equipment</h3><p class="muted">The reviewed equipment catalogue has no released items yet. You can record your own custom equipment without presenting it as catalogue-verified.</p></div></div>
+            <form id="equipment-form" class="form-grid">
+              <label>Equipment name<input name="customName" required maxlength="120" placeholder="e.g. Leg press"></label>
+              <label>Instance label (optional)<input name="instanceLabel" maxlength="80" placeholder="e.g. 45-degree machine"></label>
+              <label>Location<select name="location"><option value="gym">Gym</option><option value="home">Home</option><option value="other">Other</option></select></label>
+              <label id="equipment-other-location-wrap" hidden>Other location name<input name="otherLocation" maxlength="60" placeholder="e.g. Work gym"></label>
+              <label>Loading system<select name="loadingSystem"><option value="">Not confirmed</option><option value="pin-selected">Pin-selected</option><option value="plate-loaded">Plate-loaded</option></select></label>
+              <label>Movement mechanics<select name="movementMechanics"><option value="">Not confirmed</option><option value="fixed-path">Fixed-path</option><option value="converging">Converging</option><option value="iso-lateral">Iso-lateral</option></select></label>
+              <label>Orientation<select name="orientation"><option value="">Not confirmed</option><option value="45-degree">45-degree</option><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></label>
+              <label>Availability<select name="availability"><option value="unknown">Unknown</option><option value="available">Available</option><option value="temporarily-unavailable">Temporarily unavailable</option></select></label>
+              <div class="full form-actions"><button id="equipment-save" class="primary" type="submit">Save equipment</button><button id="equipment-cancel" class="secondary" type="button" hidden>Cancel edit</button></div>
+              <p class="full muted equipment-catalogue-note">Only characteristics you select are recorded as confirmed. Blank fields remain unknown; one characteristic is never inferred from another.</p>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="section-heading"><div><p class="eyebrow">YOUR LOCATIONS</p><h3>Equipment list</h3></div><label class="equipment-location-filter">Show location<select id="equipment-location-filter"><option value="">All locations</option><option value="gym">Gym</option><option value="home">Home</option><option value="other">Other</option></select></label></div>
+            <div id="equipment-list" class="record-list empty-state">No equipment recorded yet.</div>
+          </div>
+        </div>
       </section>
       <section id="view-hiking" class="view" hidden>
         <div class="section-heading"><div><p class="eyebrow">HIKING PREPARATION</p><h2>Record a hike</h2><p class="muted">Manual activity recording. GPS tracking is not part of this release.</p></div></div>

@@ -91,3 +91,17 @@
 @media(max-width:520px){.gym-history-heading{flex-direction:column;align-items:flex-start}}
 
 .gym-guide-heading{cursor:pointer;touch-action:pan-y;border-radius:5px}.gym-guide-heading:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.gym-guide-open{margin-top:8px;padding:8px 12px;font-size:12px}.gym-exercise-guide-dialog{width:min(760px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);overflow:auto;margin:auto;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text);box-shadow:0 18px 56px rgba(0,0,0,.5)}.gym-exercise-guide-dialog::backdrop{background:rgba(3,9,17,.78)}.gym-exercise-guide-card{padding:16px}.gym-exercise-guide-header{position:sticky;top:0;z-index:2;display:flex;align-items:start;justify-content:space-between;gap:12px;padding:10px 0 12px;background:var(--panel);border-bottom:1px solid var(--line)}.gym-exercise-guide-header h2{margin:0;font-size:21px}.gym-exercise-guide-header p.muted{margin:7px 0 0;font-size:12px}.gym-exercise-guide-content{display:grid;gap:12px;padding-top:14px;line-height:1.55}.gym-exercise-guide-content h3,.gym-exercise-guide-content h4{margin:0}.gym-exercise-guide-content p{margin:0}.gym-exercise-guide-status{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-weight:700}.gym-exercise-guide-note,.gym-exercise-guide-image-fallback{padding:10px;border-left:3px solid var(--accent);background:var(--panel2);font-size:12px}.gym-exercise-guide-assets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gym-exercise-guide-assets figure{margin:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}.gym-exercise-guide-assets img{display:block;width:100%;max-height:320px;object-fit:contain}.gym-exercise-guide-assets figcaption{margin-top:6px;font-size:11px}.gym-exercise-guide-content ol{padding-left:24px;display:grid;gap:7px}.gym-exercise-guide-content section{display:grid;gap:7px}@media(max-width:600px){.gym-exercise-guide-dialog{width:calc(100vw - 12px);max-height:calc(100dvh - 12px)}.gym-exercise-guide-card{padding:12px}.gym-exercise-guide-header{padding-top:6px}.gym-exercise-guide-assets{grid-template-columns:1fr}.gym-exercise-guide-assets img{max-height:240px}}
+
+/* E1 — My Equipment */
+.equipment-location-filter{display:grid;gap:6px;min-width:150px;color:var(--muted);font-size:11px}
+.equipment-record{padding:15px 0;border-bottom:1px solid var(--line)}
+.equipment-record:last-child{border-bottom:0}
+.equipment-record-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.equipment-record-heading strong{display:block;font-size:15px}
+.equipment-record-heading small{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.equipment-record>p{color:var(--muted);font-size:12px;line-height:1.5;margin:10px 0}
+.equipment-custom-tag{font-size:9px;letter-spacing:.1em;font-weight:800;color:var(--accent);border:1px solid var(--line);border-radius:99px;padding:5px 8px;white-space:nowrap}
+.equipment-record-actions{display:flex;gap:7px;flex-wrap:wrap}
+.equipment-record-actions button{font-size:11px;padding:8px 10px}
+.equipment-catalogue-note{font-size:11px;line-height:1.5;margin:0}
+@media(max-width:600px){.equipment-record-heading{align-items:flex-start}.equipment-record-actions button{flex:1}}

@@ -9,10 +9,88 @@ const makeId=prefix=>prefix+"-"+(crypto.randomUUID?crypto.randomUUID():Date.now(
 function notice(message,error){const el=$("notice");el.textContent=message;el.hidden=false;el.classList.toggle("error",!!error);window.scrollTo({top:0,behavior:"smooth"});}
 function hideNotice(){$("notice").hidden=true;}
 function setBusy(button,busy,label){button.disabled=busy;if(busy)button.dataset.label=button.textContent;button.textContent=busy?"Working…":(label||button.dataset.label||button.textContent);}
-function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="view-"+name);document.querySelectorAll(".tab").forEach(b=>{const active=b.dataset.view===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});hideNotice();if(name==="gym")refreshGymWorkout().catch(error=>notice(error.message,true));}
+function showView(name){document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="view-"+name);document.querySelectorAll(".tab").forEach(b=>{const active=b.dataset.view===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});hideNotice();if(name==="gym")refreshGymWorkout().catch(error=>notice(error.message,true));if(name==="equipment")refreshEquipmentView().catch(error=>notice(error.message,true));}
 function item(title,meta,tag){return '<div class="record-item"><div><strong>'+esc(title)+'</strong><small>'+esc(meta)+'</small></div><small>'+esc(tag||"")+'</small></div>';}
 
 let gymProgressionPlan={weeks:4,daysPerWeek:2};
+let equipmentEditingId=null;
+let equipmentProfileReady=false;
+async function ensureGymEquipmentProfile(){
+ const info=await ProjectComebackMigration.inspect();
+ let profile=await ProjectComebackDB.get("profile","gym-profile");
+ if(info.legacyKeyCount>0&&info.status!=="complete")return {ready:false,message:"Equipment editing is paused while your existing Gym data is awaiting migration. Download the legacy safety snapshot and complete the verified migration in Data & backup first. No profile or equipment records have been created by this screen."};
+ if(!profile){
+  if(info.status!=="complete"&&info.legacyKeyCount>0)return {ready:false,message:"Your existing Gym data must be migrated before a default Gym profile can be created."};
+  try{
+   await ProjectComebackDB.add("profile",{id:"gym-profile",scope:"gym-default-profile",value:{}});
+  }catch(error){
+   profile=await ProjectComebackDB.get("profile","gym-profile");
+   if(!profile)throw error;
+  }
+  profile=await ProjectComebackDB.get("profile","gym-profile");
+ }
+ if(!profile)return {ready:false,message:"The local Gym profile could not be verified. Equipment editing remains disabled."};
+ return {ready:true,profile};
+}
+function equipmentLocationFromForm(form){
+ const choice=String(form.elements.location.value);
+ if(choice==="gym")return {id:"gym",label:"Gym"};
+ if(choice==="home")return {id:"home",label:"Home"};
+ const label=String(form.elements.otherLocation.value||"").trim();
+ if(!label)throw new Error("Enter a name for the other equipment location.");
+ return {id:"other:"+label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),label};
+}
+function equipmentConfigFromForm(form){
+ const config={};
+ const pairs=[["loadingSystem","loadingSystemId"],["movementMechanics","movementMechanicsId"],["orientation","orientationId"]];
+ pairs.forEach(([field,key])=>{const value=String(form.elements[field].value||"");if(value)config[key]=value;});
+ return config;
+}
+function resetEquipmentForm(){
+ const form=$("equipment-form");form.reset();form.elements.location.value="gym";form.elements.availability.value="unknown";
+ equipmentEditingId=null;$("equipment-form-title").textContent="Add equipment";$("equipment-save").textContent="Save equipment";$("equipment-cancel").hidden=true;
+ $("equipment-other-location-wrap").hidden=true;
+}
+async function refreshEquipmentView(){
+ const status=$("equipment-profile-status"),workspace=$("equipment-workspace");
+ status.textContent="Checking your local Gym profile and migration status…";workspace.hidden=true;equipmentProfileReady=false;
+ const gate=await ensureGymEquipmentProfile();
+ if(!gate.ready){status.textContent=gate.message;return;}
+ equipmentProfileReady=true;status.textContent="Your local Gym profile is ready. Equipment is stored on this device and remains separate from workout history.";workspace.hidden=false;
+ await renderEquipmentList();
+}
+async function renderEquipmentList(){
+ const target=$("equipment-list"),filter=$("equipment-location-filter").value;
+ if(!equipmentProfileReady){target.textContent="Equipment editing is unavailable until the local Gym profile is ready.";return;}
+ const records=await ProjectComebackDB.listUserEquipment("gym-profile",filter||undefined);
+ if(!records.length){target.textContent="No equipment recorded for this location yet.";target.classList.add("empty-state");return;}
+ target.classList.remove("empty-state");
+ target.innerHTML=records.map(record=>{
+  const config=record.confirmedConfiguration||{};
+  const details=[
+   "Loading: "+(config.loadingSystemId||"Not confirmed"),
+   "Mechanics: "+(config.movementMechanicsId||"Not confirmed"),
+   "Orientation: "+(config.orientationId||"Not confirmed"),
+   "Availability: "+record.availability.replace(/-/g," ")
+  ];
+  const place=record.location.label+(record.instanceLabel?" · "+record.instanceLabel:"");
+  return '<article class="equipment-record"><div class="equipment-record-heading"><div><strong>'+esc(record.customName||"Custom equipment")+'</strong><small>Custom equipment · '+esc(place)+'</small></div><span class="equipment-custom-tag">USER ENTERED</span></div><p>'+details.map(esc).join(" · ")+'</p><div class="equipment-record-actions"><button class="secondary" type="button" data-equipment-edit="'+esc(record.id)+'">Edit</button><button class="secondary" type="button" data-equipment-availability="'+esc(record.id)+'" data-availability="'+(record.availability==="temporarily-unavailable"?"available":"temporarily-unavailable")+'">'+(record.availability==="temporarily-unavailable"?"Mark available":"Temporarily unavailable")+'</button><button class="danger" type="button" data-equipment-retire="'+esc(record.id)+'">Retire</button></div></article>';
+ }).join("");
+}
+async function loadEquipmentForEdit(id){
+ const record=await ProjectComebackDB.get("equipment",id);
+ if(!record||record.profileId!=="gym-profile"||record.recordType!=="user-equipment-access")throw new Error("Equipment record was not found for this Gym profile.");
+ const form=$("equipment-form"),config=record.confirmedConfiguration||{};
+ form.elements.customName.value=record.customName||"";form.elements.instanceLabel.value=record.instanceLabel||"";
+ const loc=record.location||{};
+ if(loc.id==="gym"||loc.id==="home"){form.elements.location.value=loc.id;form.elements.otherLocation.value="";}
+ else{form.elements.location.value="other";form.elements.otherLocation.value=loc.label;$("equipment-other-location-wrap").hidden=false;}
+ form.elements.loadingSystem.value=config.loadingSystemId||"";form.elements.movementMechanics.value=config.movementMechanicsId||"";form.elements.orientation.value=config.orientationId||"";
+ form.elements.availability.value=record.availability||"unknown";
+ equipmentEditingId=id;$("equipment-form-title").textContent="Edit equipment";$("equipment-save").textContent="Save changes";$("equipment-cancel").hidden=false;
+ $("equipment-form-title").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
 async function refreshGymProgressionControls(requestToken){
  const progression=ProjectComebackGymProgression;
  const plan=await progression.getPlan();
@@ -639,6 +717,40 @@ async function inspectMigration(){
  $("migration-status").textContent=info.legacyKeyCount+" legacy Gym data keys found. Migration status: "+info.status+". Original browser storage will not be deleted.";
 }
 document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click",()=>showView(button.dataset.view)));
+$("equipment-form").elements.location.addEventListener("change",event=>{$("equipment-other-location-wrap").hidden=event.target.value!=="other";});
+$("equipment-cancel").addEventListener("click",resetEquipmentForm);
+$("equipment-location-filter").addEventListener("change",()=>renderEquipmentList().catch(error=>notice(error.message,true)));
+$("equipment-form").addEventListener("submit",async event=>{
+ event.preventDefault();if(!equipmentProfileReady)return;
+ const form=event.currentTarget,fd=new FormData(form),name=String(fd.get("customName")||"").trim(),instance=String(fd.get("instanceLabel")||"").trim();
+ if(!name){notice("Enter an equipment name.",true);return;}
+ const button=$("equipment-save"),wasEditing=!!equipmentEditingId;
+ try{
+  setBusy(button,true);
+  const location=equipmentLocationFromForm(form),availability=String(fd.get("availability")||"unknown"),confirmedConfiguration=equipmentConfigFromForm(form);
+  if(equipmentEditingId){
+   const existing=await ProjectComebackDB.get("equipment",equipmentEditingId);
+   if(!existing||existing.profileId!=="gym-profile")throw new Error("Equipment record is no longer available for editing.");
+   const updated=Object.assign({},existing,{customName:name,location,availability,confirmedConfiguration});
+   if(instance)updated.instanceLabel=instance;else delete updated.instanceLabel;
+   await ProjectComebackDB.updateUserEquipment(updated);
+  }else{
+   const record={id:makeId("user-equipment"),recordType:"user-equipment-access",schemaVersion:1,profileId:"gym-profile",moduleId:"gym",itemKind:"custom",customName:name,location,availability,status:"active",confirmedConfiguration};
+   if(instance)record.instanceLabel=instance;
+   await ProjectComebackDB.addUserEquipment(record);
+  }
+  resetEquipmentForm();await renderEquipmentList();notice(wasEditing?"Equipment updated.":"Equipment added. Your other equipment instances are unchanged.");
+ }catch(error){notice(error.message,true);}
+ finally{setBusy(button,false,equipmentEditingId?"Save changes":"Save equipment");}
+});
+$("equipment-list").addEventListener("click",async event=>{
+ const edit=event.target.closest("[data-equipment-edit]"),availability=event.target.closest("[data-equipment-availability]"),retire=event.target.closest("[data-equipment-retire]");
+ try{
+  if(edit)await loadEquipmentForEdit(edit.dataset.equipmentEdit);
+  else if(availability){const record=await ProjectComebackDB.get("equipment",availability.dataset.equipmentAvailability);if(!record||record.profileId!=="gym-profile")throw new Error("Equipment record was not found.");await ProjectComebackDB.updateUserEquipment(Object.assign({},record,{availability:availability.dataset.availability}));await renderEquipmentList();notice("Equipment availability updated.");}
+  else if(retire){if(!window.confirm("Retire this equipment record? It will no longer appear in active equipment lists, but its record will not be deleted."))return;await ProjectComebackDB.retireUserEquipment(retire.dataset.equipmentRetire,"gym-profile");await renderEquipmentList();notice("Equipment retired. Its record was preserved.");}
+ }catch(error){notice(error.message,true);}
+});
 $("gym-workout-start").addEventListener("click",startGymWorkout);
 $("gym-workout-active").addEventListener("click",handleGymWorkoutAction);
 $("gym-rest-alert-mode").addEventListener("change",event=>{localStorage.setItem("gym-comeback-rest-alert",event.target.value);notice("Rest alert preference saved on this device.");});
