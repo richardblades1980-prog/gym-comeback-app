@@ -126,6 +126,7 @@ test("V1 restore preview and restore preserve validated typed inventory while re
   const typed = customRecord("keep-on-v1-restore");
   await db.put("equipment", legacyBefore);
   await db.addUserEquipment(typed);
+  const savedTyped = await db.get("equipment", typed.id);
   const incoming = v1Envelope(backup, [{
     id: "legacy-equipment-from-backup",
     legacyKey: "gym-comeback-gear",
@@ -146,7 +147,7 @@ test("V1 restore preview and restore preserve validated typed inventory while re
   assert.equal((await db.get("equipment", "legacy-equipment-from-backup")).legacyRawValue, incoming.data.equipment[0].legacyRawValue);
   assert.deepEqual(
     JSON.parse(JSON.stringify(await db.get("equipment", typed.id))),
-    JSON.parse(JSON.stringify(typed))
+    JSON.parse(JSON.stringify(savedTyped))
   );
 });
 
@@ -155,6 +156,7 @@ test("V1 restore blocks an ID collision with typed inventory and leaves all data
   await reset(db, backup);
   const typed = customRecord("collision");
   await db.addUserEquipment(typed);
+  const savedTyped = await db.get("equipment", typed.id);
   const incoming = v1Envelope(backup, [{ id: typed.id, legacyRawValue: "not the typed record" }]);
   const preview = await backup.previewRestore(incoming);
   assert.equal(preview.stores.equipment.conflicts, 1);
@@ -162,7 +164,7 @@ test("V1 restore blocks an ID collision with typed inventory and leaves all data
   await assert.rejects(() => backup.restoreBackup(incoming, { confirmed: true }), /ID conflicts with retained typed user inventory/);
   assert.deepEqual(
     JSON.parse(JSON.stringify(await db.get("equipment", typed.id))),
-    JSON.parse(JSON.stringify(typed))
+    JSON.parse(JSON.stringify(savedTyped))
   );
 });
 
@@ -177,10 +179,12 @@ test("V2 backup and restore round-trip typed and legacy equipment records exactl
   });
   await db.put("equipment", legacy);
   await db.addUserEquipment(typed);
+  const savedTyped = await db.get("equipment", typed.id);
+  const savedLegacy = await db.get("equipment", legacy.id);
   const envelope = await backup.createBackup();
   assert.equal(envelope.backupFormatVersion, 2);
   assert.ok(envelope.data.equipment.some(row => row.id === typed.id));
-  await db.updateUserEquipment(Object.assign({}, typed, { availability: "available" }));
+  await db.updateUserEquipment(Object.assign({}, savedTyped, { availability: "available" }));
   const result = await backup.restoreBackup(envelope, { confirmed: true });
   assert.equal(result.restored, true);
   assert.deepEqual(
@@ -189,6 +193,6 @@ test("V2 backup and restore round-trip typed and legacy equipment records exactl
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(await db.get("equipment", legacy.id))),
-    JSON.parse(JSON.stringify(legacy))
+    JSON.parse(JSON.stringify(savedLegacy))
   );
 });
