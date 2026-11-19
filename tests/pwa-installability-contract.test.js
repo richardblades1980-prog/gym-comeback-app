@@ -58,6 +58,6 @@ test("all PWA icons are included in the versioned V21.2 offline shell", () => {
   ]) {
     assert.ok(sw.includes('"' + asset + '"'), "service worker shell must precache " + asset);
   }
-  assert.match(sw, /const CACHE_NAME=CACHE_PREFIX\+"v29"/);
+  assert.match(sw, /const CACHE_NAME=CACHE_PREFIX\+"v30"/);
   assert.match(html, /<link rel="manifest" href="\.\/manifest\.webmanifest">/);
 });

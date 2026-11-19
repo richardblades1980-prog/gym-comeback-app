@@ -303,7 +303,7 @@ function server() {
         !coexistence.rootIndexIsLegacy || !coexistence.v21IndexWasNotStoredAsRootIndex ||
         coexistence.sentinel !== "preserve-me" ||
         !v21Controller.endsWith("/gym-comeback-app/v21.2/sw.js") ||
-        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v29") ||
+        !coexistenceCacheNames.includes("project-comeback-v21-2a-shell-v30") ||
         !coexistenceCacheNames.includes("project-comeback-v21-2a-guides-v1")) {
       throw new Error("V21.1 and V21.2 workers/caches did not coexist without intercepting or overwriting one another: " +
         JSON.stringify({ coexistence, v21Controller, coexistenceCacheNames }));
@@ -340,7 +340,7 @@ function server() {
     if (rootUpdate.state !== "activated" ||
         !rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset-v2") ||
         rootUpdate.cacheNames.includes("gym-comeback-v21-1b-2-1-timed-repetition-stopwatch-reset") ||
-        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v29") ||
+        !rootUpdate.cacheNames.includes("project-comeback-v21-2a-shell-v30") ||
         !rootUpdate.cacheNames.includes("project-comeback-v21-2a-guides-v1") ||
         rootUpdate.sentinel !== "preserve-me" ||
         !v21ControllerAfterRootUpdate.endsWith("/gym-comeback-app/v21.2/sw.js")) {
@@ -646,6 +646,13 @@ function server() {
     await firstExercise.locator('[data-gym-field="weight"]').first().dispatchEvent("change");
     await firstExercise.locator('[data-gym-field="reps"]').first().fill("12");
     await firstExercise.locator('[data-gym-field="reps"]').first().dispatchEvent("change");
+    await app.waitForFunction(() => {
+      const rows = document.querySelectorAll("#gym-workout-exercises .gym-set-row");
+      return rows[1].querySelector('[data-gym-field="weight"]').value === "15" &&
+        rows[1].querySelector('[data-gym-field="reps"]').value === "12" &&
+        rows[2].querySelector('[data-gym-field="weight"]').value === "15" &&
+        rows[2].querySelector('[data-gym-field="reps"]').value === "12";
+    });
     // Starting the stopwatch correctly marks this set in progress, so complete it directly.
     await firstExercise.locator('[data-gym-action="complete"]').first().click();
     await firstExercise.locator('[data-gym-action="undo"]').first().waitFor();
@@ -660,10 +667,16 @@ function server() {
       reps: document.querySelector('[data-gym-field="reps"]').value,
       firstStatus: document.querySelector("#gym-workout-exercises .gym-set-row .gym-set-state").textContent,
       nextSetState: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector(".gym-set-state").textContent,
+      nextSetWeight: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector('[data-gym-field="weight"]').value,
+      nextSetReps: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector('[data-gym-field="reps"]').value,
+      thirdSetWeight: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[2].querySelector('[data-gym-field="weight"]').value,
+      thirdSetReps: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[2].querySelector('[data-gym-field="reps"]').value,
       nextSetEnabled: !document.querySelectorAll("#gym-workout-exercises .gym-set-row")[1].querySelector("input").disabled,
       thirdSetLocked: document.querySelectorAll("#gym-workout-exercises .gym-set-row")[2].querySelector("input").disabled
     }));
     if (resumedWorkout.weight !== "15" || resumedWorkout.reps !== "12" ||
+        resumedWorkout.nextSetWeight !== "15" || resumedWorkout.nextSetReps !== "12" ||
+        resumedWorkout.thirdSetWeight !== "15" || resumedWorkout.thirdSetReps !== "12" ||
         !resumedWorkout.firstStatus.includes("completed") || !resumedWorkout.nextSetState.includes("not started") ||
         !resumedWorkout.nextSetEnabled || !resumedWorkout.thirdSetLocked) {
       throw new Error("Workout values or set state did not survive reload/resume: " + JSON.stringify(resumedWorkout));
@@ -700,6 +713,23 @@ function server() {
       return (await ProjectComebackDB.get("exerciseRecords", exerciseId)).restSeconds === 120;
     });
     const secondSetRow = firstExercise.locator(".gym-set-row").nth(1);
+    const exerciseIdForAutoFill = await secondSetRow.locator('[data-gym-action="start"]').getAttribute("data-exercise-id");
+    await secondSetRow.locator('[data-gym-field="weight"]').fill("17");
+    await secondSetRow.locator('[data-gym-field="weight"]').dispatchEvent("change");
+    await app.waitForFunction(async ({ date, exerciseId }) => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress");
+      const sets = await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id);
+      return sets.find(set => set.exerciseRecordId === exerciseId && set.setNumber === 2)?.weight === "17" &&
+        sets.find(set => set.exerciseRecordId === exerciseId && set.setNumber === 3)?.weight === "15";
+    }, { date: testDates.today, exerciseId: exerciseIdForAutoFill });
+    await firstExercise.locator(".gym-set-row").nth(0).locator('[data-gym-field="weight"]').fill("20");
+    await firstExercise.locator(".gym-set-row").nth(0).locator('[data-gym-field="weight"]').dispatchEvent("change");
+    await app.waitForFunction(async ({ date, exerciseId }) => {
+      const session = (await ProjectComebackDB.getAllByIndex("sessions", "by_module_date", ["gym", date])).find(item => item.status === "in-progress");
+      const sets = await ProjectComebackDB.getAllByIndex("setRecords", "by_session", session.id);
+      return sets.find(set => set.exerciseRecordId === exerciseId && set.setNumber === 2)?.weight === "17" &&
+        sets.find(set => set.exerciseRecordId === exerciseId && set.setNumber === 3)?.weight === "20";
+    }, { date: testDates.today, exerciseId: exerciseIdForAutoFill });
     await secondSetRow.locator('[data-gym-action="start"]').click();
     await secondSetRow.locator('[data-gym-action="complete"]').click();
     await app.waitForFunction(() => !!document.querySelector("#gym-rest-timer"));

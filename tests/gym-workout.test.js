@@ -120,9 +120,10 @@ test("first-set values seed later unstarted sets while later manual edits remain
   const exercise = created.workout.exerciseRecords[0];
 
   await workout.updateSetValues(created.workout, exercise.id, 1, { weight: "15", reps: "10" });
-  assert.deepEqual(exercise.sets.slice(1).map(set => [set.weight, set.reps]), [
-    ["15", "10"], ["15", "10"]
-  ]);
+  assert.equal(exercise.sets[1].weight, "15");
+  assert.equal(exercise.sets[1].reps, "10");
+  assert.equal(exercise.sets[2].weight, "15");
+  assert.equal(exercise.sets[2].reps, "10");
   assert.equal(exercise.sets[1].fieldOrigins.weight, "first-set");
   assert.equal(exercise.sets[2].fieldOrigins.reps, "first-set");
   assert.equal(exercise.sets[1].status, "locked");
@@ -143,7 +144,9 @@ test("first-set values seed later unstarted sets while later manual edits remain
 
   const loaded = await workout.loadSession(created.workout.session.id);
   const savedExercise = loaded.exerciseRecords[0];
-  assert.deepEqual(savedExercise.sets.map(set => set.weight), ["20", "17", "20"]);
+  assert.equal(savedExercise.sets[0].weight, "20");
+  assert.equal(savedExercise.sets[1].weight, "17");
+  assert.equal(savedExercise.sets[2].weight, "20");
   assert.equal(savedExercise.sets[1].fieldOrigins.weight, "user");
   assert.equal(savedExercise.sets[2].fieldOrigins.weight, "first-set");
   const savedRows = await db.getAllByIndex("setRecords", "by_session", created.workout.session.id);
