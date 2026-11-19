@@ -110,6 +110,34 @@ test("a new programme week pre-fills editable values by exact source slot withou
   assert.equal(original.weight, "25");
 });
 
+
+test("programme week carries timed targets forward but never copies actual measured duration", async () => {
+  const { db, workout } = await setup();
+  const prior = await workout.startSession(1, "2026-11-18", { week: 1 });
+  const priorExercise = prior.workout.exerciseRecords[0];
+  priorExercise.recordingMode = "timed-hold";
+  await db.put("exerciseRecords", priorExercise);
+
+  await workout.updateSetValues(prior.workout, priorExercise.id, 1, {
+    targetDuration: "45",
+    duration: "38"
+  });
+  assert.equal(priorExercise.sets[0].targetDuration, "45");
+  assert.equal(priorExercise.sets[0].duration, "38");
+
+  const nextWeek = await workout.startSession(1, "2026-11-19", { week: 2 });
+  const nextExercise = nextWeek.workout.exerciseRecords[0];
+  assert.equal(nextExercise.sets[0].targetDuration, "45");
+  assert.equal(nextExercise.sets[0].duration, "");
+  assert.equal(nextExercise.sets[1].targetDuration, "45");
+  assert.equal(nextExercise.sets[1].duration, "");
+  assert.equal(nextExercise.sets[1].fieldOrigins.targetDuration, "first-set");
+
+  const priorSet = await db.get("setRecords", priorExercise.sets[0].id);
+  assert.equal(priorSet.targetDuration, "45");
+  assert.equal(priorSet.duration, "38", "the earlier session's measured duration remains unchanged");
+});
+
 test("starting the same day and date resumes the existing in-progress session instead of duplicating it", async () => {
   const { db, workout } = await setup();
   const first = await workout.startSession(1, "2026-11-18");

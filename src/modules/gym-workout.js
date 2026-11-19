@@ -126,7 +126,7 @@
         if (!slotId || exercise.substitution || exercise.performedExerciseName || valuesBySlot.has(slotId)) return;
         const sets = snapshot.sets.filter(set => set.exerciseRecordId === exercise.id).sort(sortSets);
         const hasValues = sets.some(set =>
-          ["weight", "reps", "duration"].some(field =>
+          ["weight", "reps", "targetDuration"].some(field =>
             set[field] !== undefined && set[field] !== null && String(set[field]).trim() !== ""
           )
         );
@@ -213,7 +213,7 @@
       setRecords.filter(set => set.exerciseRecordId === exercise.id).forEach(set => {
         const priorSet = previous.sets.find(item => Number(item.setNumber) === Number(set.setNumber));
         if (!priorSet) return;
-        ["weight", "reps", "duration"].forEach(field => {
+        ["weight", "reps", "targetDuration"].forEach(field => {
           const value = priorSet[field];
           if (value !== undefined && value !== null && String(value).trim() !== "") {
             set[field] = String(value);
