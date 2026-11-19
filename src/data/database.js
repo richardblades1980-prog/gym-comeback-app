@@ -211,6 +211,7 @@
         !record.location || typeof record.location !== "object" ||
         typeof record.location.id !== "string" || !record.location.id.trim() ||
         typeof record.location.label !== "string" || !record.location.label.trim() ||
+        Object.keys(record.location).some(key => !["id", "label"].includes(key)) ||
         !USER_EQUIPMENT_AVAILABILITY.has(record.availability) ||
         !USER_EQUIPMENT_STATUS.has(record.status || "active")) {
       throw new Error("User equipment access record has an invalid identity, owner, location, status or availability.");
@@ -225,6 +226,11 @@
     }
     if (record.instanceLabel !== undefined && (typeof record.instanceLabel !== "string" || !record.instanceLabel.trim())) {
       throw new Error("User equipment instance labels must be non-empty text when supplied.");
+    }
+    for (const field of ["createdAt", "updatedAt"]) {
+      if (record[field] !== undefined && (typeof record[field] !== "string" || !Number.isFinite(Date.parse(record[field])))) {
+        throw new Error("User equipment timestamps must be valid date-time strings.");
+      }
     }
     if (record.itemKind === "catalogue") {
       if (typeof record.equipmentDefinitionId !== "string" || !record.equipmentDefinitionId ||
