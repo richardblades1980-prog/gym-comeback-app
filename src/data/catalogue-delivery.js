@@ -65,6 +65,7 @@
     if (!Number.isInteger(manifest.byteLength) || manifest.byteLength < 2) fail("byteLength is invalid.");
     if (!Number.isInteger(manifest.entryCount) || manifest.entryCount < 0) fail("entryCount is invalid.");
     if (manifest.variationCount !== undefined && (!Number.isInteger(manifest.variationCount) || manifest.variationCount < 0)) fail("variationCount is invalid.");
+    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V3) rejectV3VocabularyDescriptions(document);
     if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 || manifest.schemaVersion === PAYLOAD_SCHEMA_V3) {
       if (!Number.isInteger(manifest.variationCount) || !Number.isInteger(manifest.equipmentDefinitionCount) ||
           manifest.equipmentDefinitionCount < 0 || !Number.isInteger(manifest.vocabularyEntryCount) ||
@@ -302,9 +303,9 @@
     if (typeof value !== "string" || !value.length) fail(field + " must be a non-empty string.");
     if (value !== value.trim()) fail(field + " must be trimmed.");
     if ([...value].length > 1000) fail(field + " exceeds 1,000 Unicode characters.");
-    if (/[\\r\\n\\u0000-\\u001f\\u007f]/.test(value)) fail(field + " must be a single paragraph without control characters.");
+    if (/[\r\n\u0000-\u001f\u007f]/.test(value)) fail(field + " must be a single paragraph without control characters.");
     if (/<[^>]*>|\\[[^\\]]+\\]\\([^)]*\\)|(^|\\s)#{1,6}\\s|(^|\\s)[>*]\\s|\\*\\*|__|~~|`{1,3}/m.test(value)) {
-      fail(field + " must be plain text without HTML or Markdown.");
+    if (/<[^>]*>|\[[^\]]+\]\([^)]*\)|^#{1,6}\s|^>\s|^[-*+]\s|\*\*|__|~~|`{1,3}|\*[^*]+\*|_[^_]+_/m.test(value)) {
     }
   }
   async function validateDescriptionBinding(subject, field) {
@@ -348,6 +349,16 @@
       }
     }
     if (count !== manifest.descriptionCount) fail("description count does not match the v3 manifest.");
+  }
+  function rejectV3VocabularyDescriptions(document) {
+    const vocab = document.controlledVocabularies;
+    if (!isRecord(vocab)) return;
+    for (const [category, entries] of Object.entries(vocab)) {
+      if (category === "version" || !Array.isArray(entries)) continue;
+      if (entries.some(item => isRecord(item) && (hasOwn(item, "description") || hasOwn(item, "descriptionReviewBinding")))) {
+        fail("controlled vocabulary descriptions are not supported in v3.");
+      }
+    }
   }
   function rejectDescriptionsInV2(document) {
     for (const [key, label] of [["equipmentDefinitions","equipment definition"],["definitions","exercise definition"],["variations","exercise variation"]]) {

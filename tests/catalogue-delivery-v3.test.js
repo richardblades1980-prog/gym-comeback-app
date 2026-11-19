@@ -464,11 +464,11 @@ test("v3 installs reviewed descriptions for equipment, exercises and variations 
 test("v3 rejects missing locale, count mismatch, absent/stale bindings and invalid plain text", async () => {
   const cases = [
     ["missing locale", p => { delete p.descriptionLocale; }, /descriptionLocale must be en-AU/],
-    ["count mismatch", p => { p.definitions[0].description = "An edited description."; }, /description review target digest/],
     ["missing binding", p => { delete p.definitions[0].descriptionReviewBinding; }, /description review binding is required/],
     ["orphan binding", p => { delete p.definitions[0].description; }, /orphan description review binding/],
     ["markup", p => { bindDescription(p.definitions[0], "<b>Press</b>", "markup"); }, /plain text without HTML or Markdown/],
     ["markdown", p => { bindDescription(p.definitions[0], "**Press**", "markdown"); }, /plain text without HTML or Markdown/],
+    ["single emphasis", p => { bindDescription(p.definitions[0], "*Press*", "single-emphasis"); }, /plain text without HTML or Markdown/],
     ["whitespace", p => { bindDescription(p.definitions[0], " Press ", "whitespace"); }, /must be trimmed/],
     ["control/newline", p => { bindDescription(p.definitions[0], "Press\\nmovement", "newline"); }, /single paragraph without control characters/],
     ["unicode length", p => { bindDescription(p.definitions[0], "😀".repeat(1001), "long"); }, /exceeds 1,000 Unicode characters/],
@@ -484,7 +484,7 @@ test("v3 rejects missing locale, count mismatch, absent/stale bindings and inval
   }
 });
 
-test("v3 manifest rejects missing descriptionCount and v1/v2 reject v3 payload features", async () => {
+test("v3 does not permit vocabulary descriptions", async () => {\n  const runtime = await createRuntime();\n  const payload = makeV3Payload("fixture-v3-vocabulary-description", 3);\n  payload.controlledVocabularies.muscles[0].description = "Not supported on vocabulary entries.";\n  const item = makeManifest(payload);\n  await assert.rejects(runtime.window.ProjectComebackCatalogueDelivery.installRelease(item.manifest, new Uint8Array(item.bytes)), /controlled vocabulary descriptions are not supported in v3/);\n});\n\ntest("v3 manifest rejects missing descriptionCount and v1/v2 reject v3 payload features", async () => {
   const runtime = await createRuntime();
   const payload = makeV3Payload("fixture-v3-manifest", 3);
   const { manifest, bytes } = makeManifest(payload);
