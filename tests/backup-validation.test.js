@@ -304,3 +304,75 @@ test("V2 unique-index failure after queued replace writes rolls back and permits
   assert.equal(await db.count("exerciseAliases"), 1);
   assert.ok(await db.get("metadata", retried.restoreId), "successful retry stores its safety snapshot");
 });
+
+test("V2 backup and restore preserve Set 1 autofill and independent user field provenance", async () => {
+  const { indexedDB } = require("fake-indexeddb");
+  const dbWindow = { indexedDB };
+  const dbSandbox = { window: dbWindow };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/database.js"), "utf8"), dbSandbox);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../src/data/backup.js"), "utf8"), dbSandbox);
+  const db = dbWindow.ProjectComebackDB;
+  const restore = dbWindow.ProjectComebackBackup;
+
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(db.name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error || new Error("Could not delete test database."));
+    request.onblocked = () => reject(new Error("Test database deletion was blocked."));
+  });
+
+  const safetyBackup = await restore.createLegacySafetyBackup();
+  await db.upgradeToV6(safetyBackup);
+  await db.put("sessions", {
+    id: "gym-session-provenance-round-trip",
+    moduleId: "gym",
+    status: "in-progress",
+    date: "2026-11-19"
+  });
+  await db.put("exerciseRecords", {
+    id: "gym-exercise-provenance-round-trip",
+    moduleId: "gym",
+    sessionId: "gym-session-provenance-round-trip",
+    name: "Source exercise",
+    programmeSlotId: "source-slot-1"
+  });
+  const originalSet = {
+    id: "gym-set-provenance-round-trip",
+    moduleId: "gym",
+    sessionId: "gym-session-provenance-round-trip",
+    exerciseRecordId: "gym-exercise-provenance-round-trip",
+    setNumber: 2,
+    weight: "17",
+    reps: "10",
+    targetDuration: "30",
+    fieldOrigins: {
+      weight: "user",
+      reps: "first-set",
+      targetDuration: "first-set"
+    }
+  };
+  await db.put("setRecords", originalSet);
+
+  const envelope = await restore.createBackup();
+  assert.equal(envelope.backupFormatVersion, 2);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(envelope.data.setRecords.find(record => record.id === originalSet.id).fieldOrigins)),
+    originalSet.fieldOrigins
+  );
+
+  await db.put("setRecords", Object.assign({}, originalSet, {
+    weight: "99",
+    reps: "99",
+    fieldOrigins: { weight: "first-set", reps: "user", targetDuration: "user" }
+  }));
+  const result = await restore.restoreBackup(envelope, { confirmed: true });
+  assert.equal(result.restored, true);
+
+  const restored = await db.get("setRecords", originalSet.id);
+  assert.equal(restored.weight, "17");
+  assert.equal(restored.reps, "10");
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(restored.fieldOrigins)),
+    originalSet.fieldOrigins
+  );
+});
