@@ -102,6 +102,10 @@ test("production delivery service verifies immutable assets and exposes offline 
   assert.match(deliverySource,/async function installRelease/);
   assert.match(deliverySource,/async function lookup/);
   assert.match(deliverySource,/const PAYLOAD_SCHEMA_V2 = 2/);
+  assert.match(deliverySource,/const PAYLOAD_SCHEMA_V3 = 3/);
+  assert.match(deliverySource,/validateV3Descriptions/);
+  assert.match(deliverySource,/descriptionReviewBinding/);
+  assert.match(deliverySource,/descriptionCount/);
   assert.match(deliverySource,/async function lookupEquipment/);
   assert.match(deliverySource,/controlledVocabulariesReviewBinding/);
   assert.match(deliverySource,/equipmentDefinitionCount/);

@@ -7,6 +7,8 @@
   const CACHE_PREFIX = "project-comeback-v21-2a-catalogue-";
   const MANIFEST_SCHEMA_VERSION = 1;
   const PAYLOAD_SCHEMA_V2 = 2;
+  const PAYLOAD_SCHEMA_V3 = 3;
+  const PAYLOAD_SCHEMA_V3_LOCALE = "en-AU";
   const V2_VOCABULARY_KEYS = Object.freeze([
     "bodyRegions", "muscles", "jointActions", "movementPatterns", "bodyPositions",
     "supportPoints", "stabilisationDemands", "balanceDemands", "footContactDemands",
@@ -58,19 +60,23 @@
     manifest.releaseId = requiredString(manifest.releaseId, "releaseId");
     manifest.id = manifest.releaseId;
     if (!Number.isInteger(manifest.version) || manifest.version < 1) fail("version must be a positive integer.");
-    if (manifest.schemaVersion !== MANIFEST_SCHEMA_VERSION && manifest.schemaVersion !== PAYLOAD_SCHEMA_V2) fail("unsupported manifest/payload schema version.");
+    if (![MANIFEST_SCHEMA_VERSION, PAYLOAD_SCHEMA_V2, PAYLOAD_SCHEMA_V3].includes(manifest.schemaVersion)) fail("unsupported manifest/payload schema version.");
     if (manifest.contentType !== "application/json") fail("content type must be application/json.");
     if (!Number.isInteger(manifest.byteLength) || manifest.byteLength < 2) fail("byteLength is invalid.");
     if (!Number.isInteger(manifest.entryCount) || manifest.entryCount < 0) fail("entryCount is invalid.");
     if (manifest.variationCount !== undefined && (!Number.isInteger(manifest.variationCount) || manifest.variationCount < 0)) fail("variationCount is invalid.");
-    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2) {
+    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 || manifest.schemaVersion === PAYLOAD_SCHEMA_V3) {
       if (!Number.isInteger(manifest.variationCount) || !Number.isInteger(manifest.equipmentDefinitionCount) ||
           manifest.equipmentDefinitionCount < 0 || !Number.isInteger(manifest.vocabularyEntryCount) ||
           manifest.vocabularyEntryCount < 0) {
-        fail("v2 variation, equipment-definition and vocabulary counts are required.");
+        fail("v2/v3 variation, equipment-definition and vocabulary counts are required.");
       }
-    } else if (manifest.equipmentDefinitionCount !== undefined || manifest.vocabularyEntryCount !== undefined) {
-      fail("v1 manifests cannot declare v2-only catalogue counts.");
+      if (manifest.schemaVersion === PAYLOAD_SCHEMA_V3 && (!Number.isInteger(manifest.descriptionCount) || manifest.descriptionCount < 0)) {
+        fail("v3 descriptionCount is required and must be a non-negative integer.");
+      }
+      if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 && manifest.descriptionCount !== undefined) fail("v2 manifests cannot declare descriptionCount.");
+    } else if (manifest.equipmentDefinitionCount !== undefined || manifest.vocabularyEntryCount !== undefined || manifest.descriptionCount !== undefined) {
+      fail("v1 manifests cannot declare v2/v3-only catalogue counts.");
     }
     if (!/^sha256:[a-f0-9]{64}$/.test(manifest.checksum || "")) fail("checksum must be sha256 followed by 64 lowercase hexadecimal characters.");
     requiredString(manifest.assetUrl, "assetUrl");
@@ -290,6 +296,66 @@
         "exercise variation " + variation.id + " movementDemandProfile");
     }
   }
+  function validateDescriptionText(value, field) {
+    if (typeof value !== "string" || !value.length) fail(field + " must be a non-empty string.");
+    if (value !== value.trim()) fail(field + " must be trimmed.");
+    if ([...value].length > 1000) fail(field + " exceeds 1,000 Unicode characters.");
+    if (/[\\r\\n\\u0000-\\u001f\\u007f]/.test(value)) fail(field + " must be a single paragraph without control characters.");
+    if (/<[^>]*>|\\[[^\\]]+\\]\\([^)]*\\)|(^|\\s)#{1,6}\\s|(^|\\s)[>*]\\s|\\*\\*|__|~~|`{1,3}/m.test(value)) {
+      fail(field + " must be plain text without HTML or Markdown.");
+    }
+  }
+  async function validateDescriptionBinding(subject, field) {
+    if (!isRecord(subject.descriptionReviewBinding)) fail(field + " description review binding is required.");
+    const binding = subject.descriptionReviewBinding;
+    requiredString(binding.reviewRecordId, field + " description reviewRecordId");
+    requiredString(binding.reviewerScopeId, field + " description reviewerScopeId");
+    if (binding.decision !== "approved") fail(field + " description review decision must be approved.");
+    if (!/^sha256:[a-f0-9]{64}$/.test(binding.targetDigest || "")) fail(field + " description targetDigest is invalid.");
+    if (!Array.isArray(binding.evidenceRefs) || !binding.evidenceRefs.length) fail(field + " description evidenceRefs must contain at least one source.");
+    const seen = new Set();
+    binding.evidenceRefs.forEach((reference, index) => {
+      requiredString(reference, field + " description evidence reference " + index);
+      if (seen.has(reference)) fail(field + " description evidenceRefs contain a duplicate.");
+      seen.add(reference);
+    });
+    const target = { id: requiredString(subject.id, field + " ID"), description: subject.description };
+    const digest = await sha256(new TextEncoder().encode(stableJson(target)));
+    if (digest !== binding.targetDigest) fail(field + " description review target digest does not match the reviewed content.");
+  }
+  async function validateV3Descriptions(document, manifest) {
+    if (document.descriptionLocale !== PAYLOAD_SCHEMA_V3_LOCALE) fail("v3 descriptionLocale must be en-AU.");
+    const collections = [
+      ["equipmentDefinitions", document.equipmentDefinitions, "equipment definition"],
+      ["definitions", document.definitions, "exercise definition"],
+      ["variations", document.variations, "exercise variation"]
+    ];
+    let count = 0;
+    for (const [key, records, label] of collections) {
+      if (!Array.isArray(records)) fail(key + " must be an array for v3 descriptions.");
+      for (const subject of records) {
+        const hasDescription = hasOwn(subject, "description");
+        const hasBinding = hasOwn(subject, "descriptionReviewBinding");
+        if (!hasDescription) {
+          if (hasBinding) fail(label + " has an orphan description review binding.");
+          continue;
+        }
+        validateDescriptionText(subject.description, label + " description");
+        await validateDescriptionBinding(subject, label);
+        count += 1;
+      }
+    }
+    if (count !== manifest.descriptionCount) fail("description count does not match the v3 manifest.");
+  }
+  function rejectDescriptionsInV2(document) {
+    for (const [key, label] of [["equipmentDefinitions","equipment definition"],["definitions","exercise definition"],["variations","exercise variation"]]) {
+      const records = document[key] || [];
+      if (records.some(subject => hasOwn(subject, "description") || hasOwn(subject, "descriptionReviewBinding"))) {
+        fail("v2 payloads cannot contain catalogue descriptions; use schema v3.");
+      }
+    }
+    if (hasOwn(document, "descriptionLocale")) fail("v2 payloads cannot declare descriptionLocale.");
+  }
   async function parseAndValidate(manifest, bytes) {
     if (!(bytes instanceof Uint8Array)) bytes = new Uint8Array(bytes);
     if (bytes.byteLength !== manifest.byteLength) fail("asset byte length does not match the manifest.");
@@ -330,9 +396,11 @@
       if (!definitionIds.has(variation.exerciseDefinitionId)) fail("variation parent does not exist in this release.");
       variationIds.add(variation.id);
     }
-    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2) {
+    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 || manifest.schemaVersion === PAYLOAD_SCHEMA_V3) {
       await validateV2Payload(document, manifest, definitionIds, variationIds);
     }
+    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V2) rejectDescriptionsInV2(document);
+    if (manifest.schemaVersion === PAYLOAD_SCHEMA_V3) await validateV3Descriptions(document, manifest);
     return { document, bytes };
   }
   function cacheName(manifest) {
@@ -492,6 +560,7 @@
           schemaVersion: manifest.schemaVersion,
           equipmentDefinitionCount: manifest.equipmentDefinitionCount || 0,
           vocabularyEntryCount: manifest.vocabularyEntryCount || 0,
+          descriptionCount: manifest.schemaVersion === PAYLOAD_SCHEMA_V3 ? manifest.descriptionCount : 0,
           verifiedAt: new Date().toISOString()
         }
       });
@@ -548,14 +617,15 @@
       fail("equipment definitions are unavailable because the active release is not verified.");
     }
     const manifest = validateManifest(storedManifest);
-    if (manifest.schemaVersion !== PAYLOAD_SCHEMA_V2) {
+    if (manifest.schemaVersion !== PAYLOAD_SCHEMA_V2 && manifest.schemaVersion !== PAYLOAD_SCHEMA_V3) {
       fail("equipment definitions are unavailable for a schema v1 catalogue release.");
     }
     if (manifest.checksum !== status.release.checksum || manifest.version !== status.release.version ||
         manifest.schemaVersion !== status.release.schemaVersion ||
-        (manifest.schemaVersion === PAYLOAD_SCHEMA_V2 &&
+        ((manifest.schemaVersion === PAYLOAD_SCHEMA_V2 || manifest.schemaVersion === PAYLOAD_SCHEMA_V3) &&
           (manifest.equipmentDefinitionCount !== status.release.equipmentDefinitionCount ||
-           manifest.vocabularyEntryCount !== status.release.vocabularyEntryCount))) {
+           manifest.vocabularyEntryCount !== status.release.vocabularyEntryCount)) ||
+        (manifest.schemaVersion === PAYLOAD_SCHEMA_V3 && manifest.descriptionCount !== status.release.descriptionCount)) {
       fail("equipment definitions are unavailable because the active release manifest does not match.");
     }
     const bytes = await getVerifiedBytes(manifest);
