@@ -255,7 +255,7 @@ function server() {
     try {
       await cleanStartPage.waitForFunction(() => document.querySelector('.equipment-record[data-location-id="home"]')?.textContent.includes("Home leg press"), null, { timeout: 10000 });
     } catch (error) {
-      const diagnostic = await cleanStartPage.evaluate(() => ({
+      const diagnostic = await cleanStartPage.evaluate(async () => ({
         cards: Array.from(document.querySelectorAll(".equipment-record")).map(card => ({
           location: card.dataset.locationId, id: card.dataset.equipmentId, text: card.textContent
         })),
