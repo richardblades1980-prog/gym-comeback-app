@@ -237,6 +237,21 @@ function server() {
     await equipmentForm.locator('[name="customName"]').fill("Home leg press");
     await equipmentForm.locator('[name="orientation"]').selectOption("vertical");
     await cleanStartPage.getByRole("button", { name: "Save changes" }).click();
+    try {
+      await cleanStartPage.waitForFunction(async () =>
+        (await ProjectComebackDB.listUserEquipment("gym-profile")).some(row => row.customName === "Home leg press"),
+      null, { timeout: 10000 });
+    } catch (error) {
+      const diagnostic = await cleanStartPage.evaluate(async () => ({
+        records: (await ProjectComebackDB.listUserEquipment("gym-profile")).map(row => ({
+          id: row.id, name: row.customName, location: row.location, configuration: row.confirmedConfiguration
+        })),
+        notice: document.querySelector("#notice")?.textContent,
+        editorTitle: document.querySelector("#equipment-form-title")?.textContent,
+        saveLabel: document.querySelector("#equipment-save")?.textContent
+      }));
+      throw new Error("E1 edit did not persist: " + JSON.stringify(diagnostic));
+    }
     await cleanStartPage.waitForFunction(() => document.querySelectorAll(".equipment-record")[1]?.textContent.includes("Home leg press"), null, { timeout: 10000 });
     if (!(await cleanStartPage.locator(".equipment-record").nth(1).textContent()).includes("Home leg press")) {
       throw new Error("E1 equipment edit did not update the selected instance.");
